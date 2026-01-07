@@ -1,5 +1,5 @@
 name: Import Products
-
+# Workflow for importing products from Filstar
 on:
   schedule:
     - cron: '0 2 * * *'
