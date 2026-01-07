@@ -2,10 +2,10 @@ const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 
-// URL на вашите GET заявки (ЗАМЕНЕТЕ С ВАШИЯ URL)
-const EXTERNAL_API_URL = 'https://example.com/api/products';
+const EXTERNAL_API_URL = 'https://filstar.com/api/products';
 
 async function fetchExternalProducts() {
   console.log('Fetching products from external API...');
