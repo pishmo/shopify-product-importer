@@ -110,9 +110,8 @@ async function main() {
 
 
 // 2. Filter only allowed product IDs
-    const filteredProducts = externalProducts.filter(product => {
-      return ALLOWED_PRODUCT_IDS.includes(product.id);
-    });
+  // Премахни филтъра по ID, защото вече филтрираме по SKU
+const filteredProducts = products; 
     
     console.log(`Filtered to ${filteredProducts.length} allowed products`);
 
