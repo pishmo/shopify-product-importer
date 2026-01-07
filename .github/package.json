@@ -1,0 +1,12 @@
+{
+  "name": "shopify-product-importer",
+  "version": "1.0.0",
+  "description": "Automated product import to Shopify",
+  "main": "import.js",
+  "scripts": {
+    "start": "node import.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
