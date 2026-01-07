@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+,const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
@@ -12,7 +12,7 @@ const PRODUCT_SKUS = [
   // 'ABC123',
   // 'XYZ789',
   // 'CARP-001'
-947828
+947828,943215
  
 ];
 
