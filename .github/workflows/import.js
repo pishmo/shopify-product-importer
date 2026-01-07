@@ -9,11 +9,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // Списък с ID-та на продуктите, които искате да импортирате
 const ALLOWED_PRODUCT_IDS = [
-  123,
-  456,
-  789,
-  1011,
-  1213
+ 947828
   // Добавете всички ID-та, които искате
 ];
 
