@@ -5,7 +5,7 @@ const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 
-const EXTERNAL_API_URL = 'https://filstar.com/api/products';
+const EXTERNAL_API_URL = 'https://filstar.com/api';
 
 async function fetchExternalProducts() {
   console.log('Fetching products from Filstar API...');
