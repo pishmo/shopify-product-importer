@@ -111,7 +111,7 @@ async function main() {
 
 // 2. Filter only allowed product IDs
   // Премахни филтъра по ID, защото вече филтрираме по SKU
-const filteredProducts = products; 
+  console.log(`Processing ${externalProducts.length} products`);
     
     console.log(`Filtered to ${filteredProducts.length} allowed products`);
 
