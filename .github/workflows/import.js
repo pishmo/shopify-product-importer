@@ -8,11 +8,33 @@ const API_VERSION = '2024-10';
 const EXTERNAL_API_URL = 'https://filstar.com/api/products';
 
 async function fetchExternalProducts() {
-  console.log('Fetching products from external API...');
-  const response = await fetch(EXTERNAL_API_URL);
+  console.log('Fetching products from Filstar API...');
+  
+  const response = await fetch(EXTERNAL_API_URL, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Filstar API error: ${response.status} ${response.statusText}`);
+  }
+  
   const data = await response.json();
+  console.log(`Fetched ${data.length || 0} products from Filstar`);
+  
   return data;
 }
+
+
+
+
+
+
+
+
 
 async function createShopifyProduct(productData) {
   const mutation = `
