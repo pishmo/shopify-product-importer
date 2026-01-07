@@ -7,28 +7,22 @@ const API_VERSION = '2024-10';
 
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// Списък с ID-та на продуктите, които искате да импортирате
-const ALLOWED_PRODUCT_IDS = [
- 947828
-  // Добавете всички ID-та, които искате
+const PRODUCT_SKUS = [
+  // Добавете SKU кодовете тук, например:
+  // 'ABC123',
+  // 'XYZ789',
+  // 'CARP-001'
+947828
+ 
 ];
 
-
-
-
-
-
-
 async function fetchExternalProducts() {
-  console.log('Fetching products from Filstar API...');
+  console.log('Fetching products from Filstar API by SKU...');
   
   let allProducts = [];
-  let page = 1;
-  const limit = 50;
-  const searchTerm = 'шаран';
   
-  while (true) {
-    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=${limit}&search=${searchTerm}`;
+  for (const sku of PRODUCT_SKUS) {
+    const url = `${FILSTAR_API_BASE}/products?search=${sku}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -39,17 +33,18 @@ async function fetchExternalProducts() {
     });
     
     if (!response.ok) {
-      throw new Error(`Filstar API error: ${response.status}`);
+      console.error(`Error fetching SKU ${sku}: ${response.status}`);
+      continue;
     }
     
     const data = await response.json();
     
-    if (!data || data.length === 0) break;
-    
-    allProducts = allProducts.concat(data);
-    console.log(`Fetched page ${page}: ${data.length} products`);
-    
-    page++;
+    if (data && data.length > 0) {
+      allProducts = allProducts.concat(data);
+      console.log(`Found ${data.length} product(s) with SKU: ${sku}`);
+    } else {
+      console.log(`No product found with SKU: ${sku}`);
+    }
     
     await new Promise(resolve => setTimeout(resolve, 500));
   }
@@ -57,9 +52,6 @@ async function fetchExternalProducts() {
   console.log(`Total products fetched: ${allProducts.length}`);
   return allProducts;
 }
-
-
-
 
 
 
