@@ -109,11 +109,11 @@ async function main() {
     const externalProducts = await fetchExternalProducts();
 
 
-// 2. Filter only allowed product IDs
+// 2. Filter only allowed product SKU
   // Премахни филтъра по ID, защото вече филтрираме по SKU
   console.log(`Processing ${externalProducts.length} products`);
     
-    console.log(`Filtered to ${filteredProducts.length} allowed products`);
+
 
 
     
