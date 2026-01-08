@@ -86,51 +86,45 @@ async function fetchExternalProducts() {
 }
 
 
+// създаване на продуктите
 
-
-async function createShopifyProduct(productData) {
-  const mutation = `
-    mutation {
-      productCreate(input: {
-        title: "${productData.title}",
-        descriptionHtml: "${productData.description || ''}",
-        vendor: "${productData.vendor || ''}",
-        productType: "${productData.type || ''}"
-      }) {
-        product {
-          id
-          title
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  `;
-
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': ACCESS_TOKEN
-      },
-      body: JSON.stringify({ query: mutation })
-    }
-  );
-
-  const result = await response.json();
+async function createShopifyProduct(product) {
+  // DEBUG - виж какво идва от Filstar
+  console.log('=== RAW PRODUCT DATA ===');
+  console.log(JSON.stringify(product, null, 2));
+  console.log('========================');
   
-  if (result.data.productCreate.userErrors.length > 0) {
-    console.error('Error creating product:', result.data.productCreate.userErrors);
-  } else {
-    console.log('Created product:', result.data.productCreate.product.title);
-  }
+  const shopifyProduct = {
+    title: product.name,
+    descriptionHtml: `<p>${product.description || product.short_description || ''}</p>`,
+    vendor: product.manufacturer || 'Filstar',
+    productType: 'Fishing Equipment',
+    images: product.images ? product.images.map(url => ({ src: url })) : [],
+    variants: [{
+      sku: product.sku || '',
+      barcode: product.barcode || '',
+      price: product.price || '0.00',
+      inventoryQuantity: parseInt(product.quantity) || 0,
+      inventoryManagement: 'shopify'
+    }]
+  };
   
-  return result;
+  console.log('=== MAPPED SHOPIFY PRODUCT ===');
+  console.log(JSON.stringify(shopifyProduct, null, 2));
+  console.log('==============================');
+  
+  // ... останалия код за създаване в Shopify
 }
+
+
+
+
+
+
+
+
+
+
 
 async function main() {
   try {
