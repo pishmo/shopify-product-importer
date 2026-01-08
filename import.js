@@ -22,9 +22,10 @@ async function fetchExternalProducts() {
   let allProducts = [];
   
   for (const sku of PRODUCT_SKUS) {
-    const url = `${FILSTAR_API_BASE}/products?search=${sku}`;
+    // 1. Fetch product info (name, description, images)
+    const productUrl = `${FILSTAR_API_BASE}/products?search=${sku}`;
     
-    const response = await fetch(url, {
+    const productResponse = await fetch(productUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${FILSTAR_TOKEN}`,
@@ -32,16 +33,47 @@ async function fetchExternalProducts() {
       }
     });
     
-    if (!response.ok) {
-      console.error(`Error fetching SKU ${sku}: ${response.status}`);
+    if (!productResponse.ok) {
+      console.error(`Error fetching product SKU ${sku}: ${productResponse.status}`);
       continue;
     }
     
-    const data = await response.json();
+    const productData = await productResponse.json();
     
-    if (data && data.length > 0) {
-      allProducts = allProducts.concat(data);
-      console.log(`Found ${data.length} product(s) with SKU: ${sku}`);
+    if (productData && productData.length > 0) {
+      // 2. Fetch price and quantity info
+      const priceUrl = `${FILSTAR_API_BASE}/price-quantity?search=${sku}`;
+      
+      const priceResponse = await fetch(priceUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (priceResponse.ok) {
+        const priceData = await priceResponse.json();
+        
+        // 3. Комбинирай product info + price info
+        for (const product of productData) {
+          // Намери съответстващия вариант по SKU
+          const variant = priceData.find(v => v.sku === sku);
+          
+          if (variant) {
+            product.sku = variant.sku;
+            product.barcode = variant.barcode;
+            product.price = variant.price;
+            product.quantity = variant.quantity;
+          }
+          
+          allProducts.push(product);
+        }
+        
+        console.log(`Found ${productData.length} product(s) with SKU: ${sku}`);
+      } else {
+        console.error(`Error fetching price for SKU ${sku}: ${priceResponse.status}`);
+      }
     } else {
       console.log(`No product found with SKU: ${sku}`);
     }
@@ -52,7 +84,6 @@ async function fetchExternalProducts() {
   console.log(`Total products fetched: ${allProducts.length}`);
   return allProducts;
 }
-
 
 
 
