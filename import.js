@@ -89,36 +89,34 @@ async function fetchExternalProducts() {
 // създаване на продуктите
 
 async function createShopifyProduct(product) {
-  // DEBUG - виж какво идва от Filstar
-  console.log('=== RAW PRODUCT DATA ===');
-  console.log(JSON.stringify(product, null, 2));
-  console.log('========================');
+  console.log(`Processing product: ${product.name}`);
+  
+  // Вземи description (short_description е с HTML вече)
+  const description = product.description || product.short_description || '';
+  
+  // Създай Shopify варианти от Filstar варианти
+  const shopifyVariants = product.variants.map(variant => ({
+    sku: variant.sku,
+    barcode: variant.barcode,
+    price: variant.price,
+    inventoryQuantity: parseInt(variant.quantity) || 0,
+    inventoryManagement: 'shopify',
+    option1: variant.attributes.find(a => a.attribute_name.includes('РАЗМЕР'))?.value || variant.model || null
+  }));
   
   const shopifyProduct = {
     title: product.name,
-    descriptionHtml: `<p>${product.description || product.short_description || ''}</p>`,
+    descriptionHtml: description,
     vendor: product.manufacturer || 'Filstar',
-    productType: 'Fishing Equipment',
-    images: product.images ? product.images.map(url => ({ src: url })) : [],
-    variants: [{
-      sku: product.sku || '',
-      barcode: product.barcode || '',
-      price: product.price || '0.00',
-      inventoryQuantity: parseInt(product.quantity) || 0,
-      inventoryManagement: 'shopify'
-    }]
+    productType: product.categories?.[0]?.name || 'Fishing Equipment',
+    images: product.images.map(url => ({ src: url })),
+    variants: shopifyVariants
   };
   
-  console.log('=== MAPPED SHOPIFY PRODUCT ===');
-  console.log(JSON.stringify(shopifyProduct, null, 2));
-  console.log('==============================');
+  console.log(`Creating product with ${shopifyVariants.length} variants`);
   
-  // ... останалия код за създаване в Shopify
+  // ... останалия код за Shopify API заявка
 }
-
-
-
-
 
 
 
