@@ -116,11 +116,15 @@ async function createShopifyProduct(product) {
   console.log(`Creating product with ${shopifyVariants.length} variants`);
   
   // SHOPIFY API ЗАЯВКА
+
+
+
+  
   try {
-    const response = await fetch(`https://${SHOPIFY_SHOP_DOMAIN}/admin/api/2024-01/products.json`, {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN,
+    const response = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`, {
+  method: 'POST',
+  headers: {
+    'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ product: shopifyProduct })
@@ -139,6 +143,8 @@ async function createShopifyProduct(product) {
     console.error(`ERROR creating product "${product.name}":`, error.message);
   }
 }
+
+
 
 
 
