@@ -99,26 +99,46 @@ async function createShopifyProduct(product) {
     sku: variant.sku,
     barcode: variant.barcode,
     price: variant.price,
-    inventoryQuantity: parseInt(variant.quantity) || 0,
-    inventoryManagement: 'shopify',
+    inventory_quantity: parseInt(variant.quantity) || 0,
+    inventory_management: 'shopify',
     option1: variant.attributes.find(a => a.attribute_name.includes('РАЗМЕР'))?.value || variant.model || null
   }));
   
   const shopifyProduct = {
     title: product.name,
-    descriptionHtml: description,
+    body_html: description,
     vendor: product.manufacturer || 'Filstar',
-    productType: product.categories?.[0]?.name || 'Fishing Equipment',
+    product_type: product.categories?.[0]?.name || 'Fishing Equipment',
     images: product.images.map(url => ({ src: url })),
     variants: shopifyVariants
   };
   
   console.log(`Creating product with ${shopifyVariants.length} variants`);
   
-  // ... останалия код за Shopify API заявка
+  // SHOPIFY API ЗАЯВКА
+  try {
+    const response = await fetch(`https://${SHOPIFY_SHOP_DOMAIN}/admin/api/2024-01/products.json`, {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ product: shopifyProduct })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(`Failed to create product "${product.name}":`, JSON.stringify(errorData, null, 2));
+      return;
+    }
+    
+    const result = await response.json();
+    console.log(`✅ Successfully created product: ${result.product.title} (ID: ${result.product.id})`);
+    
+  } catch (error) {
+    console.error(`ERROR creating product "${product.name}":`, error.message);
+  }
 }
-
-
 
 
 
