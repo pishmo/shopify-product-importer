@@ -189,8 +189,7 @@ async function createShopifyProduct(product) {
   }
 }
 
-
-// 3. ФУНКЦИЯ ЗА UPDATE - само цени и наличности
+// 3. ФУНКЦИЯ ЗА UPDATE - само цени и наличности (clean version)
 async function updateShopifyProduct(productId, filstarProduct) {
   console.log(`Updating product ID ${productId}...`);
   
@@ -215,12 +214,12 @@ async function updateShopifyProduct(productId, filstarProduct) {
     const existingData = await getResponse.json();
     const existingProduct = existingData.product;
     
-    // Обнови варианти (само цена и наличност, БЕЗ промяна на options)
+    // Обнови варианти (само цена и наличност)
     for (const filstarVariant of filstarProduct.variants) {
       const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
       
       if (existingVariant) {
-        // 1. Update само цена (БЕЗ options/title)
+        // Update цена
         const updateResponse = await fetch(
           `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
           {
@@ -233,7 +232,6 @@ async function updateShopifyProduct(productId, filstarProduct) {
               variant: {
                 id: existingVariant.id,
                 price: filstarVariant.price
-                // НЕ включваме option1, option2, option3 тук!
               }
             })
           }
@@ -245,7 +243,7 @@ async function updateShopifyProduct(productId, filstarProduct) {
         
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // 2. Update наличност през Inventory API
+        // Update наличност
         if (existingVariant.inventory_item_id) {
           const newQuantity = parseInt(filstarVariant.quantity) || 0;
           
@@ -287,6 +285,8 @@ async function updateShopifyProduct(productId, filstarProduct) {
                 console.error(`  ✗ Failed to update inventory for SKU ${filstarVariant.sku}`);
               }
             }
+          } else {
+            console.error(`  ✗ Failed to get inventory levels for SKU ${filstarVariant.sku}`);
           }
           
           await new Promise(resolve => setTimeout(resolve, 300));
