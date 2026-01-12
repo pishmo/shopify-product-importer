@@ -139,6 +139,12 @@ async function createShopifyProduct(product) {
   } catch (error) {
     console.error('Error checking for existing product:', error.message);
   }
+
+
+
+
+
+
   
   // 2. СЪЗДАЙ НОВ ПРОДУКТ (ако не съществува)
   const shopifyVariants = product.variants.map(variant => ({
@@ -210,6 +216,13 @@ async function updateShopifyProduct(productId, filstarProduct) {
     const existingData = await getResponse.json();
     const existingProduct = existingData.product;
     
+  
+    
+    
+    
+    
+    
+    
     // Обнови варианти (цена и наличност)
     for (const filstarVariant of filstarProduct.variants) {
       const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
@@ -239,65 +252,82 @@ async function updateShopifyProduct(productId, filstarProduct) {
         
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // 2. Update наличност през Inventory API
-        if (existingVariant.inventory_item_id) {
-          const newQuantity = parseInt(filstarVariant.quantity) || 0;
-          
-          // Вземи текущата наличност
-          const inventoryResponse = await fetch(
-            `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels.json?inventory_item_ids=${existingVariant.inventory_item_id}`,
-            {
-              method: 'GET',
-              headers: {
-                'X-Shopify-Access-Token': ACCESS_TOKEN,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-          
-          if (inventoryResponse.ok) {
-            const inventoryData = await inventoryResponse.json();
-            const inventoryLevel = inventoryData.inventory_levels[0];
-            
-            if (inventoryLevel) {
-              // Set новата наличност
-              const setResponse = await fetch(
-                `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'X-Shopify-Access-Token': ACCESS_TOKEN,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    location_id: inventoryLevel.location_id,
-                    inventory_item_id: existingVariant.inventory_item_id,
-                    available: newQuantity
-                  })
-                }
-              );
-              
-              if (setResponse.ok) {
-                console.log(`  ✓ Updated inventory for SKU ${filstarVariant.sku}: ${newQuantity} units`);
-              } else {
-                console.error(`  ✗ Failed to update inventory for SKU ${filstarVariant.sku}`);
-              }
-            }
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
+      
+        
+        
+      // 2. Update наличност през Inventory API
+if (existingVariant.inventory_item_id) {
+  const newQuantity = parseInt(filstarVariant.quantity) || 0;
+  
+  console.log(`  → Attempting inventory update for SKU ${filstarVariant.sku}`);
+  console.log(`    inventory_item_id: ${existingVariant.inventory_item_id}`);
+  console.log(`    new quantity: ${newQuantity}`);
+  
+  // Вземи текущата наличност
+  const inventoryResponse = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels.json?inventory_item_ids=${existingVariant.inventory_item_id}`,
+    {
+      method: 'GET',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
       }
     }
+  );
+  
+  console.log(`    inventory GET status: ${inventoryResponse.status}`);
+  
+  if (inventoryResponse.ok) {
+    const inventoryData = await inventoryResponse.json();
+    console.log(`    inventory data:`, JSON.stringify(inventoryData, null, 2));
     
-    console.log(`✅ Successfully updated product ID ${productId}`);
+    const inventoryLevel = inventoryData.inventory_levels[0];
     
-  } catch (error) {
-    console.error(`ERROR updating product ID ${productId}:`, error.message);
+    if (inventoryLevel) {
+      console.log(`    location_id: ${inventoryLevel.location_id}`);
+      console.log(`    current available: ${inventoryLevel.available}`);
+      
+      // Set новата наличност
+      const setResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            location_id: inventoryLevel.location_id,
+            inventory_item_id: existingVariant.inventory_item_id,
+            available: newQuantity
+          })
+        }
+      );
+      
+      console.log(`    inventory SET status: ${setResponse.status}`);
+      
+      if (setResponse.ok) {
+        const setData = await setResponse.json();
+        console.log(`  ✓ Updated inventory for SKU ${filstarVariant.sku}: ${newQuantity} units`);
+        console.log(`    response:`, JSON.stringify(setData, null, 2));
+      } else {
+        const errorText = await setResponse.text();
+        console.error(`  ✗ Failed to update inventory for SKU ${filstarVariant.sku}`);
+        console.error(`    error:`, errorText);
+      }
+    } else {
+      console.error(`  ✗ No inventory level found for SKU ${filstarVariant.sku}`);
+    }
+  } else {
+    const errorText = await inventoryResponse.text();
+    console.error(`  ✗ Failed to get inventory levels`);
+    console.error(`    error:`, errorText);
   }
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+} else {
+  console.error(`  ✗ No inventory_item_id for SKU ${filstarVariant.sku}`);
 }
-
-
 
 
 async function main() {
