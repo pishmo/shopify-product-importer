@@ -185,7 +185,7 @@ async function createShopifyProduct(product) {
   }
 }
 
-// 3. НОВА ФУНКЦИЯ ЗА UPDATE
+// 3. КОРИГИРАНА ФУНКЦИЯ ЗА UPDATE
 async function updateShopifyProduct(productId, filstarProduct) {
   console.log(`Updating product ID ${productId}...`);
   
@@ -215,7 +215,7 @@ async function updateShopifyProduct(productId, filstarProduct) {
       const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
       
       if (existingVariant) {
-        // Update вариант
+        // 1. Update цена на вариант
         const updateResponse = await fetch(
           `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
           {
@@ -227,18 +227,66 @@ async function updateShopifyProduct(productId, filstarProduct) {
             body: JSON.stringify({
               variant: {
                 id: existingVariant.id,
-                price: filstarVariant.price,
-                inventory_quantity: parseInt(filstarVariant.quantity) || 0
+                price: filstarVariant.price
               }
             })
           }
         );
         
         if (updateResponse.ok) {
-          console.log(`  ✓ Updated variant SKU ${filstarVariant.sku}`);
+          console.log(`  ✓ Updated price for SKU ${filstarVariant.sku}`);
         }
         
-        await new Promise(resolve => setTimeout(resolve, 300)); // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 2. Update наличност през Inventory API
+        if (existingVariant.inventory_item_id) {
+          const newQuantity = parseInt(filstarVariant.quantity) || 0;
+          
+          // Вземи текущата наличност
+          const inventoryResponse = await fetch(
+            `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels.json?inventory_item_ids=${existingVariant.inventory_item_id}`,
+            {
+              method: 'GET',
+              headers: {
+                'X-Shopify-Access-Token': ACCESS_TOKEN,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          
+          if (inventoryResponse.ok) {
+            const inventoryData = await inventoryResponse.json();
+            const inventoryLevel = inventoryData.inventory_levels[0];
+            
+            if (inventoryLevel) {
+              // Set новата наличност
+              const setResponse = await fetch(
+                `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'X-Shopify-Access-Token': ACCESS_TOKEN,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    location_id: inventoryLevel.location_id,
+                    inventory_item_id: existingVariant.inventory_item_id,
+                    available: newQuantity
+                  })
+                }
+              );
+              
+              if (setResponse.ok) {
+                console.log(`  ✓ Updated inventory for SKU ${filstarVariant.sku}: ${newQuantity} units`);
+              } else {
+                console.error(`  ✗ Failed to update inventory for SKU ${filstarVariant.sku}`);
+              }
+            }
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
     }
     
@@ -248,8 +296,6 @@ async function updateShopifyProduct(productId, filstarProduct) {
     console.error(`ERROR updating product ID ${productId}:`, error.message);
   }
 }
-
-
 
 
 
