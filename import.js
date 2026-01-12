@@ -9,10 +9,8 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 const PRODUCT_SKUS = [
   // Добавете SKU кодовете тук, например:
-  // 'ABC123',
-  // 'XYZ789',
-  // 'CARP-001'
-947828,943215
+  
+947828,943215,957595
  
 ];
 
