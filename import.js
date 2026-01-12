@@ -91,10 +91,56 @@ async function fetchExternalProducts() {
 async function createShopifyProduct(product) {
   console.log(`Processing product: ${product.name}`);
   
-  // Вземи description (short_description е с HTML вече)
   const description = product.description || product.short_description || '';
   
-  // Създай Shopify варианти от Filstar варианти
+  // Вземи SKU на първия вариант за търсене
+  const mainSku = product.variants[0]?.sku;
+  
+  if (!mainSku) {
+    console.log('⚠️ Product has no SKU, skipping...');
+    return;
+  }
+  
+  // 1. ПРОВЕРИ ДАЛИ ПРОДУКТЪТ ВЕЧЕ СЪЩЕСТВУВА
+  console.log(`Checking if product with SKU ${mainSku} already exists...`);
+  
+  try {
+    const searchResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,variants&limit=250`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (!searchResponse.ok) {
+      console.error('Failed to search for existing products');
+      return;
+    }
+    
+    const searchData = await searchResponse.json();
+    
+    // Намери продукт, който има вариант с този SKU
+    const existingProduct = searchData.products.find(p => 
+      p.variants.some(v => v.sku === mainSku)
+    );
+    
+    if (existingProduct) {
+      console.log(`✓ Product already exists (ID: ${existingProduct.id}), updating...`);
+      await updateShopifyProduct(existingProduct.id, product);
+      return;
+    }
+    
+    console.log('Product does not exist, creating new...');
+    
+  } catch (error) {
+    console.error('Error checking for existing product:', error.message);
+  }
+  
+  // 2. СЪЗДАЙ НОВ ПРОДУКТ (ако не съществува)
   const shopifyVariants = product.variants.map(variant => ({
     sku: variant.sku,
     barcode: variant.barcode,
@@ -115,16 +161,11 @@ async function createShopifyProduct(product) {
   
   console.log(`Creating product with ${shopifyVariants.length} variants`);
   
-  // SHOPIFY API ЗАЯВКА
-
-
-
-  
   try {
     const response = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`, {
-  method: 'POST',
-  headers: {
-    'X-Shopify-Access-Token': ACCESS_TOKEN,
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ product: shopifyProduct })
@@ -144,6 +185,69 @@ async function createShopifyProduct(product) {
   }
 }
 
+// 3. НОВА ФУНКЦИЯ ЗА UPDATE
+async function updateShopifyProduct(productId, filstarProduct) {
+  console.log(`Updating product ID ${productId}...`);
+  
+  try {
+    // Вземи пълните данни на продукта
+    const getResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (!getResponse.ok) {
+      console.error('Failed to get product details');
+      return;
+    }
+    
+    const existingData = await getResponse.json();
+    const existingProduct = existingData.product;
+    
+    // Обнови варианти (цена и наличност)
+    for (const filstarVariant of filstarProduct.variants) {
+      const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
+      
+      if (existingVariant) {
+        // Update вариант
+        const updateResponse = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
+          {
+            method: 'PUT',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              variant: {
+                id: existingVariant.id,
+                price: filstarVariant.price,
+                inventory_quantity: parseInt(filstarVariant.quantity) || 0
+              }
+            })
+          }
+        );
+        
+        if (updateResponse.ok) {
+          console.log(`  ✓ Updated variant SKU ${filstarVariant.sku}`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 300)); // Rate limiting
+      }
+    }
+    
+    console.log(`✅ Successfully updated product ID ${productId}`);
+    
+  } catch (error) {
+    console.error(`ERROR updating product ID ${productId}:`, error.message);
+  }
+}
 
 
 
