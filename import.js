@@ -97,7 +97,7 @@ async function createShopifyProduct(product) {
   const mainSku = product.variants[0]?.sku;
   
   if (!mainSku) {
-    console.log('⚠️ Product has no SKU, skipping...');
+    console.log('?? Product has no SKU, skipping...');
     return;
   }
   
@@ -129,7 +129,7 @@ async function createShopifyProduct(product) {
     );
     
     if (existingProduct) {
-      console.log(`✓ Product already exists (ID: ${existingProduct.id}), updating...`);
+      console.log(`? Product already exists (ID: ${existingProduct.id}), updating...`);
       await updateShopifyProduct(existingProduct.id, product);
       return;
     }
@@ -184,7 +184,7 @@ async function createShopifyProduct(product) {
     }
     
     const result = await response.json();
-    console.log(`✅ Successfully created product: ${result.product.title} (ID: ${result.product.id})`);
+    console.log(`? Successfully created product: ${result.product.title} (ID: ${result.product.id})`);
     
   } catch (error) {
     console.error(`ERROR creating product "${product.name}":`, error.message);
@@ -247,7 +247,7 @@ async function updateShopifyProduct(productId, filstarProduct) {
         );
         
         if (updateResponse.ok) {
-          console.log(`  ✓ Updated price for SKU ${filstarVariant.sku}`);
+          console.log(`  ? Updated price for SKU ${filstarVariant.sku}`);
         }
         
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -255,7 +255,10 @@ async function updateShopifyProduct(productId, filstarProduct) {
       
         
         
-      // 2. Update наличност през Inventory API
+        
+        
+        
+    // 2. Update наличност през Inventory API
 if (existingVariant.inventory_item_id) {
   const newQuantity = parseInt(filstarVariant.quantity) || 0;
   
@@ -328,6 +331,23 @@ if (existingVariant.inventory_item_id) {
 } else {
   console.error(`  ✗ No inventory_item_id for SKU ${filstarVariant.sku}`);
 }
+
+
+
+
+
+        
+      }
+    }
+    
+    console.log(`? Successfully updated product ID ${productId}`);
+    
+  } catch (error) {
+    console.error(`ERROR updating product ID ${productId}:`, error.message);
+  }
+}
+
+
 
 
 async function main() {
