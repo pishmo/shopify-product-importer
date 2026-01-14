@@ -11,26 +11,46 @@ const SEARCH_QUERY = 'плетено';
 async function fetchBraidedProducts() {
   console.log(`Searching for "${SEARCH_QUERY}" products in Filstar...`);
   
-  const url = `${FILSTAR_API_BASE}/products?search=${encodeURIComponent(SEARCH_QUERY)}`;
-  console.log(`API URL: ${url}`);
+  let allProducts = [];
+  let page = 1;
+  const limit = 50; // Колко продукта на страница
   
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-      'Content-Type': 'application/json'
+  while (true) {
+    const url = `${FILSTAR_API_BASE}/products?search=${encodeURIComponent(SEARCH_QUERY)}&page=${page}&limit=${limit}`;
+    console.log(`Fetching page ${page}: ${url}`);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Filstar API error: ${response.status} ${response.statusText}`);
     }
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Filstar API error: ${response.status} ${response.statusText}`);
+    
+    const data = await response.json();
+    
+    if (!data || data.length === 0) {
+      console.log(`No more products on page ${page}`);
+      break; // Няма повече продукти
+    }
+    
+    allProducts = allProducts.concat(data);
+    console.log(`Page ${page}: Found ${data.length} products (Total so far: ${allProducts.length})`);
+    
+    page++;
+    
+    // Rate limiting между страници
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  const data = await response.json();
-  console.log(`Found ${data.length || 0} products matching "${SEARCH_QUERY}"`);
-  
-  return data;
+  console.log(`Total products found: ${allProducts.length}`);
+  return allProducts;
 }
+
 
 async function findShopifyProductBySku(sku) {
   console.log(`Searching for product with SKU: ${sku} in Shopify...`);
