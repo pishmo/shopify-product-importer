@@ -8,48 +8,72 @@ const API_VERSION = '2025-01';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const COLLECTION_ID = '738965946750'; // Влакно монофилно
 
-// Функция за fetch на всички монофилни влакна от Filstar (2 страници)
+
+// ФУНКЦИЯ 1 - Замени цялата fetchFilstarMonofilamentProducts функция
 async function fetchFilstarMonofilamentProducts() {
   console.log('Fetching monofilament products from Filstar...');
   
   let allProducts = [];
   
-  // Fetch от двете страници
-  for (let page = 1; page <= 2; page++) {
-    console.log(`Fetching page ${page}...`);
+  // Опитай с различни search термини
+  const searchTerms = ['монофилно', 'monofilament', 'mono'];
+  
+  for (const term of searchTerms) {
+    console.log(`Searching for: ${term}`);
     
-    const url = `${FILSTAR_API_BASE}/products?page=${page}&category=monofilno`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-        'Content-Type': 'application/json'
+    for (let page = 1; page <= 2; page++) {
+      const url = `${FILSTAR_API_BASE}/products?page=${page}&search=${encodeURIComponent(term)}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`Error fetching page ${page}: ${response.status}`);
+        continue;
       }
-    });
-    
-    if (!response.ok) {
-      console.error(`Error fetching page ${page}: ${response.status}`);
-      continue;
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        // Филтрирай само монофилни влакна
+        const filtered = data.filter(p => 
+          p.name && (
+            p.name.toLowerCase().includes('монофилно') ||
+            p.name.toLowerCase().includes('monofilament') ||
+            p.name.toLowerCase().includes('mono')
+          )
+        );
+        
+        allProducts = allProducts.concat(filtered);
+        console.log(`  Found ${filtered.length} monofilament products on page ${page}`);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
-    const data = await response.json();
-    
-    if (data && data.length > 0) {
-      allProducts = allProducts.concat(data);
-      console.log(`  Found ${data.length} products on page ${page}`);
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  console.log(`Total products fetched: ${allProducts.length}`);
-  return allProducts;
+  // Премахни дубликати по ID
+  const uniqueProducts = Array.from(
+    new Map(allProducts.map(p => [p.id, p])).values()
+  );
+  
+  console.log(`Total unique products: ${uniqueProducts.length}`);
+  return uniqueProducts;
 }
 
-// Функция за fetch на цена и наличност за конкретен SKU
-async function fetchPriceAndQuantity(sku) {
-  const priceUrl = `${FILSTAR_API_BASE}/price-quantity?search=${sku}`;
+// ФУНКЦИЯ 2 - Замени цялата fetchPriceAndQuantity функция
+async function fetchPriceAndQuantity(product) {
+  // Опитай с различни полета за SKU
+  const searchValue = product.sku || product.code || product.id;
+  
+  console.log(`  Fetching price for: ${searchValue}`);
+  
+  const priceUrl = `${FILSTAR_API_BASE}/price-quantity?search=${searchValue}`;
   
   const response = await fetch(priceUrl, {
     method: 'GET',
@@ -60,13 +84,34 @@ async function fetchPriceAndQuantity(sku) {
   });
   
   if (!response.ok) {
-    console.error(`Error fetching price for SKU ${sku}: ${response.status}`);
+    console.error(`  Error fetching price: ${response.status}`);
     return null;
   }
   
   const priceData = await response.json();
-  return priceData.find(v => v.sku == sku);
+  
+  // Опитай да намериш по различни полета
+  let variant = priceData.find(v => 
+    v.sku == searchValue || 
+    v.code == searchValue || 
+    v.id == searchValue
+  );
+  
+  // Ако не намери, вземи първия
+  if (!variant && priceData.length > 0) {
+    variant = priceData[0];
+  }
+  
+  return variant;
 }
+
+
+
+
+
+
+
+
 
 // Функция за проверка дали продукт съществува в Shopify
 async function findProductBySku(sku) {
@@ -279,7 +324,8 @@ async function main() {
       console.log(`Processing: ${product.name}`);
       
       // Вземи първия SKU от продукта (или всички варианти ако има)
-      const priceData = await fetchPriceAndQuantity(product.sku || product.id);
+     const priceData = await fetchPriceAndQuantity(product);
+
       
       if (!priceData) {
         console.log(`  ⚠️ No price data found, skipping`);
