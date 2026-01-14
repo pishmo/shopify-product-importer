@@ -1,14 +1,14 @@
-// import-rods.js - Специален импорт за шаранските пръчки
+// import-rods.js - UPDATE на съществуващи пръчки
+
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// SKU-та само на пръчките
+// SKU-та на пръчките за update
 const ROD_SKUS = [
-  '943215'  // Шаранска въдица FilStar F-Carp 2
-  // Добави други пръчки тук
+  '943215'  // Добави всички SKU-та на пръчките от колекцията
 ];
 
 async function fetchRodProducts() {
@@ -54,70 +54,124 @@ async function fetchRodProducts() {
   return allProducts;
 }
 
-async function createRodProduct(filstarProduct) {
-  console.log(`Creating rod product: ${filstarProduct.title || filstarProduct.name}`);
-  
-  // Форматирай вариантите с атрибути
-  const variants = filstarProduct.variants.map(variant => {
-    // TODO: Адаптирай според реалната структура от Filstar
-    // Примерен формат - ще коригираме след като видим данните
-    const optionName = formatRodOption(variant);
-    
-    return {
-      option1: optionName,
-      price: variant.price || '0.00',
-      sku: variant.sku,
-      barcode: variant.barcode || variant.ean,
-      inventory_quantity: parseInt(variant.quantity) || 0,
-      inventory_management: 'shopify'
-    };
-  });
-  
-  const productData = {
-    product: {
-      title: filstarProduct.title || filstarProduct.name,
-      body_html: filstarProduct.description || filstarProduct.desc || '',
-      vendor: 'Filstar',
-      product_type: 'Шаранска въдица',
-      variants: variants,
-      options: [
-        {
-          name: 'Вариант',
-          values: variants.map(v => v.option1)
-        }
-      ]
-    }
-  };
-  
-  console.log('Product data:', JSON.stringify(productData, null, 2));
+async function findShopifyProductBySku(sku) {
+  console.log(`Searching for product with SKU: ${sku} in Shopify...`);
   
   const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250`,
     {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(productData)
+      }
     }
   );
   
-  if (response.ok) {
-    const result = await response.json();
-    console.log(`✅ Created product: ${result.product.title}`);
-  } else {
-    const error = await response.text();
-    console.error(`❌ Failed to create product:`, error);
+  if (!response.ok) {
+    console.error('Failed to fetch Shopify products');
+    return null;
+  }
+  
+  const data = await response.json();
+  
+  // Намери продукт, който има вариант с този SKU
+  for (const product of data.products) {
+    const hasVariant = product.variants.some(v => v.sku === sku);
+    if (hasVariant) {
+      console.log(`Found existing product: ${product.title} (ID: ${product.id})`);
+      return product.id;
+    }
+  }
+  
+  console.log(`No existing product found with SKU: ${sku}`);
+  return null;
+}
+
+async function updateRodProduct(productId, filstarProduct) {
+  console.log(`Updating rod product ID: ${productId}`);
+  
+  try {
+    // Вземи пълните данни на продукта
+    const getResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (!getResponse.ok) {
+      console.error('Failed to get product details');
+      return;
+    }
+    
+    const existingData = await getResponse.json();
+    const existingProduct = existingData.product;
+    
+    console.log(`Current product has ${existingProduct.variants.length} variants`);
+    
+    // Update всеки вариант с нов option name
+    for (const filstarVariant of filstarProduct.variants) {
+      const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
+      
+      if (existingVariant) {
+        // Форматирай новото име на опцията
+        const newOptionName = formatRodOption(filstarVariant);
+        
+        console.log(`Updating variant SKU ${filstarVariant.sku}:`);
+        console.log(`  Old option: ${existingVariant.option1}`);
+        console.log(`  New option: ${newOptionName}`);
+        
+        const updateResponse = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
+          {
+            method: 'PUT',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              variant: {
+                id: existingVariant.id,
+                option1: newOptionName
+              }
+            })
+          }
+        );
+        
+        if (updateResponse.ok) {
+          console.log(`  ✓ Updated variant option name`);
+        } else {
+          const error = await updateResponse.text();
+          console.error(`  ✗ Failed to update variant:`, error);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } else {
+        console.log(`  ⚠ Variant with SKU ${filstarVariant.sku} not found in Shopify`);
+      }
+    }
+    
+    console.log(`✅ Finished updating product ID ${productId}`);
+    
+  } catch (error) {
+    console.error(`ERROR updating product ID ${productId}:`, error.message);
   }
 }
 
 function formatRodOption(variant) {
   // TODO: Адаптирай според структурата от Filstar
-  // Примерен формат - ще коригираме
+  // Примерен формат - ще коригираме след като видим данните
   
   // Ако атрибутите са в variant.attributes:
-  // return `РАЗМЕР: ${variant.attributes.size} - ${variant.attributes.length}м, АКЦИЯ: ${variant.attributes.action}`;
+  // const size = variant.attributes?.size || '';
+  // const length = variant.attributes?.length || '';
+  // const action = variant.attributes?.action || '';
+  // return `РАЗМЕР: ${size} - ${length}м, АКЦИЯ: ${action}`;
   
   // Засега връщаме само SKU за debug
   return variant.sku || variant.option1 || 'Unknown';
@@ -125,21 +179,38 @@ function formatRodOption(variant) {
 
 async function main() {
   try {
-    console.log('Starting rod import...');
+    console.log('Starting rod update...');
     
-    const products = await fetchRodProducts();
-    console.log(`Total rod products fetched: ${products.length}`);
+    const filstarProducts = await fetchRodProducts();
+    console.log(`Total rod products fetched from Filstar: ${filstarProducts.length}`);
     
-    for (const product of products) {
-      await createRodProduct(product);
+    for (const filstarProduct of filstarProducts) {
+      // Намери първия SKU от вариантите
+      const firstSku = filstarProduct.variants?.[0]?.sku;
+      
+      if (!firstSku) {
+        console.log('No SKU found in variants, skipping...');
+        continue;
+      }
+      
+      // Намери съществуващия продукт в Shopify
+      const productId = await findShopifyProductBySku(firstSku);
+      
+      if (productId) {
+        await updateRodProduct(productId, filstarProduct);
+      } else {
+        console.log('Product not found in Shopify, skipping...');
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    console.log('Rod import completed!');
+    console.log('Rod update completed!');
   } catch (error) {
-    console.error('Import failed:', error);
+    console.error('Update failed:', error);
     process.exit(1);
   }
 }
 
 main();
+
