@@ -23,19 +23,37 @@ async function getSkusFromCollection(collectionId) {
   );
   
   if (!response.ok) {
-    throw new Error('Failed to fetch collection products');
+    const errorText = await response.text();
+    console.error('API Error:', response.status, errorText);
+    throw new Error(`Failed to fetch collection products: ${response.status}`);
   }
   
   const data = await response.json();
+  console.log('API Response:', JSON.stringify(data, null, 2)); // DEBUG
+  
+  // Провери дали има products
+  if (!data.products || !Array.isArray(data.products)) {
+    console.error('No products array in response');
+    return [];
+  }
   
   // Извлечи първия SKU от всеки продукт
   const skus = data.products
-    .map(p => p.variants[0]?.sku)
+    .map(p => {
+      if (!p.variants || !Array.isArray(p.variants) || p.variants.length === 0) {
+        console.log(`Product ${p.title || p.id} has no variants`);
+        return null;
+      }
+      return p.variants[0]?.sku;
+    })
     .filter(sku => sku);
   
   console.log(`Found ${skus.length} products in collection`);
   return skus;
 }
+
+
+
 
 async function fetchRodProducts(skus) {
   console.log('Fetching rod products from Filstar...');
