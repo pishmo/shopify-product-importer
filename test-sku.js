@@ -18,7 +18,7 @@ async function testSku(sku) {
   let found = false;
   
   // Търси в първите 45 страници
-  for (let page = 1; page <= 45; page++) {
+  for (let page = 1; page <= 85; page++) {
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
     
     try {
@@ -109,7 +109,7 @@ async function testSku(sku) {
   }
   
   if (!found) {
-    console.log(`\n❌ SKU ${sku} NOT FOUND in first 15 pages (750 products)`);
+    console.log(`\n❌ SKU ${sku} NOT FOUND in first 85 pages `);
     
     // Опитай директно търсене
     console.log(`\n🔍 Trying direct search...`);
