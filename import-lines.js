@@ -7,11 +7,8 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // SKU-та на влакната - ще попълним след като видим списъка
 const LINE_SKUS = [
-  // Монофилно влакно
-  // TODO: Добави SKU-тата тук
-  
-  // Плетено влакно
-  // TODO: Добави SKU-тата тук
+  '955634',  // Монофилно влакно (тест)
+  '928131'   // Плетено влакно (тест)
 ];
 
 async function fetchLineProducts() {
