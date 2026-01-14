@@ -1,18 +1,23 @@
-// import-fluorocarbon.js - Импорт на fluorocarbon влакна от Filstar страница
+// import-fluorocarbon.js - Импорт на fluorocarbon влакна чрез search
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// URL на страницата с fluorocarbon продукти
-// Примерно: /products?category=fluorocarbon или /products?page=X
-const FLUOROCARBON_PAGE_URL = `${FILSTAR_API_BASE}/products?category=fluorocarbon`;
+// Search query за fluorocarbon продукти
+const SEARCH_QUERY = 'fluorocarbon';
+
+// ID на колекцията Fluorocarbon
+const FLUOROCARBON_COLLECTION_ID = '738987442558';
 
 async function fetchFluorocarbonProducts() {
-  console.log('Fetching fluorocarbon products from Filstar...');
+  console.log(`Searching for "${SEARCH_QUERY}" products in Filstar...`);
   
-  const response = await fetch(FLUOROCARBON_PAGE_URL, {
+  const url = `${FILSTAR_API_BASE}/products?search=${encodeURIComponent(SEARCH_QUERY)}`;
+  console.log(`API URL: ${url}`);
+  
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${FILSTAR_TOKEN}`,
@@ -25,7 +30,7 @@ async function fetchFluorocarbonProducts() {
   }
   
   const data = await response.json();
-  console.log(`Fetched ${data.length || 0} fluorocarbon products from Filstar`);
+  console.log(`Found ${data.length || 0} products matching "${SEARCH_QUERY}"`);
   
   return data;
 }
@@ -61,6 +66,36 @@ async function findShopifyProductBySku(sku) {
   
   console.log(`No existing product found with SKU: ${sku}`);
   return null;
+}
+
+async function addProductToCollection(productId) {
+  console.log(`Adding product ${productId} to Fluorocarbon collection...`);
+  
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
+    {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        collect: {
+          product_id: productId,
+          collection_id: FLUOROCARBON_COLLECTION_ID
+        }
+      })
+    }
+  );
+  
+  if (response.ok) {
+    console.log(`  ✓ Added to Fluorocarbon collection`);
+  } else if (response.status === 422) {
+    console.log(`  ℹ Product already in collection`);
+  } else {
+    const error = await response.text();
+    console.error(`  ✗ Failed to add to collection:`, error);
+  }
 }
 
 async function createShopifyProduct(filstarProduct) {
@@ -105,6 +140,10 @@ async function createShopifyProduct(filstarProduct) {
   if (response.ok) {
     const result = await response.json();
     console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
+    
+    // Добави продукта в колекцията
+    await addProductToCollection(result.product.id);
+    
     return result.product.id;
   } else {
     const error = await response.text();
@@ -216,6 +255,9 @@ async function updateShopifyProduct(productId, filstarProduct) {
       }
     }
     
+    // Увери се, че продуктът е в колекцията
+    await addProductToCollection(productId);
+    
     console.log(`✅ Successfully updated product ID ${productId}`);
     
   } catch (error) {
@@ -292,11 +334,11 @@ async function main() {
   try {
     console.log('Starting fluorocarbon import...');
     
-    // Свали цялата страница с fluorocarbon продукти
+    // Търси fluorocarbon продукти в Filstar
     const filstarProducts = await fetchFluorocarbonProducts();
     
     if (!filstarProducts || filstarProducts.length === 0) {
-      console.log('No products found on the page');
+      console.log('No fluorocarbon products found');
       return;
     }
     
