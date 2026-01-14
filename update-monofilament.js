@@ -1,120 +1,61 @@
-const fetch = require('node-fetch');
-
+// update-monofilament.js - Импорт на монофилни влакна чрез search
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
-const API_VERSION = '2025-01';
-
+const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
-const COLLECTION_ID = '738965946750'; // Влакно монофилно
 
+// Search query за монофилни влакна
+const SEARCH_QUERY = 'монофилно';
 
-// ФУНКЦИЯ 1 - Замени цялата fetchFilstarMonofilamentProducts функция
-async function fetchFilstarMonofilamentProducts() {
-  console.log('Fetching monofilament products from Filstar...');
+// Колекция "Влакно монофилно"
+const COLLECTION_ID = '738965946750';
+
+async function fetchMonofilamentProducts() {
+  console.log(`Searching for "${SEARCH_QUERY}" products in Filstar...`);
   
   let allProducts = [];
+  let page = 1;
+  const limit = 50;
   
-  // Опитай с различни search термини
-  const searchTerms = ['монофилно', 'monofilament', 'mono'];
-  
-  for (const term of searchTerms) {
-    console.log(`Searching for: ${term}`);
+  while (true) {
+    const url = `${FILSTAR_API_BASE}/products?search=${encodeURIComponent(SEARCH_QUERY)}&page=${page}&limit=${limit}`;
+    console.log(`Fetching page ${page}: ${url}`);
     
-    for (let page = 1; page <= 2; page++) {
-      const url = `${FILSTAR_API_BASE}/products?page=${page}&search=${encodeURIComponent(term)}`;
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        console.error(`Error fetching page ${page}: ${response.status}`);
-        continue;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+        'Content-Type': 'application/json'
       }
-      
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        // Филтрирай само монофилни влакна
-        const filtered = data.filter(p => 
-          p.name && (
-            p.name.toLowerCase().includes('монофилно') ||
-            p.name.toLowerCase().includes('monofilament') ||
-            p.name.toLowerCase().includes('mono')
-          )
-        );
-        
-        allProducts = allProducts.concat(filtered);
-        console.log(`  Found ${filtered.length} monofilament products on page ${page}`);
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Filstar API error: ${response.status} ${response.statusText}`);
     }
+    
+    const data = await response.json();
+    
+    if (!data || data.length === 0) {
+      console.log(`No more products on page ${page}`);
+      break;
+    }
+    
+    allProducts = allProducts.concat(data);
+    console.log(`Page ${page}: Found ${data.length} products (Total so far: ${allProducts.length})`);
+    
+    page++;
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  // Премахни дубликати по ID
-  const uniqueProducts = Array.from(
-    new Map(allProducts.map(p => [p.id, p])).values()
-  );
-  
-  console.log(`Total unique products: ${uniqueProducts.length}`);
-  return uniqueProducts;
+  console.log(`Total products found: ${allProducts.length}`);
+  return allProducts;
 }
 
-// ФУНКЦИЯ 2 - Замени цялата fetchPriceAndQuantity функция
-async function fetchPriceAndQuantity(product) {
-  // Опитай с различни полета за SKU
-  const searchValue = product.sku || product.code || product.id;
+async function findShopifyProductBySku(sku) {
+  console.log(`Searching for product with SKU: ${sku} in Shopify...`);
   
-  console.log(`  Fetching price for: ${searchValue}`);
-  
-  const priceUrl = `${FILSTAR_API_BASE}/price-quantity?search=${searchValue}`;
-  
-  const response = await fetch(priceUrl, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  if (!response.ok) {
-    console.error(`  Error fetching price: ${response.status}`);
-    return null;
-  }
-  
-  const priceData = await response.json();
-  
-  // Опитай да намериш по различни полета
-  let variant = priceData.find(v => 
-    v.sku == searchValue || 
-    v.code == searchValue || 
-    v.id == searchValue
-  );
-  
-  // Ако не намери, вземи първия
-  if (!variant && priceData.length > 0) {
-    variant = priceData[0];
-  }
-  
-  return variant;
-}
-
-
-
-
-
-
-
-
-
-// Функция за проверка дали продукт съществува в Shopify
-async function findProductBySku(sku) {
   const response = await fetch(
     `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250`,
     {
@@ -127,123 +68,125 @@ async function findProductBySku(sku) {
   );
   
   if (!response.ok) {
+    console.error('Failed to fetch Shopify products');
     return null;
   }
   
   const data = await response.json();
   
   for (const product of data.products) {
-    for (const variant of product.variants) {
-      if (variant.sku === sku) {
-        return {
-          productId: product.id,
-          variantId: variant.id,
-          inventoryItemId: variant.inventory_item_id,
-          title: product.title
-        };
-      }
+    const hasVariant = product.variants.some(v => v.sku === sku);
+    if (hasVariant) {
+      console.log(`Found existing product: ${product.title} (ID: ${product.id})`);
+      return product.id;
     }
   }
   
+  console.log(`No existing product found with SKU: ${sku}`);
   return null;
 }
 
-// Функция за update на цена и наличност
-async function updatePriceAndInventory(variantId, inventoryItemId, price, quantity) {
-  console.log(`  Updating: price=${price}, quantity=${quantity}`);
+async function addProductToCollection(productId) {
+  console.log(`Adding product ${productId} to collection ${COLLECTION_ID}...`);
   
-  // Update price
-  const priceResponse = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`,
-    {
-      method: 'PUT',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        variant: {
-          id: variantId,
-          price: price.toString()
-        }
-      })
-    }
-  );
-  
-  if (!priceResponse.ok) {
-    console.error(`  Failed to update price`);
-    return false;
-  }
-  
-  // Get inventory level
-  const inventoryResponse = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels.json?inventory_item_ids=${inventoryItemId}`,
-    {
-      method: 'GET',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
+  try {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          collect: {
+            product_id: productId,
+            collection_id: COLLECTION_ID
+          }
+        })
       }
+    );
+    
+    if (response.ok) {
+      console.log(`  ✓ Added to collection`);
+    } else if (response.status === 422) {
+      console.log(`  ℹ Already in collection`);
+    } else {
+      const error = await response.text();
+      console.error(`  ✗ Failed to add to collection:`, error);
     }
-  );
-  
-  if (!inventoryResponse.ok) {
-    console.error(`  Failed to get inventory`);
-    return false;
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+  } catch (error) {
+    console.error(`ERROR adding to collection:`, error.message);
   }
-  
-  const inventoryData = await inventoryResponse.json();
-  
-  if (inventoryData.inventory_levels.length === 0) {
-    console.error(`  No inventory location found`);
-    return false;
-  }
-  
-  const locationId = inventoryData.inventory_levels[0].location_id;
-  
-  // Update inventory
-  const updateInventoryResponse = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
-    {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        location_id: locationId,
-        inventory_item_id: inventoryItemId,
-        available: quantity
-      })
-    }
-  );
-  
-  if (!updateInventoryResponse.ok) {
-    console.error(`  Failed to update inventory`);
-    return false;
-  }
-  
-  console.log(`  ✅ Updated successfully`);
-  return true;
 }
 
-// Функция за създаване на нов продукт
-async function createProduct(product, variant) {
-  console.log(`  Creating new product: ${product.name}`);
+async function addImagesToProduct(productId, filstarProduct) {
+  if (!filstarProduct.images || filstarProduct.images.length === 0) {
+    console.log(`  No images found for product`);
+    return;
+  }
   
-  const shopifyProduct = {
-    title: product.name,
-    body_html: product.description || '',
-    vendor: 'Filstar',
-    product_type: 'Влакно монофилно',
-    variants: [{
-      sku: variant.sku,
-      barcode: variant.barcode || '',
-      price: variant.price.toString(),
-      inventory_management: 'shopify',
-      inventory_quantity: variant.quantity || 0
-    }],
-    images: product.images ? product.images.map(img => ({ src: img.url })) : []
+  console.log(`Adding ${filstarProduct.images.length} images to product ${productId}...`);
+  
+  for (const imageUrl of filstarProduct.images) {
+    try {
+      const response = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image: {
+              src: imageUrl
+            }
+          })
+        }
+      );
+      
+      if (response.ok) {
+        console.log(`  ✓ Added image: ${imageUrl}`);
+      } else {
+        const error = await response.text();
+        console.error(`  ✗ Failed to add image:`, error);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error(`ERROR adding image:`, error.message);
+    }
+  }
+}
+
+async function createShopifyProduct(filstarProduct) {
+  console.log(`Creating new product: ${filstarProduct.name}`);
+  
+  const productData = {
+    product: {
+      title: filstarProduct.name,
+      body_html: filstarProduct.description || filstarProduct.short_description || '',
+      vendor: filstarProduct.manufacturer || 'Filstar',
+      product_type: 'Влакно монофилно',
+      status: 'active',
+      variants: filstarProduct.variants.map(variant => ({
+        sku: variant.sku,
+        price: variant.price,
+        inventory_quantity: parseInt(variant.quantity) || 0,
+        inventory_management: 'shopify',
+        option1: formatLineOption(variant),
+        barcode: variant.barcode || null
+      })),
+      options: [
+        {
+          name: 'Вариант',
+          values: filstarProduct.variants.map(v => formatLineOption(v))
+        }
+      ]
+    }
   };
   
   const response = await fetch(
@@ -254,115 +197,235 @@ async function createProduct(product, variant) {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ product: shopifyProduct })
-    }
-  );
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`  Failed to create product: ${errorText}`);
-    return null;
-  }
-  
-  const result = await response.json();
-  console.log(`  ✅ Created product ID: ${result.product.id}`);
-  
-  // Add to collection
-  await addToCollection(result.product.id);
-  
-  return result.product;
-}
-
-// Функция за добавяне в колекция
-async function addToCollection(productId) {
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
-    {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        collect: {
-          product_id: productId,
-          collection_id: COLLECTION_ID
-        }
-      })
+      body: JSON.stringify(productData)
     }
   );
   
   if (response.ok) {
-    console.log(`  ✅ Added to collection`);
-    return true;
+    const result = await response.json();
+    console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
+    
+    // Добави към колекцията
+    await addProductToCollection(result.product.id);
+    
+    // Добави снимки
+    await addImagesToProduct(result.product.id, filstarProduct);
+    
+    return result.product.id;
+  } else {
+    const error = await response.text();
+    console.error(`✗ Failed to create product:`, error);
+    return null;
   }
-  
-  return false;
 }
 
-// Main функция
-async function main() {
-  console.log('Starting monofilament line import/update...\n');
+async function updateShopifyProduct(productId, filstarProduct) {
+  console.log(`Updating product ID ${productId}...`);
   
   try {
-    // 1. Fetch всички монофилни влакна от Filstar
-    const filstarProducts = await fetchFilstarMonofilamentProducts();
+    const getResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     
-    if (filstarProducts.length === 0) {
-      console.log('No products found on Filstar');
+    if (!getResponse.ok) {
+      console.error('Failed to get product details');
       return;
     }
     
-    console.log(`\n--- Processing ${filstarProducts.length} products ---\n`);
+    const existingData = await getResponse.json();
+    const existingProduct = existingData.product;
     
-    let created = 0;
-    let updated = 0;
-    let skipped = 0;
-    
-    // 2. Обработка на всеки продукт
-    for (const product of filstarProducts) {
-      console.log(`Processing: ${product.name}`);
+    for (const filstarVariant of filstarProduct.variants) {
+      const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
       
-      // Вземи първия SKU от продукта (или всички варианти ако има)
-     const priceData = await fetchPriceAndQuantity(product);
+      if (existingVariant) {
+        const newOptionName = formatLineOption(filstarVariant);
+        
+        const updateResponse = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
+          {
+            method: 'PUT',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              variant: {
+                id: existingVariant.id,
+                price: filstarVariant.price,
+                option1: newOptionName
+              }
+            })
+          }
+        );
+        
+        if (updateResponse.ok) {
+          console.log(`  ✓ Updated price and option for SKU ${filstarVariant.sku}`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        if (existingVariant.inventory_item_id) {
+          const newQuantity = parseInt(filstarVariant.quantity) || 0;
+          
+          const inventoryResponse = await fetch(
+            `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels.json?inventory_item_ids=${existingVariant.inventory_item_id}`,
+            {
+              method: 'GET',
+              headers: {
+                'X-Shopify-Access-Token': ACCESS_TOKEN,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          
+          if (inventoryResponse.ok) {
+            const inventoryData = await inventoryResponse.json();
+            const inventoryLevel = inventoryData.inventory_levels[0];
+            
+            if (inventoryLevel) {
+              const setResponse = await fetch(
+                `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'X-Shopify-Access-Token': ACCESS_TOKEN,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    location_id: inventoryLevel.location_id,
+                    inventory_item_id: existingVariant.inventory_item_id,
+                    available: newQuantity
+                  })
+                }
+              );
+              
+              if (setResponse.ok) {
+                console.log(`  ✓ Updated inventory for SKU ${filstarVariant.sku}: ${newQuantity} units`);
+              }
+            }
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      }
+    }
+    
+    console.log(`✅ Successfully updated product ID ${productId}`);
+    
+    // Увери се че е в колекцията
+    await addProductToCollection(productId);
+    
+    // Добави снимки ако липсват
+    await addImagesToProduct(productId, filstarProduct);
+    
+  } catch (error) {
+    console.error(`ERROR updating product ID ${productId}:`, error.message);
+  }
+}
 
+function formatLineOption(variant) {
+  if (!variant.attributes || variant.attributes.length === 0) {
+    return variant.model || `SKU: ${variant.sku}`;
+  }
+  
+  const attributes = variant.attributes;
+  let parts = [];
+  
+  if (variant.model && variant.model.trim()) {
+    parts.push(variant.model.trim());
+  }
+  
+  const length = attributes.find(a => 
+    a.attribute_name.includes('ДЪЛЖИНА')
+  )?.value;
+  
+  if (length) {
+    parts.push(`${length}м`);
+  }
+  
+  const diameter = attributes.find(a => 
+    a.attribute_name.includes('РАЗМЕР') && 
+    a.attribute_name.includes('MM')
+  )?.value;
+  
+  if (diameter) {
+    parts.push(`Ø${diameter}мм`);
+  }
+  
+  const japaneseSize = attributes.find(a => 
+    a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
+  )?.value;
+  
+  if (japaneseSize) {
+    parts.push(japaneseSize);
+  }
+  
+  const testKg = attributes.find(a => 
+    a.attribute_name.includes('ТЕСТ') && 
+    a.attribute_name.includes('KG')
+  )?.value;
+  
+  const testLb = attributes.find(a => 
+    a.attribute_name.includes('ТЕСТ') && 
+    a.attribute_name.includes('LB')
+  )?.value;
+  
+  if (testKg && testLb) {
+    parts.push(`${testKg}кг/${testLb}LB`);
+  } else if (testKg) {
+    parts.push(`${testKg}кг`);
+  } else if (testLb) {
+    parts.push(`${testLb}LB`);
+  }
+  
+  return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
+}
+
+async function main() {
+  try {
+    console.log('Starting monofilament line import...');
+    
+    const filstarProducts = await fetchMonofilamentProducts();
+    
+    if (!filstarProducts || filstarProducts.length === 0) {
+      console.log('No monofilament line products found');
+      return;
+    }
+    
+    console.log(`Processing ${filstarProducts.length} products...`);
+    
+    for (const filstarProduct of filstarProducts) {
+      const firstSku = filstarProduct.variants?.[0]?.sku;
       
-      if (!priceData) {
-        console.log(`  ⚠️ No price data found, skipping`);
-        skipped++;
+      if (!firstSku) {
+        console.log(`Skipping product ${filstarProduct.name} - no SKU found`);
         continue;
       }
       
-      // Провери дали съществува в Shopify
-      const existingProduct = await findProductBySku(priceData.sku);
+      console.log(`\n--- Processing: ${filstarProduct.name} ---`);
       
-      if (existingProduct) {
-        // Update съществуващ продукт
-        console.log(`  Found existing: ${existingProduct.title}`);
-        const success = await updatePriceAndInventory(
-          existingProduct.variantId,
-          existingProduct.inventoryItemId,
-          priceData.price,
-          priceData.quantity
-        );
-        if (success) updated++;
+      const productId = await findShopifyProductBySku(firstSku);
+      
+      if (productId) {
+        await updateShopifyProduct(productId, filstarProduct);
       } else {
-        // Създай нов продукт
-        const newProduct = await createProduct(product, priceData);
-        if (newProduct) created++;
+        await createShopifyProduct(filstarProduct);
       }
       
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    console.log('\n=== Summary ===');
-    console.log(`✅ Created: ${created}`);
-    console.log(`🔄 Updated: ${updated}`);
-    console.log(`⚠️ Skipped: ${skipped}`);
-    console.log(`📦 Total processed: ${filstarProducts.length}`);
-    
+    console.log('\n✅ Monofilament line import completed!');
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Import failed:', error);
     process.exit(1);
   }
 }
