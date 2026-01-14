@@ -23,35 +23,31 @@ async function getSkusFromCollection(collectionId) {
   );
   
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('API Error:', response.status, errorText);
-    throw new Error(`Failed to fetch collection products: ${response.status}`);
+    throw new Error('Failed to fetch collection products');
   }
   
   const data = await response.json();
   
-  // Провери дали има products
-  if (!data.products || !Array.isArray(data.products)) {
-    console.error('No products array in response');
-    return [];
+  // Извлечи SKU от ВСИЧКИ варианти на всички продукти
+  const skus = [];
+  
+  for (const product of data.products) {
+    console.log(`Product: ${product.title}`);
+    console.log(`  Variants: ${product.variants.length}`);
+    
+    for (const variant of product.variants) {
+      if (variant.sku && variant.sku.trim()) {
+        skus.push(variant.sku);
+        console.log(`  Found SKU: ${variant.sku}`);
+      } else {
+        console.log(`  Variant has no SKU`);
+      }
+    }
   }
   
-  // Извлечи първия SKU от всеки продукт
-  const skus = data.products
-    .map(p => {
-      if (!p.variants || !Array.isArray(p.variants) || p.variants.length === 0) {
-        console.log(`Product ${p.title || p.id} has no variants`);
-        return null;
-      }
-      return p.variants[0]?.sku;
-    })
-    .filter(sku => sku);
-  
-  console.log(`Found ${skus.length} products with SKUs in collection`);
-  console.log('SKUs:', skus);
+  console.log(`Total SKUs found: ${skus.length}`);
   return skus;
 }
-
 
 
 
