@@ -8,7 +8,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // SKU-та на пръчките за update
 const ROD_SKUS = [
-  '943215'  // Добави всички SKU-та на пръчките от колекцията
+  '943215',  // Добави всички SKU-та на пръчките от колекцията
    '944981',  // Въдица Faith Slender Carp
   '942200',  // Шаранска въдица Atemi Gladiator Carp
   '922775',  // Шаранска въдица FilStar X-Treme Carp
