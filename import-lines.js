@@ -7,8 +7,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // SKU-та на влакната - ще попълним след като видим списъка
 const LINE_SKUS = [
-// SKU-та на влакната
-const LINE_SKUS = [
+
   // Монофилно влакно (6 продукта)
   '955634',  // Монофилно влакно Lazer Pro Specialist Carp Camo 1200 m.
   '935610',  // Монофилно влакно Lazer Fortex Mare Trolling, 1000m.
@@ -24,11 +23,11 @@ const LINE_SKUS = [
   '942511',  // Плетено влакно Exocet Mk2 Spod braid
   '949778',  // Плетено влакно Spomb Braid
   '940291'   // Плетено влакно Submerge Braid Dark Camo, 600m.
-];
-
-
  
 ];
+
+
+
 
 async function fetchLineProducts() {
   console.log('Fetching line products from Filstar...');
