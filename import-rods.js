@@ -12,7 +12,7 @@ async function getSkusFromCollection(collectionId) {
   console.log(`Fetching all SKUs from collection ${collectionId}...`);
   
   const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?limit=250`,
     {
       method: 'GET',
       headers: {
@@ -29,7 +29,6 @@ async function getSkusFromCollection(collectionId) {
   }
   
   const data = await response.json();
-  console.log('API Response:', JSON.stringify(data, null, 2)); // DEBUG
   
   // Провери дали има products
   if (!data.products || !Array.isArray(data.products)) {
@@ -48,9 +47,11 @@ async function getSkusFromCollection(collectionId) {
     })
     .filter(sku => sku);
   
-  console.log(`Found ${skus.length} products in collection`);
+  console.log(`Found ${skus.length} products with SKUs in collection`);
+  console.log('SKUs:', skus);
   return skus;
 }
+
 
 
 
