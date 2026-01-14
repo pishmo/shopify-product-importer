@@ -11,6 +11,48 @@ const SEARCH_QUERY = 'плетено';
 // Колекция "Влакно плетено"
 const COLLECTION_ID = '738965979518';
 
+async function addImagesToProduct(productId, filstarProduct) {
+  if (!filstarProduct.images || filstarProduct.images.length === 0) {
+    console.log(`  No images found for product`);
+    return;
+  }
+  
+  console.log(`Adding ${filstarProduct.images.length} images to product ${productId}...`);
+  
+  for (const imageUrl of filstarProduct.images) {
+    try {
+      const response = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image: {
+              src: imageUrl
+            }
+          })
+        }
+      );
+      
+      if (response.ok) {
+        console.log(`  ✓ Added image`);
+      } else {
+        const error = await response.text();
+        console.error(`  ✗ Failed to add image:`, error);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error) {
+      console.error(`ERROR adding image:`, error.message);
+    }
+  }
+}
+
+
+
 async function fetchBraidedProducts() {
   console.log(`Searching for "${SEARCH_QUERY}" products in Filstar...`);
   
