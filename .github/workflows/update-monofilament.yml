@@ -2,8 +2,8 @@ name: Update Monofilament Lines
 
 on:
   schedule:
-    # Изпълнява се всеки ден в 3:00 сутринта
-    - cron: '0 1 0 * * *'
+    # Изпълнява се всеки ден в 3:00 сутринта (1:00 UTC = 3:00 EET)
+    - cron: '0 1 * * *'
   workflow_dispatch:
     # Позволява ръчно стартиране
 
