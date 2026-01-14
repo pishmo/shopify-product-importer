@@ -1,43 +1,48 @@
-// import-rods.js - UPDATE на съществуващи пръчки
-
+// import-rods.js - Автоматично извличане на пръчки от колекция
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// SKU-та на пръчките за update
-const ROD_SKUS = [
-  '943215',  // Добави всички SKU-та на пръчките от колекцията
-   '944981',  // Въдица Faith Slender Carp
-  '942200',  // Шаранска въдица Atemi Gladiator Carp
-  '922775',  // Шаранска въдица FilStar X-Treme Carp
-  '927234',  // Шаранска въдица Carbo Specialist Carp II
-  '928448',  // Шаранска въдица FilStar X-treme Tele Carp
-  '943214',  // Шаранска въдица FilStar UniCarp Slim
-  '943217',  // Шаранска въдица FilStar F-Carp 3
-  '948724',  // Въдица FilStar Premier Tele Carp
-  '948759',  // Въдица FilStar Tournament Carp
-  '948707',  // Въдица FilStar Minima Carp
-  '948710',  // Въдица FilStar F1 Spod
-  '948701',  // Въдица FilStar Arex Tele Carp
-  '952356',  // Въдица Fox EOS Pro Rod
-  '953622',  // Въдица FilStar Power Glass CARP-3
-  '959361',  // Въдица Okuma LS-6K Carp
-  '962400',  // Въдица Fox EOS X Spod/Marker Full Shrink Rod
-  '961204',  // Въдица Filstar Easy Carp - Hybrid Compact Rod
-  '922792',  // Шаранска въдица FilStar Target Tele Carp
-  '962694',  // Въдица Fox Spomb S Rod
-  '925922',  // Въдица FilStar Universal Carp 3
-  '943215'   // Шаранска въдица F
-];
+// ID на колекцията "Въдици"
+const COLLECTION_ID = '738867413374';
 
-async function fetchRodProducts() {
+async function getSkusFromCollection(collectionId) {
+  console.log(`Fetching all SKUs from collection ${collectionId}...`);
+  
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250`,
+    {
+      method: 'GET',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch collection products');
+  }
+  
+  const data = await response.json();
+  
+  // Извлечи първия SKU от всеки продукт
+  const skus = data.products
+    .map(p => p.variants[0]?.sku)
+    .filter(sku => sku);
+  
+  console.log(`Found ${skus.length} products in collection`);
+  return skus;
+}
+
+async function fetchRodProducts(skus) {
   console.log('Fetching rod products from Filstar...');
   
   let allProducts = [];
   
-  for (const sku of ROD_SKUS) {
+  for (const sku of skus) {
     const url = `${FILSTAR_API_BASE}/products?search=${sku}`;
     
     const response = await fetch(url, {
@@ -58,15 +63,6 @@ async function fetchRodProducts() {
     if (data && data.length > 0) {
       allProducts = allProducts.concat(data);
       console.log(`Found ${data.length} product(s) with SKU: ${sku}`);
-      
-      // DEBUG - покажи структурата на вариантите
-      console.log('=== VARIANT STRUCTURE ===');
-      if (data[0].variants) {
-        data[0].variants.forEach((v, i) => {
-          console.log(`Variant ${i}:`, JSON.stringify(v, null, 2));
-        });
-      }
-      console.log('=== END ===');
     }
     
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -96,7 +92,6 @@ async function findShopifyProductBySku(sku) {
   
   const data = await response.json();
   
-  // Намери продукт, който има вариант с този SKU
   for (const product of data.products) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
@@ -113,7 +108,6 @@ async function updateRodProduct(productId, filstarProduct) {
   console.log(`Updating rod product ID: ${productId}`);
   
   try {
-    // Вземи пълните данни на продукта
     const getResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
       {
@@ -135,12 +129,10 @@ async function updateRodProduct(productId, filstarProduct) {
     
     console.log(`Current product has ${existingProduct.variants.length} variants`);
     
-    // Update всеки вариант с нов option name
     for (const filstarVariant of filstarProduct.variants) {
       const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
       
       if (existingVariant) {
-        // Форматирай новото име на опцията
         const newOptionName = formatRodOption(filstarVariant);
         
         console.log(`Updating variant SKU ${filstarVariant.sku}:`);
@@ -209,17 +201,19 @@ function formatRodOption(variant) {
   return variant.model || `SKU: ${variant.sku}`;
 }
 
-
-
 async function main() {
   try {
     console.log('Starting rod update...');
     
-    const filstarProducts = await fetchRodProducts();
+    // Автоматично извличане на SKU-та от колекцията
+    const skus = await getSkusFromCollection(COLLECTION_ID);
+    
+    // Извличане от Filstar
+    const filstarProducts = await fetchRodProducts(skus);
     console.log(`Total rod products fetched from Filstar: ${filstarProducts.length}`);
     
+    // Update в Shopify
     for (const filstarProduct of filstarProducts) {
-      // Намери първия SKU от вариантите
       const firstSku = filstarProduct.variants?.[0]?.sku;
       
       if (!firstSku) {
@@ -227,7 +221,6 @@ async function main() {
         continue;
       }
       
-      // Намери съществуващия продукт в Shopify
       const productId = await findShopifyProductBySku(firstSku);
       
       if (productId) {
@@ -247,4 +240,3 @@ async function main() {
 }
 
 main();
-
