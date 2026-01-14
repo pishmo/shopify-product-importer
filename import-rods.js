@@ -11,8 +11,9 @@ const COLLECTION_ID = '738867413374';
 async function getSkusFromCollection(collectionId) {
   console.log(`Fetching all SKUs from collection ${collectionId}...`);
   
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250`,
+  // Първо вземи product IDs от колекцията
+  const collectionResponse = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id&limit=250`,
     {
       method: 'GET',
       headers: {
@@ -22,23 +23,39 @@ async function getSkusFromCollection(collectionId) {
     }
   );
   
-  if (!response.ok) {
+  if (!collectionResponse.ok) {
     throw new Error('Failed to fetch collection products');
   }
   
-  const data = await response.json();
+  const collectionData = await collectionResponse.json();
+  const productIds = collectionData.products.map(p => p.id);
   
-  // Извлечи SKU от ВСИЧКИ варианти на всички продукти
+  console.log(`Found ${productIds.length} products in collection`);
+  
+  // Сега вземи пълните данни за всеки продукт
   const skus = [];
   
-  for (const product of data.products) {
-    console.log(`Product: ${product.title}`);
+  for (const productId of productIds) {
+    const productResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json?fields=id,title,variants`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     
-    if (!product.variants || product.variants.length === 0) {
-      console.log(`  No variants found`);
+    if (!productResponse.ok) {
+      console.log(`Failed to fetch product ${productId}`);
       continue;
     }
     
+    const productData = await productResponse.json();
+    const product = productData.product;
+    
+    console.log(`Product: ${product.title}`);
     console.log(`  Variants: ${product.variants.length}`);
     
     for (const variant of product.variants) {
@@ -49,6 +66,9 @@ async function getSkusFromCollection(collectionId) {
         console.log(`  Variant has no SKU`);
       }
     }
+    
+    // Rate limiting
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
   
   console.log(`Total SKUs found: ${skus.length}`);
