@@ -8,12 +8,15 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // Search query за плетени влакна
 const SEARCH_QUERY = 'плетено';
 
+// Колекция "Влакно плетено"
+const COLLECTION_ID = '738965979518';
+
 async function fetchBraidedProducts() {
   console.log(`Searching for "${SEARCH_QUERY}" products in Filstar...`);
   
   let allProducts = [];
   let page = 1;
-  const limit = 50; // Колко продукта на страница
+  const limit = 50;
   
   while (true) {
     const url = `${FILSTAR_API_BASE}/products?search=${encodeURIComponent(SEARCH_QUERY)}&page=${page}&limit=${limit}`;
@@ -35,7 +38,7 @@ async function fetchBraidedProducts() {
     
     if (!data || data.length === 0) {
       console.log(`No more products on page ${page}`);
-      break; // Няма повече продукти
+      break;
     }
     
     allProducts = allProducts.concat(data);
@@ -43,14 +46,12 @@ async function fetchBraidedProducts() {
     
     page++;
     
-    // Rate limiting между страници
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   
   console.log(`Total products found: ${allProducts.length}`);
   return allProducts;
 }
-
 
 async function findShopifyProductBySku(sku) {
   console.log(`Searching for product with SKU: ${sku} in Shopify...`);
@@ -83,6 +84,42 @@ async function findShopifyProductBySku(sku) {
   
   console.log(`No existing product found with SKU: ${sku}`);
   return null;
+}
+
+async function addProductToCollection(productId) {
+  console.log(`Adding product ${productId} to collection ${COLLECTION_ID}...`);
+  
+  try {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          collect: {
+            product_id: productId,
+            collection_id: COLLECTION_ID
+          }
+        })
+      }
+    );
+    
+    if (response.ok) {
+      console.log(`  ✓ Added to collection`);
+    } else if (response.status === 422) {
+      console.log(`  ℹ Already in collection`);
+    } else {
+      const error = await response.text();
+      console.error(`  ✗ Failed to add to collection:`, error);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+  } catch (error) {
+    console.error(`ERROR adding to collection:`, error.message);
+  }
 }
 
 async function createShopifyProduct(filstarProduct) {
@@ -127,6 +164,10 @@ async function createShopifyProduct(filstarProduct) {
   if (response.ok) {
     const result = await response.json();
     console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
+    
+    // Добави към колекцията
+    await addProductToCollection(result.product.id);
+    
     return result.product.id;
   } else {
     const error = await response.text();
@@ -235,6 +276,9 @@ async function updateShopifyProduct(productId, filstarProduct) {
     }
     
     console.log(`✅ Successfully updated product ID ${productId}`);
+    
+    // Увери се че е в колекцията
+    await addProductToCollection(productId);
     
   } catch (error) {
     console.error(`ERROR updating product ID ${productId}:`, error.message);
