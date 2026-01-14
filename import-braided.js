@@ -11,16 +11,20 @@ const SEARCH_QUERY = 'плетено';
 // Колекция "Влакно плетено"
 const COLLECTION_ID = '738965979518';
 
-async function fetchBraidedProducts() {
-  console.log(`Searching for "${SEARCH_QUERY}" products in Filstar...`);
+
+
+// сновата функция
+
+// update-braided.js
+const BRAIDED_CATEGORY_ID = '105';
+
+  async function fetchBraidedProducts() {
+  console.log('Fetching braided line products from Filstar (Category ID: 105)...');
   
   let allProducts = [];
-  let page = 1;
-  const limit = 50;
   
-  while (true) {
-    const url = `${FILSTAR_API_BASE}/products?search=${encodeURIComponent(SEARCH_QUERY)}&page=${page}&limit=${limit}`;
-    console.log(`Fetching page ${page}: ${url}`);
+  for (let page = 1; page <= 10; page++) {
+    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -31,27 +35,40 @@ async function fetchBraidedProducts() {
     });
     
     if (!response.ok) {
-      throw new Error(`Filstar API error: ${response.status} ${response.statusText}`);
+      console.error(`Error fetching page ${page}: ${response.status}`);
+      break;
     }
     
     const data = await response.json();
     
     if (!data || data.length === 0) {
-      console.log(`No more products on page ${page}`);
       break;
     }
     
-    allProducts = allProducts.concat(data);
-    console.log(`Page ${page}: Found ${data.length} products (Total so far: ${allProducts.length})`);
+    const filtered = data.filter(p => {
+      if (!p.categories || p.categories.length === 0) {
+        return false;
+      }
+      
+      const isBraided = p.categories.some(cat => cat.id === BRAIDED_CATEGORY_ID);
+      
+      if (isBraided) {
+        console.log(`  ? Found: ${p.name} (ID: ${p.id})`);
+      }
+      
+      return isBraided;
+    });
     
-    page++;
+    allProducts = allProducts.concat(filtered);
+    console.log(`  Page ${page}: ${filtered.length} braided products`);
     
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  console.log(`Total products found: ${allProducts.length}`);
+  console.log(`\nTotal braided products: ${allProducts.length}`);
   return allProducts;
 }
+
 
 async function findShopifyProductBySku(sku) {
   console.log(`Searching for product with SKU: ${sku} in Shopify...`);
@@ -108,12 +125,12 @@ async function addProductToCollection(productId) {
     );
     
     if (response.ok) {
-      console.log(`  ✓ Added to collection`);
+      console.log(`  ? Added to collection`);
     } else if (response.status === 422) {
-      console.log(`  ℹ Already in collection`);
+      console.log(`  ? Already in collection`);
     } else {
       const error = await response.text();
-      console.error(`  ✗ Failed to add to collection:`, error);
+      console.error(`  ? Failed to add to collection:`, error);
     }
     
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -149,10 +166,10 @@ async function addImagesToProduct(productId, filstarProduct) {
       );
       
       if (response.ok) {
-        console.log(`  ✓ Added image: ${imageUrl}`);
+        console.log(`  ? Added image: ${imageUrl}`);
       } else {
         const error = await response.text();
-        console.error(`  ✗ Failed to add image:`, error);
+        console.error(`  ? Failed to add image:`, error);
       }
       
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -203,7 +220,7 @@ async function createShopifyProduct(filstarProduct) {
   
   if (response.ok) {
     const result = await response.json();
-    console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
+    console.log(`? Created product: ${result.product.title} (ID: ${result.product.id})`);
     
     // Добави към колекцията
     await addProductToCollection(result.product.id);
@@ -214,7 +231,7 @@ async function createShopifyProduct(filstarProduct) {
     return result.product.id;
   } else {
     const error = await response.text();
-    console.error(`✗ Failed to create product:`, error);
+    console.error(`? Failed to create product:`, error);
     return null;
   }
 }
@@ -267,7 +284,7 @@ async function updateShopifyProduct(productId, filstarProduct) {
         );
         
         if (updateResponse.ok) {
-          console.log(`  ✓ Updated price and option for SKU ${filstarVariant.sku}`);
+          console.log(`  ? Updated price and option for SKU ${filstarVariant.sku}`);
         }
         
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -308,7 +325,7 @@ async function updateShopifyProduct(productId, filstarProduct) {
               );
               
               if (setResponse.ok) {
-                console.log(`  ✓ Updated inventory for SKU ${filstarVariant.sku}: ${newQuantity} units`);
+                console.log(`  ? Updated inventory for SKU ${filstarVariant.sku}: ${newQuantity} units`);
               }
             }
           }
@@ -318,7 +335,7 @@ async function updateShopifyProduct(productId, filstarProduct) {
       }
     }
     
-    console.log(`✅ Successfully updated product ID ${productId}`);
+    console.log(`? Successfully updated product ID ${productId}`);
     
     // Увери се че е в колекцията
     await addProductToCollection(productId);
@@ -357,7 +374,7 @@ function formatLineOption(variant) {
   )?.value;
   
   if (diameter) {
-    parts.push(`Ø${diameter}мм`);
+    parts.push(`O${diameter}мм`);
   }
   
   const japaneseSize = attributes.find(a => 
@@ -423,7 +440,7 @@ async function main() {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    console.log('\n✅ Braided line import completed!');
+    console.log('\n? Braided line import completed!');
   } catch (error) {
     console.error('Import failed:', error);
     process.exit(1);
