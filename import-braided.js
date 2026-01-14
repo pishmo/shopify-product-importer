@@ -11,10 +11,6 @@ const SEARCH_QUERY = 'плетено';
 // Колекция "Влакно плетено"
 const COLLECTION_ID = '738965979518';
 
-
-
-
-
 async function fetchBraidedProducts() {
   console.log(`Searching for "${SEARCH_QUERY}" products in Filstar...`);
   
@@ -126,8 +122,45 @@ async function addProductToCollection(productId) {
   }
 }
 
-
-
+async function addImagesToProduct(productId, filstarProduct) {
+  if (!filstarProduct.images || filstarProduct.images.length === 0) {
+    console.log(`  No images found for product`);
+    return;
+  }
+  
+  console.log(`Adding ${filstarProduct.images.length} images to product ${productId}...`);
+  
+  for (const imageUrl of filstarProduct.images) {
+    try {
+      const response = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image: {
+              src: imageUrl
+            }
+          })
+        }
+      );
+      
+      if (response.ok) {
+        console.log(`  ✓ Added image: ${imageUrl}`);
+      } else {
+        const error = await response.text();
+        console.error(`  ✗ Failed to add image:`, error);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error(`ERROR adding image:`, error.message);
+    }
+  }
+}
 
 async function createShopifyProduct(filstarProduct) {
   console.log(`Creating new product: ${filstarProduct.name}`);
@@ -135,7 +168,7 @@ async function createShopifyProduct(filstarProduct) {
   const productData = {
     product: {
       title: filstarProduct.name,
-      body_html: filstarProduct.description || '',
+      body_html: filstarProduct.description || filstarProduct.short_description || '',
       vendor: filstarProduct.manufacturer || 'Filstar',
       product_type: 'Плетено влакно',
       status: 'active',
@@ -172,28 +205,19 @@ async function createShopifyProduct(filstarProduct) {
     const result = await response.json();
     console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
     
-   
-  // Добави към колекцията
-await addProductToCollection(result.product.id);
-
-// Добави снимки
-await addImagesToProduct(result.product.id, filstarProduct);
-
-return result.product.id;
-
-
+    // Добави към колекцията
+    await addProductToCollection(result.product.id);
     
+    // Добави снимки
+    await addImagesToProduct(result.product.id, filstarProduct);
+    
+    return result.product.id;
   } else {
     const error = await response.text();
     console.error(`✗ Failed to create product:`, error);
     return null;
   }
 }
-
-
-
-
-
 
 async function updateShopifyProduct(productId, filstarProduct) {
   console.log(`Updating product ID ${productId}...`);
@@ -299,6 +323,9 @@ async function updateShopifyProduct(productId, filstarProduct) {
     // Увери се че е в колекцията
     await addProductToCollection(productId);
     
+    // Добави снимки ако липсват
+    await addImagesToProduct(productId, filstarProduct);
+    
   } catch (error) {
     console.error(`ERROR updating product ID ${productId}:`, error.message);
   }
@@ -402,49 +429,5 @@ async function main() {
     process.exit(1);
   }
 }
-
-
-// Тук са другите функции (formatLineOption, updateShopifyProduct и т.н.)
-
-async function addImagesToProduct(productId, filstarProduct) {
-  if (!filstarProduct.images || filstarProduct.images.length === 0) {
-    console.log(`  No images found for product`);
-    return;
-  }
-  
-  console.log(`Adding ${filstarProduct.images.length} images to product ${productId}...`);
-  
-  for (const imageUrl of filstarProduct.images) {
-    try {
-      const response = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            image: {
-              src: imageUrl
-            }
-          })
-        }
-      );
-      
-      if (response.ok) {
-        console.log(`  ✓ Added image`);
-      } else {
-        const error = await response.text();
-        console.error(`  ✗ Failed to add image:`, error);
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-    } catch (error) {
-      console.error(`ERROR adding image:`, error.message);
-    }
-  }
-}
-
 
 main();
