@@ -4,6 +4,7 @@ const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
+const FILSTAR_BASE_URL = 'https://filstar.com';
 
 // Search query за fluorocarbon продукти
 const SEARCH_QUERY = 'fluorocarbon';
@@ -98,6 +99,75 @@ async function addProductToCollection(productId) {
   }
 }
 
+async function addProductImages(productId, filstarProduct) {
+  console.log(`Adding images to product ${productId}...`);
+  
+  // Събери всички изображения
+  const images = [];
+  
+  // Главно изображение на продукта
+  if (filstarProduct.image) {
+    const imageUrl = filstarProduct.image.startsWith('http') 
+      ? filstarProduct.image 
+      : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
+    images.push({ src: imageUrl });
+    console.log(`  Found main image: ${imageUrl}`);
+  }
+  
+  // Допълнителни изображения
+  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+    for (const img of filstarProduct.images) {
+      const imageUrl = img.startsWith('http') 
+        ? img 
+        : `${FILSTAR_BASE_URL}/${img}`;
+      images.push({ src: imageUrl });
+      console.log(`  Found additional image: ${imageUrl}`);
+    }
+  }
+  
+  // Изображения на варианти
+  if (filstarProduct.variants) {
+    for (const variant of filstarProduct.variants) {
+      if (variant.image) {
+        const imageUrl = variant.image.startsWith('http') 
+          ? variant.image 
+          : `${FILSTAR_BASE_URL}/${variant.image}`;
+        images.push({ src: imageUrl });
+        console.log(`  Found variant image: ${imageUrl}`);
+      }
+    }
+  }
+  
+  if (images.length === 0) {
+    console.log(`  No images found for this product`);
+    return;
+  }
+  
+  // Добави изображенията към продукта
+  for (const image of images) {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image })
+      }
+    );
+    
+    if (response.ok) {
+      console.log(`  ✓ Added image: ${image.src}`);
+    } else {
+      const error = await response.text();
+      console.error(`  ✗ Failed to add image:`, error);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+}
+
 async function createShopifyProduct(filstarProduct) {
   console.log(`Creating new product: ${filstarProduct.name}`);
   
@@ -140,6 +210,9 @@ async function createShopifyProduct(filstarProduct) {
   if (response.ok) {
     const result = await response.json();
     console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
+    
+    // Добави изображения
+    await addProductImages(result.product.id, filstarProduct);
     
     // Добави продукта в колекцията
     await addProductToCollection(result.product.id);
@@ -253,6 +326,14 @@ async function updateShopifyProduct(productId, filstarProduct) {
           await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
+    }
+    
+    // Добави изображения ако няма
+    if (!existingProduct.images || existingProduct.images.length === 0) {
+      console.log(`Product has no images, adding them...`);
+      await addProductImages(productId, filstarProduct);
+    } else {
+      console.log(`Product already has ${existingProduct.images.length} image(s), skipping image import`);
     }
     
     // Увери се, че продуктът е в колекцията
