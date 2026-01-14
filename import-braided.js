@@ -17,13 +17,14 @@ const COLLECTION_ID = '738965979518';
 
 // update-braided.js
 const BRAIDED_CATEGORY_ID = '105';
-
-  async function fetchBraidedProducts() {
+async function fetchBraidedProducts() {
   console.log('Fetching braided line products from Filstar (Category ID: 105)...');
   
   let allProducts = [];
   
-  for (let page = 1; page <= 10; page++) {
+  for (let page = 1; page <= 25; page++) { // Увеличено до 25 страници
+    console.log(`Fetching page ${page}...`);
+    
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
     
     const response = await fetch(url, {
@@ -42,6 +43,7 @@ const BRAIDED_CATEGORY_ID = '105';
     const data = await response.json();
     
     if (!data || data.length === 0) {
+      console.log('No more products found.');
       break;
     }
     
@@ -50,7 +52,7 @@ const BRAIDED_CATEGORY_ID = '105';
         return false;
       }
       
-      const isBraided = p.categories.some(cat => cat.id === BRAIDED_CATEGORY_ID);
+      const isBraided = p.categories.some(cat => cat.id === '105');
       
       if (isBraided) {
         console.log(`  ? Found: ${p.name} (ID: ${p.id})`);
@@ -60,7 +62,7 @@ const BRAIDED_CATEGORY_ID = '105';
     });
     
     allProducts = allProducts.concat(filtered);
-    console.log(`  Page ${page}: ${filtered.length} braided products`);
+    console.log(`  Page ${page}: ${filtered.length} braided products found`);
     
     await new Promise(resolve => setTimeout(resolve, 500));
   }
@@ -68,6 +70,11 @@ const BRAIDED_CATEGORY_ID = '105';
   console.log(`\nTotal braided products: ${allProducts.length}`);
   return allProducts;
 }
+
+
+
+// край на феч
+
 
 
 async function findShopifyProductBySku(sku) {
