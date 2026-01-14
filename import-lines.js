@@ -7,8 +7,27 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // SKU-та на влакната - ще попълним след като видим списъка
 const LINE_SKUS = [
- // '955634',  // Монофилно влакно (тест)
-  '928131'   // Плетено влакно (тест)
+// SKU-та на влакната
+const LINE_SKUS = [
+  // Монофилно влакно (6 продукта)
+  '955634',  // Монофилно влакно Lazer Pro Specialist Carp Camo 1200 m.
+  '935610',  // Монофилно влакно Lazer Fortex Mare Trolling, 1000m.
+  '940530',  // Sufix Key Lime IGFA
+  '955633',  // Монофилно влакно Lazer Pro Specialist Carp Camo, 300m.
+  '930709',  // Монофилно влакно Lazer Specimen Carp 1200 m
+  '922760',  // Монофилно влакно Lazer Ultra - Carp
+  
+  // Плетено влакно (6 продукта)
+  '928131',  // Плетено влакно Lazer PE Braid Yellow, 1000m.
+  '936324',  // Плетено влакно PE Braid Multicolour - 600 m
+  '949779',  // Повод Spomb Braided Shockleader
+  '942511',  // Плетено влакно Exocet Mk2 Spod braid
+  '949778',  // Плетено влакно Spomb Braid
+  '940291'   // Плетено влакно Submerge Braid Dark Camo, 600m.
+];
+
+
+ 
 ];
 
 async function fetchLineProducts() {
