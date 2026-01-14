@@ -164,18 +164,31 @@ async function updateRodProduct(productId, filstarProduct) {
 }
 
 function formatRodOption(variant) {
-  // TODO: Адаптирай според структурата от Filstar
-  // Примерен формат - ще коригираме след като видим данните
+  // Ако няма атрибути (напр. резервен връх), използвай model или SKU
+  if (!variant.attributes || variant.attributes.length === 0) {
+    return variant.model || `SKU: ${variant.sku}`;
+  }
   
-  // Ако атрибутите са в variant.attributes:
-  // const size = variant.attributes?.size || '';
-  // const length = variant.attributes?.length || '';
-  // const action = variant.attributes?.action || '';
-  // return `РАЗМЕР: ${size} - ${length}м, АКЦИЯ: ${action}`;
+  // Извлечи размер и акция
+  const attributes = variant.attributes;
+  const size = attributes.find(a => a.attribute_name.includes('РАЗМЕР'))?.value || '';
+  const action = attributes.find(a => a.attribute_name.includes('АКЦИЯ'))?.value || '';
   
-  // Засега връщаме само SKU за debug
-  return variant.sku || variant.option1 || 'Unknown';
+  // Ако има и двата атрибута
+  if (size && action) {
+    return `${size}м / ${action} LB`;
+  }
+  
+  // Ако има само размер
+  if (size) {
+    return `${size}м`;
+  }
+  
+  // Fallback към model или SKU
+  return variant.model || `SKU: ${variant.sku}`;
 }
+
+
 
 async function main() {
   try {
