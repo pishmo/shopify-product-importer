@@ -164,6 +164,9 @@ async function addProductToCollection(productId) {
   }
 }
 
+
+
+
 async function createShopifyProduct(filstarProduct) {
   console.log(`Creating new product: ${filstarProduct.name}`);
   
@@ -207,16 +210,28 @@ async function createShopifyProduct(filstarProduct) {
     const result = await response.json();
     console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
     
-    // Добави към колекцията
-    await addProductToCollection(result.product.id);
+   
+  // Добави към колекцията
+await addProductToCollection(result.product.id);
+
+// Добави снимки
+await addImagesToProduct(result.product.id, filstarProduct);
+
+return result.product.id;
+
+
     
-    return result.product.id;
   } else {
     const error = await response.text();
     console.error(`✗ Failed to create product:`, error);
     return null;
   }
 }
+
+
+
+
+
 
 async function updateShopifyProduct(productId, filstarProduct) {
   console.log(`Updating product ID ${productId}...`);
