@@ -168,41 +168,40 @@ function formatLineOption(variant) {
   const attributes = variant.attributes;
   let parts = [];
   
-  // 1. Модел (ако има в model полето)
+  // 1. Модел (ако има)
   if (variant.model && variant.model.trim()) {
     parts.push(variant.model.trim());
   }
   
-  // 2. Дължина / Размер мм
+  // 2. Дължина
   const length = attributes.find(a => 
-    a.attribute_name.includes('ДЪЛЖИНА') || 
-    a.attribute_name.includes('МЕТРАЖ')
+    a.attribute_name.includes('ДЪЛЖИНА')
   )?.value;
   
+  if (length) {
+    parts.push(`${length}м`);
+  }
+  
+  // 3. Размер (диаметър)
   const diameter = attributes.find(a => 
     a.attribute_name.includes('РАЗМЕР') && 
     a.attribute_name.includes('MM')
   )?.value;
   
-  if (length && diameter) {
-    parts.push(`${length}м / ${diameter}мм`);
-  } else if (length) {
-    parts.push(`${length}м`);
-  } else if (diameter) {
-    parts.push(`${diameter}мм`);
+  if (diameter) {
+    parts.push(`Ø${diameter}мм`);
   }
   
-  // 3. # Размер японски
+  // 4. # Японска номерация
   const japaneseSize = attributes.find(a => 
-    a.attribute_name.includes('#') || 
-    a.attribute_name.includes('ЯПОНСКИ')
+    a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
   )?.value;
   
   if (japaneseSize) {
-    parts.push(`#${japaneseSize}`);
+    parts.push(japaneseSize);
   }
   
-  // 4. Тест кг / LB
+  // 5. Тест кг / LB
   const testKg = attributes.find(a => 
     a.attribute_name.includes('ТЕСТ') && 
     a.attribute_name.includes('KG')
@@ -214,7 +213,7 @@ function formatLineOption(variant) {
   )?.value;
   
   if (testKg && testLb) {
-    parts.push(`${testKg}кг / ${testLb}LB`);
+    parts.push(`${testKg}кг/${testLb}LB`);
   } else if (testKg) {
     parts.push(`${testKg}кг`);
   } else if (testLb) {
@@ -222,8 +221,9 @@ function formatLineOption(variant) {
   }
   
   // Ако няма нищо, върни SKU
-  return parts.length > 0 ? parts.join(' | ') : `SKU: ${variant.sku}`;
+  return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
+
 
 async function main() {
   try {
