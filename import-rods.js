@@ -9,6 +9,27 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // SKU-та на пръчките за update
 const ROD_SKUS = [
   '943215'  // Добави всички SKU-та на пръчките от колекцията
+   '944981',  // Въдица Faith Slender Carp
+  '942200',  // Шаранска въдица Atemi Gladiator Carp
+  '922775',  // Шаранска въдица FilStar X-Treme Carp
+  '927234',  // Шаранска въдица Carbo Specialist Carp II
+  '928448',  // Шаранска въдица FilStar X-treme Tele Carp
+  '943214',  // Шаранска въдица FilStar UniCarp Slim
+  '943217',  // Шаранска въдица FilStar F-Carp 3
+  '948724',  // Въдица FilStar Premier Tele Carp
+  '948759',  // Въдица FilStar Tournament Carp
+  '948707',  // Въдица FilStar Minima Carp
+  '948710',  // Въдица FilStar F1 Spod
+  '948701',  // Въдица FilStar Arex Tele Carp
+  '952356',  // Въдица Fox EOS Pro Rod
+  '953622',  // Въдица FilStar Power Glass CARP-3
+  '959361',  // Въдица Okuma LS-6K Carp
+  '962400',  // Въдица Fox EOS X Spod/Marker Full Shrink Rod
+  '961204',  // Въдица Filstar Easy Carp - Hybrid Compact Rod
+  '922792',  // Шаранска въдица FilStar Target Tele Carp
+  '962694',  // Въдица Fox Spomb S Rod
+  '925922',  // Въдица FilStar Universal Carp 3
+  '943215'   // Шаранска въдица F
 ];
 
 async function fetchRodProducts() {
