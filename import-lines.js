@@ -1,40 +1,94 @@
-// import-lines.js - Специален импорт за влакна (монофилно и плетено)
+// import-lines.js - Автоматично извличане на влакна от колекции
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// SKU-та на влакната - ще попълним след като видим списъка
-const LINE_SKUS = [
-
-  // Монофилно влакно (6 продукта)
-  '955634',  // Монофилно влакно Lazer Pro Specialist Carp Camo 1200 m.
-  '935610',  // Монофилно влакно Lazer Fortex Mare Trolling, 1000m.
-  '940530',  // Sufix Key Lime IGFA
-  '955633',  // Монофилно влакно Lazer Pro Specialist Carp Camo, 300m.
-  '930709',  // Монофилно влакно Lazer Specimen Carp 1200 m
-  '922760',  // Монофилно влакно Lazer Ultra - Carp
-  
-  // Плетено влакно (6 продукта)
-  '928131',  // Плетено влакно Lazer PE Braid Yellow, 1000m.
-  '936324',  // Плетено влакно PE Braid Multicolour - 600 m
-  '949779',  // Повод Spomb Braided Shockleader
-  '942511',  // Плетено влакно Exocet Mk2 Spod braid
-  '949778',  // Плетено влакно Spomb Braid
-  '940291'   // Плетено влакно Submerge Braid Dark Camo, 600m.
- 
+// ID-та на колекциите
+const COLLECTION_IDS = [
+  '738965946750',  // Влакно монофилно
+  '738965979518'   // Влакно плетено
 ];
 
+async function getSkusFromCollections(collectionIds) {
+  console.log(`Fetching all SKUs from ${collectionIds.length} collections...`);
+  
+  let allSkus = [];
+  
+  for (const collectionId of collectionIds) {
+    console.log(`\nProcessing collection ${collectionId}...`);
+    
+    // Първо вземи product IDs от колекцията
+    const collectionResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id&limit=250`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (!collectionResponse.ok) {
+      console.error(`Failed to fetch collection ${collectionId}`);
+      continue;
+    }
+    
+    const collectionData = await collectionResponse.json();
+    const productIds = collectionData.products.map(p => p.id);
+    
+    console.log(`Found ${productIds.length} products in collection ${collectionId}`);
+    
+    // Сега вземи пълните данни за всеки продукт
+    for (const productId of productIds) {
+      const productResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json?fields=id,title,variants`,
+        {
+          method: 'GET',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (!productResponse.ok) {
+        console.log(`Failed to fetch product ${productId}`);
+        continue;
+      }
+      
+      const productData = await productResponse.json();
+      const product = productData.product;
+      
+      console.log(`Product: ${product.title}`);
+      console.log(`  Variants: ${product.variants.length}`);
+      
+      for (const variant of product.variants) {
+        if (variant.sku && variant.sku.trim()) {
+          allSkus.push(variant.sku);
+          console.log(`  Found SKU: ${variant.sku}`);
+        } else {
+          console.log(`  Variant has no SKU`);
+        }
+      }
+      
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+  }
+  
+  console.log(`\nTotal SKUs found across all collections: ${allSkus.length}`);
+  return allSkus;
+}
 
-
-
-async function fetchLineProducts() {
+async function fetchLineProducts(skus) {
   console.log('Fetching line products from Filstar...');
   
   let allProducts = [];
   
-  for (const sku of LINE_SKUS) {
+  for (const sku of skus) {
     const url = `${FILSTAR_API_BASE}/products?search=${sku}`;
     
     const response = await fetch(url, {
@@ -55,15 +109,6 @@ async function fetchLineProducts() {
     if (data && data.length > 0) {
       allProducts = allProducts.concat(data);
       console.log(`Found ${data.length} product(s) with SKU: ${sku}`);
-      
-      // DEBUG - покажи структурата на вариантите (само за първия продукт)
-      if (allProducts.length === 1 && data[0].variants) {
-        console.log('=== VARIANT STRUCTURE ===');
-        data[0].variants.forEach((v, i) => {
-          console.log(`Variant ${i}:`, JSON.stringify(v, null, 2));
-        });
-        console.log('=== END ===');
-      }
     }
     
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -242,14 +287,18 @@ function formatLineOption(variant) {
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
 
-
 async function main() {
   try {
     console.log('Starting line update...');
     
-    const filstarProducts = await fetchLineProducts();
+    // Автоматично извличане на SKU-та от колекциите
+    const skus = await getSkusFromCollections(COLLECTION_IDS);
+    
+    // Извличане от Filstar
+    const filstarProducts = await fetchLineProducts(skus);
     console.log(`Total line products fetched from Filstar: ${filstarProducts.length}`);
     
+    // Update в Shopify
     for (const filstarProduct of filstarProducts) {
       const firstSku = filstarProduct.variants?.[0]?.sku;
       
