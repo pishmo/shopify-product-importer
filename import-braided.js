@@ -41,50 +41,44 @@ function getImageFilename(src) {
 
 
 // Функция за fetch на плетени влакна от Filstar
+// Функция за извличане на всички плетени влакна от Filstar
 async function fetchBraidedProducts() {
-  console.log('Fetching braided line products from Filstar...');
+  console.log('Fetching all products from Filstar API...');
   
-  let allProducts = [];
-  let page = 1;
-  
-  while (true) {
-    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
+  try {
+    const response = await fetch(`${FILSTAR_API_BASE}/products`, {
       headers: {
-        'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${FILSTAR_TOKEN}`
       }
     });
-    
+
     if (!response.ok) {
-      console.error(`Error fetching page ${page}: ${response.status}`);
-      break;
+      throw new Error(`Filstar API error: ${response.status}`);
     }
+
+    const allProducts = await response.json();
+    console.log(`Total products fetched: ${allProducts.length}`);
     
-    const data = await response.json();
+    // Филтрирай само плетените влакна
+    const braidedProducts = allProducts.filter(product => 
+      product.categories?.some(cat => 
+        cat.name.includes('Плетени') || 
+        cat.name.toLowerCase().includes('braid')
+      )
+    );
     
-    if (!data || data.length === 0) break;
+    console.log(`Found ${braidedProducts.length} braided products`);
     
-    // Филтрирай само продукти от категория 105 (плетени влакна)
-    const filtered = data.filter(p => {
-      if (!p.categories || p.categories.length === 0) {
-        return false;
-      }
-      return p.categories.some(cat => cat.id === BRAIDED_CATEGORY_ID);
-    });
+    return braidedProducts;
     
-    allProducts = allProducts.concat(filtered);
-    console.log(`Page ${page}: Found ${filtered.length} braided products`);
-    
-    page++;
-    await new Promise(resolve => setTimeout(resolve, 500));
+  } catch (error) {
+    console.error('Error fetching products:', error.message);
+    throw error;
   }
-  
-  console.log(`Total braided products fetched: ${allProducts.length}`);
-  return allProducts;
 }
+
+
+
 
 // Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
