@@ -1,0 +1,25 @@
+name: Test Categories
+
+on:
+  workflow_dispatch:  # Ръчно стартиране
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install node-fetch@2
+      
+      - name: Run category test
+        env:
+          FILSTAR_API_TOKEN: ${{ secrets.FILSTAR_API_TOKEN }}
+        run: node test-categories.js
