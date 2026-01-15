@@ -8,7 +8,7 @@ const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // Категория ID за монофилни влакна във Filstar
-const MONOFILAMENT_CATEGORY_ID = 'XXX'; // <-- Трябва да сложиш правилното ID
+const MONOFILAMENT_CATEGORY_ID = '41'; // <-- Трябва да сложиш правилното ID
 
 // Функция за извличане на всички монофилни влакна от Filstar
 async function fetchMonofilamentProducts() {
