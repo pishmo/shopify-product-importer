@@ -110,6 +110,69 @@ async function fetchAllFishingLines() {
         headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
       });
 
+      if (!response.ok) {
+        throw new Error(`Filstar API error: ${response.status}`);
+      }
+
+      const pageProducts = await response.json();
+      
+      if (!pageProducts || pageProducts.length === 0) {
+        hasMorePages = false;
+      } else {
+        allProducts = allProducts.concat(pageProducts);
+        console.log(`  → Fetched ${pageProducts.length} products from page ${page}`);
+        page++;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    console.log(`Total products fetched: ${allProducts.length}`);
+    
+    // Филтрирай по категории ID
+    const lines = {
+      monofilament: [],
+      braided: [],
+      fluorocarbon: [],
+      other: []
+    };
+    
+    allProducts.forEach(product => {
+      // Провери дали има parent "Влакна и поводи" (ID: 4)
+      const hasLineParent = product.categories?.some(c => 
+        c.parent_id === '4' || c.parent_id === 4
+      );
+      
+      if (!hasLineParent) return; // Пропусни ако не е влакно
+      
+      // Извлечи ID-тата на категориите
+      const categoryIds = product.categories?.map(c => c.id.toString()) || [];
+      
+      // Провери в коя категория влакна спада
+      if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.monofilament.includes(id))) {
+        lines.monofilament.push(product);
+      } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.braided.includes(id))) {
+        lines.braided.push(product);
+      } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(id))) {
+        lines.fluorocarbon.push(product);
+      } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.other.includes(id))) {
+        lines.other.push(product);
+      }
+    });
+    
+    console.log(`\nFound fishing lines:`);
+    console.log(`  - Monofilament: ${lines.monofilament.length}`);
+    console.log(`  - Braided: ${lines.braided.length}`);
+    console.log(`  - Fluorocarbon: ${lines.fluorocarbon.length}`);
+    console.log(`  - Other: ${lines.other.length}`);
+    console.log(`  - Total: ${lines.monofilament.length + lines.braided.length + lines.fluorocarbon.length + lines.other.length}\n`);
+    
+    return lines;
+    
+  } catch (error) {
+    console.error('Error fetching products:', error.message);
+    throw error;
+  }
+}
 
 // Функция за търсене на продукт в Shopify по SKU
 async function findShopifyProductBySKU(sku) {
