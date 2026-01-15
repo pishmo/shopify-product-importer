@@ -327,6 +327,80 @@ async function updateFishingLineProduct(shopifyProduct, filstarProduct, lineType
   console.log(`✅ Finished updating product`);
 }
 
+
+async function createFishingLineProduct(filstarProduct, lineType) {
+  console.log(`Creating new product: ${filstarProduct.name}`);
+  
+  try {
+    const description = filstarProduct.description || filstarProduct.short_description || '';
+    
+    const shopifyVariants = filstarProduct.variants.map(variant => {
+      const optionName = formatLineOption(variant, lineType);
+      
+      return {
+        sku: variant.sku,
+        barcode: variant.barcode || null,
+        price: variant.price,
+        inventory_management: 'shopify',
+        inventory_quantity: parseInt(variant.quantity) || 0,
+        option1: optionName
+      };
+    });
+    
+    const images = filstarProduct.images
+      ? filstarProduct.images.map(url => ({ src: url }))
+      : [];
+    
+    const vendor = filstarProduct.manufacturer || 'Filstar';
+    const productType = filstarProduct.categories?.[0]?.name || 'Влакна и поводи';
+    
+    const productData = {
+      product: {
+        title: filstarProduct.name,
+        body_html: description,
+        vendor: vendor,
+        product_type: productType,
+        variants: shopifyVariants,
+        images: images,
+        status: 'active'
+      }
+    };
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+      }
+    );
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`✗ Failed to create product:`, error);
+      return null;
+    }
+    
+    const result = await response.json();
+    console.log(`✅ Created product: ${result.product.title} (ID: ${result.product.id})`);
+    console.log(`   Created ${result.product.variants.length} variants`);
+    
+    return result.product.id;
+    
+  } catch (error) {
+    console.error(`ERROR creating product:`, error.message);
+    return null;
+  }
+}
+
+
+
+
+
+
 // Главна функция
 async function main() {
   try {
@@ -354,13 +428,21 @@ async function main() {
         
         console.log(`Searching for product with SKU: ${mainSKU}...`);
         const shopifyProduct = await findShopifyProductBySKU(mainSKU);
-        
-        if (shopifyProduct) {
-          console.log(`Found existing product: ${shopifyProduct.title} (ID: ${shopifyProduct.id})`);
-          await updateFishingLineProduct(shopifyProduct, filstarProduct, lineType);
-        } else {
-          console.log(`⚠️ Product not found in Shopify, skipping: ${filstarProduct.name}`);
-        }
+
+
+if (shopifyProduct) {
+  console.log(`Found existing product: ${shopifyProduct.title} (ID: ${shopifyProduct.id})`);
+  await updateFishingLineProduct(shopifyProduct, filstarProduct, lineType);
+} else {
+  console.log(`⚠️ Product not found in Shopify: ${filstarProduct.name}`);
+  console.log(`Creating new product...`);
+  const newProductId = await createFishingLineProduct(filstarProduct, lineType);
+  if (newProductId) {
+    console.log(`✅ Successfully created product with ID: ${newProductId}`);
+  }
+}
+
+
         
         await new Promise(resolve => setTimeout(resolve, 500));
       }
