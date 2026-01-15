@@ -7,6 +7,10 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // SKU-та за тестване (добави SKU от "Други" категория)
 const TEST_SKUS = [
   // Добави тук SKU от "Други" категория
+'955614',
+  '954732', 
+  '949760'
+  
 ];
 
 async function testProductBySku(sku) {
