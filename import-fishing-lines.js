@@ -328,6 +328,9 @@ async function updateFishingLineProduct(shopifyProduct, filstarProduct, lineType
 }
 
 
+
+
+
 async function createFishingLineProduct(filstarProduct, lineType) {
   console.log(`Creating new product: ${filstarProduct.name}`);
   
@@ -348,24 +351,28 @@ async function createFishingLineProduct(filstarProduct, lineType) {
       };
     });
     
-    const images = filstarProduct.images
-      ? filstarProduct.images.map(url => ({ src: url }))
-      : [];
+ 
+
     
-    const vendor = filstarProduct.manufacturer || 'Filstar';
-    const productType = filstarProduct.categories?.[0]?.name || 'Влакна и поводи';
-    
-    const productData = {
-      product: {
-        title: filstarProduct.name,
-        body_html: description,
-        vendor: vendor,
-        product_type: productType,
-        variants: shopifyVariants,
-        images: images,
-        status: 'active'
-      }
-    };
+ // Премахни дублиращи се снимки преди създаване
+const uniqueImages = filstarProduct.images 
+  ? [...new Set(filstarProduct.images)].map(url => ({ src: url }))
+  : [];
+
+const productData = {
+  product: {
+    title: filstarProduct.name,
+    body_html: description,
+    vendor: vendor,
+    product_type: productType,
+    variants: shopifyVariants,
+    images: uniqueImages,
+    status: 'active'
+  }
+};
+
+
+
     
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
@@ -396,6 +403,10 @@ async function createFishingLineProduct(filstarProduct, lineType) {
     return null;
   }
 }
+
+
+
+
 
 
 
