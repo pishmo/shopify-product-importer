@@ -388,7 +388,7 @@ function formatLineOption(variant) {
   )?.value;
   
   if (diameter) {
-    parts.push(`O${diameter}мм`);
+    parts.push(`Ø${diameter}мм`);
   }
   
   // 4. Японска номерация
