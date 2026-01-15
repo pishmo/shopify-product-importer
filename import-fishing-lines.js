@@ -335,7 +335,8 @@ async function createFishingLineProduct(filstarProduct, lineType) {
     const description = filstarProduct.description || filstarProduct.short_description || '';
     
     const shopifyVariants = filstarProduct.variants.map(variant => {
-      const optionName = formatLineOption(variant, lineType);
+      const optionName = formatFishingLineOption(variant, lineType);
+
       
       return {
         sku: variant.sku,
