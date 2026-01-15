@@ -117,9 +117,13 @@ const lines = {
 
 
 
-    
 allProducts.forEach(product => {
   const categoryNames = product.categories?.map(c => c.name) || [];
+  
+  // Проверка дали има parent категория "Влакна и поводи"
+  const hasLineParent = product.categories?.some(c => 
+    c.parent_name === 'Влакна и поводи' || c.parent_id === '4'
+  );
   
   if (categoryNames.some(name => LINE_CATEGORIES.braided.includes(name))) {
     lines.braided.push(product);
@@ -127,10 +131,13 @@ allProducts.forEach(product => {
     lines.monofilament.push(product);
   } else if (categoryNames.some(name => LINE_CATEGORIES.fluorocarbon.some(fc => name.includes(fc)))) {
     lines.fluorocarbon.push(product);
-  } else if (categoryNames.some(name => LINE_CATEGORIES.other.includes(name))) {
-    lines.other.push(product);  // ← Добави това
+  } else if (hasLineParent && categoryNames.some(name => LINE_CATEGORIES.other.includes(name))) {
+    // Само "Други" които са под "Влакна и поводи"
+    lines.other.push(product);
   }
 });
+
+
     
 console.log(`\nFound fishing lines:`);
 console.log(`  - Braided: ${lines.braided.length}`);
