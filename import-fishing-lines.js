@@ -394,8 +394,19 @@ async function updateProduct(shopifyProduct, filstarProduct, collectionId) {
 
 // Главна функция
 async function main() {
+  
+
+  
   try {
     console.log('🎣 Starting fishing lines import...\n');
+
+
+  // 🔍 DEBUG - добави тези 2 реда:
+    const allFilstarProducts = await fetchAllFilstarProducts();
+    console.log('Sample product categories:', JSON.stringify(allFilstarProducts[0]?.categories, null, 2));
+
+   return; // спри тук за да видим резултата
+    
     console.log('Categories to process:');
     Object.entries(CATEGORY_MAPPING).forEach(([id, info]) => {
       console.log(`  - ${info.name} (Filstar ID: ${id})`);
