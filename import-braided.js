@@ -1,30 +1,40 @@
-// import-braided.js - Импорт на плетени влакна чрез search
+// import-braided.js - Import на плетени влакна с проверка за дублирани снимки
+const fetch = require('node-fetch');
+
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// Search query за плетени влакна
-const SEARCH_QUERY = 'плетено';
-
-// Колекция "Влакно плетено"
-const COLLECTION_ID = '738965979518';
-
-
-
-// сновата функция
-
-// update-braided.js
+// Категория ID за плетени влакна във Filstar
 const BRAIDED_CATEGORY_ID = '105';
+
+// Функция за извличане на filename от URL (без hash)
+function getImageFilename(src) {
+  const urlParts = src.split('/').pop();
+  const withoutQuery = urlParts.split('?')[0];
+  
+  // Премахни UUID hash-а (всичко след последното "_")
+  const parts = withoutQuery.split('_');
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length >= 32 && /^[a-f0-9]+/.test(lastPart)) {
+      parts.pop();
+    }
+  }
+  
+  return parts.join('_');
+}
+
+// Функция за fetch на плетени влакна от Filstar
 async function fetchBraidedProducts() {
-  console.log('Fetching braided line products from Filstar (Category ID: 105)...');
+  console.log('Fetching braided line products from Filstar...');
   
   let allProducts = [];
+  let page = 1;
   
-  for (let page = 1; page <= 200; page++) { // Увеличено до 200 страници
-    console.log(`Fetching page ${page}...`);
-    
+  while (true) {
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
     
     const response = await fetch(url, {
@@ -42,46 +52,33 @@ async function fetchBraidedProducts() {
     
     const data = await response.json();
     
-    if (!data || data.length === 0) {
-      console.log('No more products found.');
-      break;
-    }
+    if (!data || data.length === 0) break;
     
+    // Филтрирай само продукти от категория 105 (плетени влакна)
     const filtered = data.filter(p => {
       if (!p.categories || p.categories.length === 0) {
         return false;
       }
-      
-      const isBraided = p.categories.some(cat => cat.id === '105');
-      
-      if (isBraided) {
-        console.log(`  ? Found: ${p.name} (ID: ${p.id})`);
-      }
-      
-      return isBraided;
+      return p.categories.some(cat => cat.id === BRAIDED_CATEGORY_ID);
     });
     
     allProducts = allProducts.concat(filtered);
-    console.log(`  Page ${page}: ${filtered.length} braided products found`);
+    console.log(`Page ${page}: Found ${filtered.length} braided products`);
     
+    page++;
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  console.log(`\nTotal braided products: ${allProducts.length}`);
+  console.log(`Total braided products fetched: ${allProducts.length}`);
   return allProducts;
 }
 
-
-
-// край на феч
-
-
-
+// Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
-  console.log(`Searching for product with SKU: ${sku} in Shopify...`);
+  console.log(`Searching for product with SKU: ${sku}...`);
   
   const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`,
     {
       method: 'GET',
       headers: {
@@ -102,7 +99,7 @@ async function findShopifyProductBySku(sku) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
       console.log(`Found existing product: ${product.title} (ID: ${product.id})`);
-      return product.id;
+      return product;
     }
   }
   
@@ -110,168 +107,96 @@ async function findShopifyProductBySku(sku) {
   return null;
 }
 
-async function addProductToCollection(productId) {
-  console.log(`Adding product ${productId} to collection ${COLLECTION_ID}...`);
-  
-  try {
-    const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          collect: {
-            product_id: productId,
-            collection_id: COLLECTION_ID
-          }
-        })
-      }
-    );
-    
-    if (response.ok) {
-      console.log(`  ? Added to collection`);
-    } else if (response.status === 422) {
-      console.log(`  ? Already in collection`);
-    } else {
-      const error = await response.text();
-      console.error(`  ? Failed to add to collection:`, error);
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
-  } catch (error) {
-    console.error(`ERROR adding to collection:`, error.message);
+// Функция за проверка дали снимка вече съществува
+function imageExists(existingImages, newImageUrl) {
+  if (!existingImages || existingImages.length === 0) {
+    return false;
   }
+  
+  const newFilename = getImageFilename(newImageUrl);
+  
+  for (const existingImage of existingImages) {
+    const existingFilename = getImageFilename(existingImage.src);
+    if (existingFilename === newFilename) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
-async function addImagesToProduct(productId, filstarProduct) {
-  if (!filstarProduct.images || filstarProduct.images.length === 0) {
-    console.log(`  No images found for product`);
-    return;
+// Функция за upload на снимка (само ако не съществува)
+async function uploadProductImage(productId, imageUrl, existingImages) {
+  // Провери дали снимката вече съществува
+  if (imageExists(existingImages, imageUrl)) {
+    console.log(`  ⏭️  Image already exists, skipping: ${getImageFilename(imageUrl)}`);
+    return false;
   }
   
-  console.log(`Adding ${filstarProduct.images.length} images to product ${productId}...`);
-  
-  for (const imageUrl of filstarProduct.images) {
-    try {
-      const response = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            image: {
-              src: imageUrl
-            }
-          })
-        }
-      );
-      
-      if (response.ok) {
-        console.log(`  ? Added image: ${imageUrl}`);
-      } else {
-        const error = await response.text();
-        console.error(`  ? Failed to add image:`, error);
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-    } catch (error) {
-      console.error(`ERROR adding image:`, error.message);
-    }
-  }
-}
-
-async function createShopifyProduct(filstarProduct) {
-  console.log(`Creating new product: ${filstarProduct.name}`);
-  
-  const productData = {
-    product: {
-      title: filstarProduct.name,
-      body_html: filstarProduct.description || filstarProduct.short_description || '',
-      vendor: filstarProduct.manufacturer || 'Filstar',
-      product_type: 'Плетено влакно',
-      status: 'active',
-      variants: filstarProduct.variants.map(variant => ({
-        sku: variant.sku,
-        price: variant.price,
-        inventory_quantity: parseInt(variant.quantity) || 0,
-        inventory_management: 'shopify',
-        option1: formatLineOption(variant),
-        barcode: variant.barcode || null
-      })),
-      options: [
-        {
-          name: 'Вариант',
-          values: filstarProduct.variants.map(v => formatLineOption(v))
-        }
-      ]
-    }
-  };
+  console.log(`  📸 Uploading new image: ${getImageFilename(imageUrl)}`);
   
   const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
     {
       method: 'POST',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(productData)
+      body: JSON.stringify({
+        image: {
+          src: imageUrl
+        }
+      })
     }
   );
   
-  if (response.ok) {
-    const result = await response.json();
-    console.log(`? Created product: ${result.product.title} (ID: ${result.product.id})`);
-    
-    // Добави към колекцията
-    await addProductToCollection(result.product.id);
-    
-    // Добави снимки
-    await addImagesToProduct(result.product.id, filstarProduct);
-    
-    return result.product.id;
-  } else {
+  if (!response.ok) {
     const error = await response.text();
-    console.error(`? Failed to create product:`, error);
-    return null;
+    console.error(`  ✗ Failed to upload image:`, error);
+    return false;
   }
+  
+  console.log(`  ✓ Image uploaded successfully`);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  return true;
 }
 
-async function updateShopifyProduct(productId, filstarProduct) {
-  console.log(`Updating product ID ${productId}...`);
+// Функция за update на продукт
+async function updateBraidedProduct(shopifyProduct, filstarProduct) {
+  console.log(`\nUpdating product: ${shopifyProduct.title}`);
   
-  try {
-    const getResponse = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
-      {
-        method: 'GET',
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+  const productId = shopifyProduct.id;
+  let imagesUploaded = 0;
+  let imagesSkipped = 0;
+  
+  // Upload снимки (само нови)
+  if (filstarProduct.images && filstarProduct.images.length > 0) {
+    console.log(`Processing ${filstarProduct.images.length} images from Filstar...`);
     
-    if (!getResponse.ok) {
-      console.error('Failed to get product details');
-      return;
+    for (const image of filstarProduct.images) {
+      const uploaded = await uploadProductImage(productId, image.url, shopifyProduct.images);
+      if (uploaded) {
+        imagesUploaded++;
+      } else {
+        imagesSkipped++;
+      }
     }
     
-    const existingData = await getResponse.json();
-    const existingProduct = existingData.product;
+    console.log(`Images: ${imagesUploaded} uploaded, ${imagesSkipped} skipped (already exist)`);
+  }
+  
+  // Update варианти
+  if (filstarProduct.variants && filstarProduct.variants.length > 0) {
+    console.log(`Updating ${filstarProduct.variants.length} variants...`);
     
     for (const filstarVariant of filstarProduct.variants) {
-      const existingVariant = existingProduct.variants.find(v => v.sku === filstarVariant.sku);
+      const existingVariant = shopifyProduct.variants.find(v => v.sku === filstarVariant.sku);
       
       if (existingVariant) {
-        const newOptionName = formatLineOption(filstarVariant);
+        const newOptionName = formatBraidedVariantName(filstarVariant);
         
+        // Update variant option name
         const updateResponse = await fetch(
           `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
           {
@@ -283,83 +208,27 @@ async function updateShopifyProduct(productId, filstarProduct) {
             body: JSON.stringify({
               variant: {
                 id: existingVariant.id,
-                price: filstarVariant.price,
-                option1: newOptionName
+                option1: newOptionName,
+                price: filstarVariant.price || existingVariant.price
               }
             })
           }
         );
         
         if (updateResponse.ok) {
-          console.log(`  ? Updated price and option for SKU ${filstarVariant.sku}`);
+          console.log(`  ✓ Updated variant: ${newOptionName}`);
         }
         
         await new Promise(resolve => setTimeout(resolve, 300));
-        
-        if (existingVariant.inventory_item_id) {
-          const newQuantity = parseInt(filstarVariant.quantity) || 0;
-          
-          const inventoryResponse = await fetch(
-            `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels.json?inventory_item_ids=${existingVariant.inventory_item_id}`,
-            {
-              method: 'GET',
-              headers: {
-                'X-Shopify-Access-Token': ACCESS_TOKEN,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-          
-          if (inventoryResponse.ok) {
-            const inventoryData = await inventoryResponse.json();
-            const inventoryLevel = inventoryData.inventory_levels[0];
-            
-            if (inventoryLevel) {
-              const setResponse = await fetch(
-                `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'X-Shopify-Access-Token': ACCESS_TOKEN,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    location_id: inventoryLevel.location_id,
-                    inventory_item_id: existingVariant.inventory_item_id,
-                    available: newQuantity
-                  })
-                }
-              );
-              
-              if (setResponse.ok) {
-                console.log(`  ? Updated inventory for SKU ${filstarVariant.sku}: ${newQuantity} units`);
-              }
-            }
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
       }
     }
-    
-    console.log(`? Successfully updated product ID ${productId}`);
-    
-    // Увери се че е в колекцията
-    await addProductToCollection(productId);
-    
-    // Добави снимки ако липсват
-    await addImagesToProduct(productId, filstarProduct);
-    
-  } catch (error) {
-    console.error(`ERROR updating product ID ${productId}:`, error.message);
   }
+  
+  console.log(`✅ Finished updating product`);
 }
 
-
-
-
-
-function formatLineOption(variant) {
+// Функция за форматиране на variant име
+function formatBraidedVariantName(variant) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
   }
@@ -388,7 +257,7 @@ function formatLineOption(variant) {
   )?.value;
   
   if (diameter) {
-    parts.push(`Ø${diameter}мм`);
+    parts.push(`⌀${diameter}мм`);
   }
   
   // 4. Японска номерация
@@ -397,7 +266,6 @@ function formatLineOption(variant) {
   )?.value;
   
   if (japaneseSize) {
-    // Ако вече започва с #, не добавяй втори
     const formattedSize = japaneseSize.startsWith('#') 
       ? japaneseSize 
       : `#${japaneseSize}`;
@@ -414,63 +282,46 @@ function formatLineOption(variant) {
     parts.push(`${testKg}кг`);
   }
   
-  // 6. Тест LB
-  const testLb = attributes.find(a => 
-    a.attribute_name.includes('ТЕСТ') && 
-    a.attribute_name.includes('LB')
-  )?.value;
-  
-  if (testLb) {
-    parts.push(`${testLb}LB`);
-  }
-  
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
 
-
-
-
-//край на формата
-
-
-
+// Главна функция
 async function main() {
   try {
-    console.log('Starting braided line import...');
+    console.log('Starting braided line import...\n');
     
+    // Fetch продукти от Filstar
     const filstarProducts = await fetchBraidedProducts();
     
-    if (!filstarProducts || filstarProducts.length === 0) {
-      console.log('No braided line products found');
+    if (filstarProducts.length === 0) {
+      console.log('No braided products found in Filstar');
       return;
     }
     
-    console.log(`Processing ${filstarProducts.length} products...`);
-    
+    // Update всеки продукт
     for (const filstarProduct of filstarProducts) {
       const firstSku = filstarProduct.variants?.[0]?.sku;
       
       if (!firstSku) {
-        console.log(`Skipping product ${filstarProduct.name} - no SKU found`);
+        console.log(`Skipping product without SKU: ${filstarProduct.name}`);
         continue;
       }
       
-      console.log(`\n--- Processing: ${filstarProduct.name} ---`);
+      const shopifyProduct = await findShopifyProductBySku(firstSku);
       
-      const productId = await findShopifyProductBySku(firstSku);
-      
-      if (productId) {
-        await updateShopifyProduct(productId, filstarProduct);
+      if (shopifyProduct) {
+        await updateBraidedProduct(shopifyProduct, filstarProduct);
       } else {
-        await createShopifyProduct(filstarProduct);
+        console.log(`Product not found in Shopify, skipping...`);
       }
       
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    console.log('\n? Braided line import completed!');
+    console.log('\n✅ Braided line import completed!');
+    
   } catch (error) {
-    console.error('Import failed:', error);
+    console.error('❌ Import failed:', error);
     process.exit(1);
   }
 }
