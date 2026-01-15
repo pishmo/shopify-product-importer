@@ -65,7 +65,7 @@ async function fetchAllFilstarProducts() {
   console.log('Fetching all products from Filstar API...');
   
   try {
-    const response = await fetch(`${FILSTAR_API_BASE}/products?limit=1000`, {
+ const response = await fetch(`${FILSTAR_API_BASE}/products`, {
       headers: {
         'Authorization': `Bearer ${FILSTAR_TOKEN}`
       }
