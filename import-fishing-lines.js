@@ -160,6 +160,7 @@ async function fetchAllFishingLines() {
 
 
 
+
 // Функция за търсене на продукт в Shopify по SKU
 async function findShopifyProductBySKU(sku) {
   const query = `
