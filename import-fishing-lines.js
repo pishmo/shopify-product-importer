@@ -394,9 +394,15 @@ async function updateProduct(shopifyProduct, filstarProduct, collectionId) {
 
 // Главна функция
 // Главна функция
+// Главна функция
 async function main() {
   try {
     console.log('🎣 Starting fishing lines import...\n');
+    console.log('Categories to process:');
+    Object.entries(CATEGORY_MAPPING).forEach(([id, info]) => {
+      console.log(`  - ${info.name} (Filstar ID: ${id})`);
+    });
+    console.log('');
     
     // Fetch всички продукти от Filstar веднъж
     const allFilstarProducts = await fetchAllFilstarProducts();
@@ -408,14 +414,57 @@ async function main() {
     console.log('\n');
     return; // ⛔ Спри тук за debugging
     
-    console.log('Categories to process:');
-    Object.entries(CATEGORY_MAPPING).forEach(([id, info]) => {
-      console.log(`  - ${info.name} (Filstar ID: ${id})`);
-    });
-    console.log('');
+    // Обработи всяка категория
+    for (const [categoryId, categoryInfo] of Object.entries(CATEGORY_MAPPING)) {
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`📦 Processing category: ${categoryInfo.name} (ID: ${categoryId})`);
+      console.log(`${'='.repeat(60)}\n`);
+      
+      // Филтрирай продукти за тази категория
+      const categoryProducts = filterProductsByCategory(allFilstarProducts, categoryId);
+      console.log(`Found ${categoryProducts.length} products in this category\n`);
+      
+      if (categoryProducts.length === 0) {
+        console.log('No products to process, skipping...\n');
+        continue;
+      }
+      
+      // Обработи всеки продукт
+      for (const filstarProduct of categoryProducts) {
+        const firstSku = filstarProduct.variants?.[0]?.sku;
+        
+        if (!firstSku) {
+          console.log(`⚠️ Skipping product without SKU: ${filstarProduct.name}`);
+          continue;
+        }
+        
+        const shopifyProduct = await findShopifyProductBySku(firstSku);
+        
+        if (shopifyProduct) {
+          // Update съществуващ продукт
+          await updateProduct(shopifyProduct, filstarProduct, categoryInfo.shopifyCollectionId);
+        } else {
+          // Създай нов продукт
+          await createProduct(filstarProduct, categoryInfo.shopifyCollectionId);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      console.log(`\n✅ Finished processing category: ${categoryInfo.name}`);
+    }
     
-    // ... останалия код остава същия
+    console.log('\n' + '='.repeat(60));
+    console.log('🎉 All categories processed successfully!');
+    console.log('='.repeat(60));
+    
+  } catch (error) {
+    console.error('❌ Import failed:', error);
+    process.exit(1);
+  }
+}
 
+main();
 
 main();
 
