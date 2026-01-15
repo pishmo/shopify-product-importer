@@ -22,7 +22,7 @@ async function fetchBraidedProducts() {
   
   let allProducts = [];
   
-  for (let page = 1; page <= 150; page++) { // Увеличено до 150 страници
+  for (let page = 1; page <= 200; page++) { // Увеличено до 200 страници
     console.log(`Fetching page ${page}...`);
     
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
