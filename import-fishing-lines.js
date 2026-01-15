@@ -93,6 +93,7 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
   return true;
 }
 
+
 // Функция за извличане на всички влакна от Filstar по категории
 async function fetchAllFishingLines() {
   console.log('Fetching fishing line products from Filstar API...');
@@ -156,7 +157,6 @@ async function fetchAllFishingLines() {
     throw error;
   }
 }
-
 
 
 
