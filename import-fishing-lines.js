@@ -89,9 +89,12 @@ async function fetchAllFilstarProducts() {
 // Функция за филтриране на продукти по категория ID
 function filterProductsByCategory(products, categoryId) {
   return products.filter(product => 
-    product.categories?.some(cat => cat.id === parseInt(categoryId))
+    product.categories?.some(cat => cat.id === categoryId)
   );
 }
+
+
+
 
 // Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
@@ -393,7 +396,7 @@ async function updateProduct(shopifyProduct, filstarProduct, collectionId) {
 }
 
 // Главна функция
-// Главна функция
+
 // Главна функция
 async function main() {
   try {
@@ -406,13 +409,6 @@ async function main() {
     
     // Fetch всички продукти от Filstar веднъж
     const allFilstarProducts = await fetchAllFilstarProducts();
-    
-    // 🔍 DEBUG - покажи структурата на категориите
-    console.log('\n🔍 DEBUG: Sample product structure:');
-    console.log('Product name:', allFilstarProducts[0]?.name);
-    console.log('Categories:', JSON.stringify(allFilstarProducts[0]?.categories, null, 2));
-    console.log('\n');
-    return; // ⛔ Спри тук за debugging
     
     // Обработи всяка категория
     for (const [categoryId, categoryInfo] of Object.entries(CATEGORY_MAPPING)) {
@@ -464,7 +460,6 @@ async function main() {
   }
 }
 
-main();
 
 main();
 
