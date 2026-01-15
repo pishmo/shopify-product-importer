@@ -4,12 +4,18 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const API_VERSION = '2024-01';
 
+
 // Дефиниция на категориите влакна
 const LINE_CATEGORIES = {
   braided: ['Плетени'],
   monofilament: ['Монофилни'],
-  fluorocarbon: ['Флуорокарбон', 'Fluorocarbon']
+  fluorocarbon: ['Флуорокарбон', 'Fluorocarbon'],
+  other: ['Други']  // ✅ Вече добавено
 };
+
+
+
+
 
 // Функция за извличане на filename от URL (без hash)
 function getImageFilename(src) {
@@ -100,31 +106,39 @@ async function fetchAllFishingLines() {
     const allProducts = await response.json();
     console.log(`Total products fetched: ${allProducts.length}`);
     
-    // Филтрирай по категории
-    const lines = {
-      braided: [],
-      monofilament: [],
-      fluorocarbon: []
-    };
+   
+  // Филтрирай по категории
+const lines = {
+  braided: [],
+  monofilament: [],
+  fluorocarbon: [],
+  other: []  // ← Добави това
+};
+
+
+
     
-    allProducts.forEach(product => {
-      const categoryNames = product.categories?.map(c => c.name) || [];
-      
-      if (categoryNames.some(name => LINE_CATEGORIES.braided.includes(name))) {
-        lines.braided.push(product);
-      } else if (categoryNames.some(name => LINE_CATEGORIES.monofilament.includes(name))) {
-        lines.monofilament.push(product);
-      } else if (categoryNames.some(name => LINE_CATEGORIES.fluorocarbon.some(fc => name.includes(fc)))) {
-        lines.fluorocarbon.push(product);
-      }
-    });
+allProducts.forEach(product => {
+  const categoryNames = product.categories?.map(c => c.name) || [];
+  
+  if (categoryNames.some(name => LINE_CATEGORIES.braided.includes(name))) {
+    lines.braided.push(product);
+  } else if (categoryNames.some(name => LINE_CATEGORIES.monofilament.includes(name))) {
+    lines.monofilament.push(product);
+  } else if (categoryNames.some(name => LINE_CATEGORIES.fluorocarbon.some(fc => name.includes(fc)))) {
+    lines.fluorocarbon.push(product);
+  } else if (categoryNames.some(name => LINE_CATEGORIES.other.includes(name))) {
+    lines.other.push(product);  // ← Добави това
+  }
+});
     
-    console.log(`\nFound fishing lines:`);
-    console.log(`  - Braided: ${lines.braided.length}`);
-    console.log(`  - Monofilament: ${lines.monofilament.length}`);
-    console.log(`  - Fluorocarbon: ${lines.fluorocarbon.length}`);
-    console.log(`  - Total: ${lines.braided.length + lines.monofilament.length + lines.fluorocarbon.length}\n`);
-    
+console.log(`\nFound fishing lines:`);
+console.log(`  - Braided: ${lines.braided.length}`);
+console.log(`  - Monofilament: ${lines.monofilament.length}`);
+console.log(`  - Fluorocarbon: ${lines.fluorocarbon.length}`);
+console.log(`  - Other: ${lines.other.length}`);  // ← Добави това
+console.log(`  - Total: ${lines.braided.length + lines.monofilament.length + lines.fluorocarbon.length + lines.other.length}\n`);  // ← Обнови total
+
     return lines;
     
   } catch (error) {
