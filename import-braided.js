@@ -166,6 +166,8 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
   return true;
 }
 
+
+
 // Функция за update на продукт
 async function updateBraidedProduct(shopifyProduct, filstarProduct) {
   console.log(`\nUpdating product: ${shopifyProduct.title}`);
@@ -178,8 +180,8 @@ async function updateBraidedProduct(shopifyProduct, filstarProduct) {
   if (filstarProduct.images && filstarProduct.images.length > 0) {
     console.log(`Processing ${filstarProduct.images.length} images from Filstar...`);
     
-    for (const image of filstarProduct.images) {
-      const uploaded = await uploadProductImage(productId, image.url, shopifyProduct.images);
+    for (const imageUrl of filstarProduct.images) {  // ✅ imageUrl директно
+      const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);  // ✅ imageUrl
       if (uploaded) {
         imagesUploaded++;
       } else {
@@ -189,6 +191,8 @@ async function updateBraidedProduct(shopifyProduct, filstarProduct) {
     
     console.log(`Images: ${imagesUploaded} uploaded, ${imagesSkipped} skipped (already exist)`);
   }
+
+
   
   // Update варианти
   if (filstarProduct.variants && filstarProduct.variants.length > 0) {
