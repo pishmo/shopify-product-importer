@@ -68,6 +68,37 @@ async function testCategories() {
         });
       }
     }
+
+
+// Добави след проверката на категориите:
+
+console.log('\n\n--- Searching for categories containing "Монофилни" or "моно" ---');
+const allCategoryIds = new Set();
+const categoryNames = new Map();
+
+allProducts.forEach(p => {
+  p.categories?.forEach(cat => {
+    allCategoryIds.add(cat.id);
+    categoryNames.set(cat.id, cat.name);
+  });
+});
+
+console.log('\nAll unique categories:');
+Array.from(categoryNames.entries())
+  .filter(([id, name]) => 
+    name.toLowerCase().includes('моно') || 
+    name.toLowerCase().includes('влакн')
+  )
+  .forEach(([id, name]) => {
+    const count = allProducts.filter(p => 
+      p.categories?.some(c => c.id === id)
+    ).length;
+    console.log(`  ${name} (ID: ${id}) - ${count} products`);
+  });
+
+
+
+
     
     // Провери продукти БЕЗ категории
     const noCategories = allProducts.filter(p => !p.categories || p.categories.length === 0);
