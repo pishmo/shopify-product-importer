@@ -1,5 +1,3 @@
-// Премахни require('dotenv').config();
-
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 
@@ -11,114 +9,93 @@ async function testSinglePage() {
     headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
   });
   
-  const data = await response.json();
-  console.log('Response structure:', Object.keys(data));
-  console.log('Total products on page:', data.products?.length || 0);
+  const products = await response.json();
+  console.log('Response type:', Array.isArray(products) ? 'Array' : 'Object');
+  console.log('Total products:', products.length);
   
-  if (data.products && data.products[0]) {
-    const product = data.products[0];
-    console.log('\n--- First Product Structure ---');
-    console.log('Keys:', Object.keys(product));
-    console.log('\nProduct ID:', product.id);
-    console.log('SKU:', product.sku);
+  if (products[0]) {
+    const product = products[0];
+    console.log('\n--- First Product ---');
+    console.log('ID:', product.id);
+    console.log('SKU:', product.variants?.[0]?.sku);
     console.log('Name:', product.name);
-    console.log('Category:', product.category);
-    console.log('Type:', product.type);
+    console.log('Categories:', product.categories?.map(c => c.name).join(', '));
     
-    console.log('\n--- Images Structure ---');
-    console.log('Images array:', product.images);
-    if (product.images && product.images[0]) {
-      console.log('First image type:', typeof product.images[0]);
-      console.log('First image:', JSON.stringify(product.images[0], null, 2));
-    }
+    console.log('\n--- Images ---');
+    console.log('Images type:', Array.isArray(product.images) ? 'Array of strings' : typeof product.images);
+    console.log('First image:', product.images?.[0]);
     
-    console.log('\n--- Variants Structure ---');
-    if (product.variants && product.variants[0]) {
-      console.log('First variant:', JSON.stringify(product.variants[0], null, 2));
-    }
-  }
-}
-
-// Тест 2: Търсене по категория
-async function testCategoryFilter() {
-  console.log('\n\n=== TEST 2: Category Filter ===');
-  
-  const categories = ['braided', 'плетено', 'pe-braid', 'line'];
-  
-  for (const cat of categories) {
-    console.log(`\nTrying category: "${cat}"`);
-    const response = await fetch(`${FILSTAR_API_BASE}/products?category=${cat}&per_page=5`, {
-      headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
-    });
-    
-    const data = await response.json();
-    console.log(`  Results: ${data.products?.length || 0} products`);
-    if (data.products && data.products[0]) {
-      console.log(`  Example: ${data.products[0].name}`);
+    console.log('\n--- Variants ---');
+    console.log('Variants count:', product.variants?.length);
+    if (product.variants?.[0]) {
+      console.log('First variant SKU:', product.variants[0].sku);
+      console.log('First variant price:', product.variants[0].price);
+      console.log('First variant quantity:', product.variants[0].quantity);
     }
   }
 }
 
-// Тест 3: Търсене по тип продукт
-async function testTypeFilter() {
-  console.log('\n\n=== TEST 3: Type Filter ===');
+// Тест 2: Намери плетени влакна
+async function testFindBraidedProducts() {
+  console.log('\n\n=== TEST 2: Find Braided Products ===');
   
-  const types = ['braided', 'line', 'fishing-line'];
-  
-  for (const type of types) {
-    console.log(`\nTrying type: "${type}"`);
-    const response = await fetch(`${FILSTAR_API_BASE}/products?type=${type}&per_page=5`, {
-      headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
-    });
-    
-    const data = await response.json();
-    console.log(`  Results: ${data.products?.length || 0} products`);
-  }
-}
-
-// Тест 4: Вземи конкретен продукт по SKU
-async function testProductBySKU() {
-  console.log('\n\n=== TEST 4: Product by SKU ===');
-  
-  const testSKU = '934079'; // SKU от лога
-  console.log(`Searching for SKU: ${testSKU}`);
-  
-  const response = await fetch(`${FILSTAR_API_BASE}/products?sku=${testSKU}`, {
+  const response = await fetch(`${FILSTAR_API_BASE}/products?page=1&per_page=100`, {
     headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
   });
   
-  const data = await response.json();
-  console.log('Full product data:');
-  console.log(JSON.stringify(data, null, 2));
+  const products = await response.json();
+  
+  // Филтрирай по категория name
+  const braided = products.filter(p => 
+    p.categories?.some(cat => 
+      cat.name.toLowerCase().includes('плетен') || 
+      cat.name.toLowerCase().includes('braid')
+    )
+  );
+  
+  console.log(`Found ${braided.length} braided products in first 100`);
+  
+  if (braided[0]) {
+    console.log('\nExample braided product:');
+    console.log('Name:', braided[0].name);
+    console.log('Categories:', braided[0].categories?.map(c => c.name).join(', '));
+    console.log('SKU:', braided[0].variants?.[0]?.sku);
+  }
 }
 
-// Тест 5: Провери pagination metadata
+// Тест 3: Провери pagination
 async function testPagination() {
-  console.log('\n\n=== TEST 5: Pagination Info ===');
+  console.log('\n\n=== TEST 3: Pagination ===');
   
-  const response = await fetch(`${FILSTAR_API_BASE}/products?page=1&per_page=10`, {
+  const page1 = await fetch(`${FILSTAR_API_BASE}/products?page=1&per_page=10`, {
     headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
   });
   
-  const data = await response.json();
-  console.log('Pagination keys:', Object.keys(data).filter(k => k !== 'products'));
-  console.log('Total pages:', data.total_pages || data.pages || 'unknown');
-  console.log('Total products:', data.total || data.total_products || 'unknown');
-  console.log('Current page:', data.page || data.current_page || 'unknown');
+  const page2 = await fetch(`${FILSTAR_API_BASE}/products?page=2&per_page=10`, {
+    headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
+  });
+  
+  const p1 = await page1.json();
+  const p2 = await page2.json();
+  
+  console.log('Page 1 products:', p1.length);
+  console.log('Page 2 products:', p2.length);
+  console.log('First product page 1:', p1[0]?.name);
+  console.log('First product page 2:', p2[0]?.name);
+  console.log('Are they different?', p1[0]?.id !== p2[0]?.id);
 }
 
-// Изпълни всички тестове
+// Изпълни тестове
 async function runAllTests() {
   try {
     await testSinglePage();
-    await testCategoryFilter();
-    await testTypeFilter();
-    await testProductBySKU();
+    await testFindBraidedProducts();
     await testPagination();
     
     console.log('\n\n✅ All tests completed!');
   } catch (error) {
     console.error('❌ Test failed:', error.message);
+    console.error(error);
   }
 }
 
