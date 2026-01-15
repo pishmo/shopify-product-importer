@@ -1,4 +1,4 @@
-// import-monofilament.js - Import на монофилни влакна с проверка за дублирани снимки
+// test-categories.js - Тест за извличане на монофилни влакна
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -46,3 +46,17 @@ async function fetchMonofilamentProducts() {
     throw error;
   }
 }
+
+// Стартирай теста
+(async () => {
+  try {
+    console.log('=== Starting Monofilament Products Test ===');
+    const products = await fetchMonofilamentProducts();
+    console.log('=== Test Complete ===');
+    console.log(`Successfully fetched ${products.length} monofilament products`);
+  } catch (error) {
+    console.error('=== Test Failed ===');
+    console.error(error);
+    process.exit(1);
+  }
+})();
