@@ -17,8 +17,8 @@ async function testSku(sku) {
   
   let found = false;
   
-  // Търси в първите 1 страници
-  for (let page = 1; page <= 1; page++) {
+  // Търси в първите 10 страници
+  for (let page = 1; page <= 10; page++) {
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
     
     try {
