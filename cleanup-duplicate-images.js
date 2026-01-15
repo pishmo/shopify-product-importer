@@ -1,9 +1,29 @@
-// cleanup-duplicate-images.js - Премахва дублирани снимки от продукти
+// cleanup-duplicate-images.js - ОБНОВЕНА ВЕРСИЯ
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
+
+// Функция за извличане на filename от URL
+function getImageFilename(src) {
+  // Извлича filename преди hash-а
+  // Пример: "elite-8-multi-300m-1-jpg_0dcf0dcbe24fa36699f6d464979dbb98" -> "elite-8-multi-300m-1-jpg"
+  const urlParts = src.split('/').pop(); // Вземи последната част от URL
+  const withoutQuery = urlParts.split('?')[0]; // Премахни query параметри
+  
+  // Премахни UUID hash-а (всичко след последното "_")
+  const parts = withoutQuery.split('_');
+  if (parts.length > 1) {
+    // Ако последната част изглежда като hash (32+ chars), премахни я
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length >= 32 && /^[a-f0-9]+/.test(lastPart)) {
+      parts.pop();
+    }
+  }
+  
+  return parts.join('_');
+}
 
 // Функция за вземане на всички продукти
 async function getAllProducts() {
@@ -28,7 +48,6 @@ async function getAllProducts() {
     const data = await response.json();
     allProducts = allProducts.concat(data.products);
     
-    // Проверка за следваща страница (pagination)
     const linkHeader = response.headers.get('link');
     url = null;
     
@@ -56,19 +75,22 @@ function findDuplicateImages(images) {
     return [];
   }
   
-  const seen = new Map(); // src -> първата снимка с този src
+  const seen = new Map(); // filename -> първата снимка с този filename
   const duplicates = [];
   
   for (const image of images) {
-    // Използваме src без query параметри за сравнение
-    const cleanSrc = image.src.split('?')[0];
+    const filename = getImageFilename(image.src);
     
-    if (seen.has(cleanSrc)) {
+    if (seen.has(filename)) {
       // Това е дубликат - запази ID-то за изтриване
-      duplicates.push(image.id);
+      duplicates.push({
+        id: image.id,
+        src: image.src,
+        filename: filename
+      });
     } else {
       // Първо срещане на тази снимка
-      seen.set(cleanSrc, image);
+      seen.set(filename, image);
     }
   }
   
@@ -82,7 +104,7 @@ async function deleteProductImage(productId, imageId) {
     {
       method: 'DELETE',
       headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'X-Shopify-Access-TOKEN': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       }
     }
@@ -93,13 +115,13 @@ async function deleteProductImage(productId, imageId) {
     throw new Error(`Failed to delete image ${imageId}: ${error}`);
   }
   
-  await new Promise(resolve => setTimeout(resolve, 300)); // Rate limiting
+  await new Promise(resolve => setTimeout(resolve, 300));
 }
 
 // Главна функция
 async function main() {
   try {
-    console.log('Starting duplicate image cleanup...\n');
+    console.log('Starting duplicate image cleanup (by filename)...\n');
     
     const products = await getAllProducts();
     
@@ -108,29 +130,34 @@ async function main() {
     let productsWithDuplicates = 0;
     
     for (const product of products) {
-      const duplicateIds = findDuplicateImages(product.images);
+      const duplicates = findDuplicateImages(product.images);
       
-      if (duplicateIds.length > 0) {
+      if (duplicates.length > 0) {
         productsWithDuplicates++;
-        totalDuplicatesFound += duplicateIds.length;
+        totalDuplicatesFound += duplicates.length;
         
         console.log(`\n📦 Product: ${product.title}`);
         console.log(`   Total images: ${product.images.length}`);
-        console.log(`   Duplicates found: ${duplicateIds.length}`);
-        console.log(`   Unique images: ${product.images.length - duplicateIds.length}`);
+        console.log(`   Duplicates found: ${duplicates.length}`);
+        console.log(`   Unique images: ${product.images.length - duplicates.length}`);
+        
+        // Покажи примери от дубликатите
+        if (duplicates.length > 0) {
+          console.log(`   Example duplicate: ${duplicates[0].filename}`);
+        }
         
         // Изтриване на дубликатите
-        for (const imageId of duplicateIds) {
+        for (const duplicate of duplicates) {
           try {
-            await deleteProductImage(product.id, imageId);
+            await deleteProductImage(product.id, duplicate.id);
             totalDuplicatesDeleted++;
-            console.log(`   ✓ Deleted duplicate image ID: ${imageId}`);
+            console.log(`   ✓ Deleted: ${duplicate.filename} (ID: ${duplicate.id})`);
           } catch (error) {
-            console.error(`   ✗ Failed to delete image ${imageId}:`, error.message);
+            console.error(`   ✗ Failed to delete ${duplicate.id}:`, error.message);
           }
         }
         
-        console.log(`   ✅ Cleaned up ${duplicateIds.length} duplicate images`);
+        console.log(`   ✅ Cleaned up ${duplicates.length} duplicate images`);
       }
     }
     
