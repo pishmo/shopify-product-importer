@@ -10,8 +10,16 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // Категория ID за плетени влакна във Filstar
 const BRAIDED_CATEGORY_ID = '105';
 
+
+
 // Функция за извличане на filename от URL (без hash)
 function getImageFilename(src) {
+  // Проверка дали src е валиден string
+  if (!src || typeof src !== 'string') {
+    console.log('⚠️ Invalid image src:', src);
+    return null;
+  }
+  
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
@@ -26,6 +34,11 @@ function getImageFilename(src) {
   
   return parts.join('_');
 }
+
+
+
+
+
 
 // Функция за fetch на плетени влакна от Filstar
 async function fetchBraidedProducts() {
@@ -107,23 +120,20 @@ async function findShopifyProductBySku(sku) {
   return null;
 }
 
-// Функция за проверка дали снимка вече съществува
+
 function imageExists(existingImages, newImageUrl) {
-  if (!existingImages || existingImages.length === 0) {
-    return false;
-  }
-  
   const newFilename = getImageFilename(newImageUrl);
+  if (!newFilename) return false; // Ако няма валиден filename, не е дубликат
   
-  for (const existingImage of existingImages) {
-    const existingFilename = getImageFilename(existingImage.src);
-    if (existingFilename === newFilename) {
-      return true;
-    }
-  }
-  
-  return false;
+  return existingImages.some(img => {
+    const existingFilename = getImageFilename(img.src);
+    return existingFilename && existingFilename === newFilename;
+  });
 }
+
+
+
+
 
 // Функция за upload на снимка (само ако не съществува)
 async function uploadProductImage(productId, imageUrl, existingImages) {
