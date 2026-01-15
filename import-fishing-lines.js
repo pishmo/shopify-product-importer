@@ -98,34 +98,17 @@ async function fetchAllFishingLines() {
   console.log('Fetching fishing line products from Filstar API...');
   
   try {
-    let allProducts = [];
-    let page = 1;
-    let hasMorePages = true;
+    console.log(`Fetching all products (limit: 1000)...`);
     
-    // Fetch всички продукти (с pagination)
-    while (hasMorePages) {
-      console.log(`Fetching page ${page}...`);
-      
-      const response = await fetch(`${FILSTAR_API_BASE}/products?page=${page}&limit=100`, {
-        headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
-      });
+    const response = await fetch(`${FILSTAR_API_BASE}/products?limit=1000`, {
+      headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
+    });
 
-      if (!response.ok) {
-        throw new Error(`Filstar API error: ${response.status}`);
-      }
-
-      const pageProducts = await response.json();
-      
-      if (!pageProducts || pageProducts.length === 0) {
-        hasMorePages = false;
-      } else {
-        allProducts = allProducts.concat(pageProducts);
-        console.log(`  → Fetched ${pageProducts.length} products from page ${page}`);
-        page++;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+    if (!response.ok) {
+      throw new Error(`Filstar API error: ${response.status}`);
     }
-    
+
+    const allProducts = await response.json();
     console.log(`Total products fetched: ${allProducts.length}`);
     
     // Филтрирай по категории ID
@@ -173,6 +156,9 @@ async function fetchAllFishingLines() {
     throw error;
   }
 }
+
+
+
 
 // Функция за търсене на продукт в Shopify по SKU
 async function findShopifyProductBySKU(sku) {
