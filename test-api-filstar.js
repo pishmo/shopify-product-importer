@@ -1,4 +1,4 @@
-require('dotenv').config();
+// Премахни require('dotenv').config();
 
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
