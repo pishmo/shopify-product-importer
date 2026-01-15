@@ -1,4 +1,4 @@
-// test-categories.js - Тест за извличане на монофилни влакна
+// test-categories.js - Тест за извличане на монофилни влакна с пагинация
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -10,22 +10,45 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // Категория ID за монофилни влакна във Filstar
 const MONOFILAMENT_CATEGORY_ID = '41';
 
-// Функция за извличане на всички монофилни влакна от Filstar
+// Функция за извличане на всички монофилни влакна от Filstar с пагинация
 async function fetchMonofilamentProducts() {
-  console.log('Fetching all products from Filstar API...');
+  console.log('Fetching all products from Filstar API with pagination...');
+  
+  let allProducts = [];
+  let page = 1;
+  let hasMorePages = true;
   
   try {
-    const response = await fetch(`${FILSTAR_API_BASE}/products`, {
-      headers: {
-        'Authorization': `Bearer ${FILSTAR_TOKEN}`
+    while (hasMorePages) {
+      console.log(`Fetching page ${page}...`);
+      
+      const response = await fetch(`${FILSTAR_API_BASE}/products?page=${page}&limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${FILSTAR_TOKEN}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Filstar API error: ${response.status}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`Filstar API error: ${response.status}`);
+      const pageProducts = await response.json();
+      console.log(`Page ${page}: ${pageProducts.length} products`);
+      
+      if (pageProducts.length === 0) {
+        hasMorePages = false;
+      } else {
+        allProducts = allProducts.concat(pageProducts);
+        
+        // Ако върнатите продукти са по-малко от 1000, значи това е последната страница
+        if (pageProducts.length < 1000) {
+          hasMorePages = false;
+        } else {
+          page++;
+        }
+      }
     }
-
-    const allProducts = await response.json();
+    
     console.log(`Total products fetched: ${allProducts.length}`);
     
     // Филтрирай само монофилните влакна
