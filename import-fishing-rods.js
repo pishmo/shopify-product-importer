@@ -229,7 +229,7 @@ function filterLinesByCategory(allProducts) {
     }
    // Специални пръчки
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.specialty_rods.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('Специални пръчки))) {
+             categoryNames.some(name => name.toLowerCase().includes('Специални пръчки'))) {
       lines.specialty_rods.push(product);
     }   
  // Комплекти
