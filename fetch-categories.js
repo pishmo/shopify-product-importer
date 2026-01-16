@@ -10,7 +10,7 @@ async function fetchAllCategories() {
   const categories = new Map();
   
   // Опитай да вземеш продукти и извлечи категориите от тях
-  for (let page = 1; page <= 10; page++) {
+  for (let page = 1; page <= 20; page++) {
     console.log(`Fetching products page ${page}...`);
     
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
