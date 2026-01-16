@@ -231,59 +231,68 @@ async function findShopifyProductBySku(sku) {
 }
 
 
+// Функция за форматиране на variant име
+function formatVariantName(variant, categoryType) {
+  if (!variant.attributes || variant.attributes.length === 0) {
+    return variant.model || `SKU: ${variant.sku}`;
+  }
+  
+  const attributes = variant.attributes;
+  let parts = [];
+  
+  // Модел (ако има)
+  if (variant.model && variant.model.trim()) {
+    parts.push(variant.model.trim());
+  }
+  
+  // Дължина
+  const length = attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
+  if (length) {
+    parts.push(`${length}м`);
+  }
+  
+  // Диаметър
+  const diameter = attributes.find(a => 
+    a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM')
+  )?.value;
+  if (diameter) {
+    parts.push(`⌀${diameter}мм`);
+  }
+  
+  // Японска номерация (за плетени)
+  if (categoryType === 'braided') {
+    const japaneseSize = attributes.find(a => 
+      a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
+    )?.value;
+    if (japaneseSize) {
+      const formattedSize = japaneseSize.startsWith('#') ? japaneseSize : `#${japaneseSize}`;
+      parts.push(formattedSize);
+    }
+  }
+  
+  // Тест кг
+  const testKg = attributes.find(a => 
+    a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
+  )?.value;
+  if (testKg) {
+    parts.push(`${testKg}кг`);
+  }
+  
+  return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
+}
+
+
+
 // Функция за създаване на нов продукт в Shopify
 async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
   
   try {
-   // 1. Подготви variants
-const variants = filstarProduct.variants.map(variant => ({
-  option1: variant.option1 || variant.name,
-  price: variant.price?.toString() || '0',
-  sku: variant.sku,
-  barcode: variant.barcode || variant.sku,
-  inventory_quantity: variant.quantity || 0,
-  inventory_management: 'shopify',
-  weight: parseFloat(variant.weight) || 0,
-  weight_unit: 'kg'
-}));
-
-// DEBUG: Провери първия variant
-console.log(`  📦 Preparing ${variants.length} variants`);
-console.log(`  First variant:`, JSON.stringify(variants[0], null, 2));
-
-// Филтрирай невалидни варианти
-const validVariants = variants.filter(v => {
-  if (!v.sku) {
-    console.log(`  ⚠️  Skipping variant without SKU:`, v);
-    return false;
-  }
-  if (!v.price || parseFloat(v.price) < 0) {
-    console.log(`  ⚠️  Skipping variant with invalid price:`, v);
-    return false;
-  }
-  return true;
-});
-
-console.log(`  ✓ Valid variants: ${validVariants.length}/${variants.length}`);
-
-
-    
-
-// ⭐ ДОБАВИ DEBUG ТУК:
-console.log(`  📦 Preparing ${variants.length} variants`);
-console.log(`  First variant:`, JSON.stringify(variants[0], null, 2));
-    
-    // 2. Подготви images
-    const images = filstarProduct.images?.map(imageUrl => ({
-      src: imageUrl
-    })) || [];
-
-    // 3. Извлечи vendor от Filstar response
+    // Извлечи vendor
     const vendor = filstarProduct.manufacturer || 'Unknown';
     console.log(`  🏷️  Vendor: ${vendor}`);
 
-    // 4. Създай продукта
+    // Подготви продукта
     const productData = {
       product: {
         title: filstarProduct.name,
@@ -292,8 +301,22 @@ console.log(`  First variant:`, JSON.stringify(variants[0], null, 2));
         product_type: getCategoryName(category),
         tags: ['Filstar', category, vendor],
         status: 'active',
-        variants: validVariants,
-        images: images
+        variants: filstarProduct.variants.map(variant => ({
+          sku: variant.sku,
+          price: variant.price,
+          inventory_quantity: parseInt(variant.quantity) || 0,
+          inventory_management: 'shopify',
+          option1: formatVariantName(variant, category),
+          barcode: variant.barcode || null,
+          weight: parseFloat(variant.weight) || 0,
+          weight_unit: 'kg'
+        })),
+        options: [
+          {
+            name: 'Вариант',
+            values: filstarProduct.variants.map(v => formatVariantName(v, category))
+          }
+        ]
       }
     };
 
@@ -318,15 +341,17 @@ console.log(`  First variant:`, JSON.stringify(variants[0], null, 2));
     const productId = result.product.id;
     
     console.log(`  ✅ Product created with ID: ${productId}`);
-    console.log(`  📦 Created ${variants.length} variants`);
-    console.log(`  🖼️  Uploaded ${images.length} images`);
+    console.log(`  📦 Created ${filstarProduct.variants.length} variants`);
 
-    // 5. Добави в колекция
+    // Добави изображения
+    const uploadedImages = await addProductImages(productId, filstarProduct);
+
+    // Добави в колекция
     await addProductToCollection(productId, category);
 
-    // 6. Обнови статистиката
+    // Обнови статистиката
     stats[category].created++;
-    stats[category].images += images.length;
+    stats[category].images += uploadedImages;
 
     return result.product;
 
@@ -335,6 +360,9 @@ console.log(`  First variant:`, JSON.stringify(variants[0], null, 2));
     throw error;
   }
 }
+
+
+
 
 
 
@@ -413,56 +441,6 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
   console.log(`  ✓ Image uploaded successfully`);
   await new Promise(resolve => setTimeout(resolve, 300));
   return true;
-}
-
-// Функция за форматиране на variant име
-function formatVariantName(variant, categoryType) {
-  if (!variant.attributes || variant.attributes.length === 0) {
-    return variant.model || `SKU: ${variant.sku}`;
-  }
-  
-  const attributes = variant.attributes;
-  let parts = [];
-  
-  // Модел (ако има)
-  if (variant.model && variant.model.trim()) {
-    parts.push(variant.model.trim());
-  }
-  
-  // Дължина
-  const length = attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
-  if (length) {
-    parts.push(`${length}м`);
-  }
-  
-  // Диаметър
-  const diameter = attributes.find(a => 
-    a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM')
-  )?.value;
-  if (diameter) {
-    parts.push(`⌀${diameter}мм`);
-  }
-  
-  // Японска номерация (за плетени)
-  if (categoryType === 'braided') {
-    const japaneseSize = attributes.find(a => 
-      a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
-    )?.value;
-    if (japaneseSize) {
-      const formattedSize = japaneseSize.startsWith('#') ? japaneseSize : `#${japaneseSize}`;
-      parts.push(formattedSize);
-    }
-  }
-  
-  // Тест кг
-  const testKg = attributes.find(a => 
-    a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
-  )?.value;
-  if (testKg) {
-    parts.push(`${testKg}кг`);
-  }
-  
-  return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
 
 
