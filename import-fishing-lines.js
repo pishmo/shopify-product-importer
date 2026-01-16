@@ -375,6 +375,33 @@ async function addProductImages(productId, filstarProduct) {
 }
 
 
+// Функция за проверка и коригиране на дубликати
+function ensureUniqueVariantNames(variants, categoryType) {
+  const formattedVariants = variants.map(v => ({
+    original: v,
+    name: formatVariantName(v, categoryType),
+    sku: v.sku
+  }));
+  
+  // Намери дубликати
+  const nameCounts = {};
+  formattedVariants.forEach(v => {
+    nameCounts[v.name] = (nameCounts[v.name] || 0) + 1;
+  });
+  
+  // Провери дали има поне един дубликат
+  const hasDuplicates = Object.values(nameCounts).some(count => count > 1);
+  
+  // Ако има дубликати, добави SKU на ВСИЧКИ варианти
+  if (hasDuplicates) {
+    console.log('  ⚠️  Duplicates detected - adding SKU to all variant names');
+    return formattedVariants.map(v => `SKU ${v.sku}: ${v.name}`);
+  }
+  
+  // Ако няма дубликати, върни нормалните имена
+  return formattedVariants.map(v => v.name);
+}
+
 
 
 
@@ -387,6 +414,9 @@ async function createShopifyProduct(filstarProduct, category) {
     const vendor = filstarProduct.manufacturer || 'Unknown';
     console.log(`  🏷️  Vendor: ${vendor}`);
 
+    // Генерирай уникални имена на варианти (с проверка за дубликати)
+    const variantNames = ensureUniqueVariantNames(filstarProduct.variants, category);
+
     // Подготви продукта
     const productData = {
       product: {
@@ -396,12 +426,12 @@ async function createShopifyProduct(filstarProduct, category) {
         product_type: getCategoryName(category),
         tags: ['Filstar', category, vendor],
         status: 'active',
-        variants: filstarProduct.variants.map(variant => ({
+        variants: filstarProduct.variants.map((variant, index) => ({
           sku: variant.sku,
           price: variant.price,
           inventory_quantity: parseInt(variant.quantity) || 0,
           inventory_management: 'shopify',
-          option1: formatVariantName(variant, category),
+          option1: variantNames[index],
           barcode: variant.barcode || null,
           weight: parseFloat(variant.weight) || 0,
           weight_unit: 'kg'
@@ -409,7 +439,7 @@ async function createShopifyProduct(filstarProduct, category) {
         options: [
           {
             name: 'Вариант',
-            values: filstarProduct.variants.map(v => formatVariantName(v, category))
+            values: variantNames
           }
         ]
       }
