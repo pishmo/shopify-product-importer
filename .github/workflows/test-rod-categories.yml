@@ -1,8 +1,6 @@
 name: TEST Fishing Rods Categories
 
 on:
-  schedule:
-    - cron: '0 4 * * *'  # Всеки ден в 4:00 сутринта
   workflow_dispatch:
 
 jobs:
