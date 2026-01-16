@@ -1,4 +1,4 @@
-name: Import Fishing Rods
+name: TEST Fishing Rods Categories
 
 on:
   schedule:
@@ -23,4 +23,4 @@ jobs:
           SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
           SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
           FILSTAR_API_TOKEN: ${{ secrets.FILSTAR_API_TOKEN }}
-        run: node import-fishing-rods.js
+        run: node test-rod-categories.js
