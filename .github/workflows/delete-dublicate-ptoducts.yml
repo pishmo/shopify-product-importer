@@ -1,4 +1,4 @@
-name: Test Filstar API
+name:  Cleanup Duplicate Products
 
 on:
   workflow_dispatch:
@@ -12,6 +12,6 @@ jobs:
         with:
           node-version: '18'
       - run: npm install
-      - run: node test-api-filstar.js
+      - run: node delete-dublicate-products.js
         env:
           FILSTAR_API_TOKEN: ${{ secrets.FILSTAR_API_TOKEN }}
