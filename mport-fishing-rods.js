@@ -17,8 +17,8 @@ const COLLECTION_MAPPING = {
   match_feeder: 'gid://shopify/Collection/739156132222',
   specialty_rods: 'gid://shopify/Collection/739156230526',
   kits: 'gid://shopify/Collection/739156164990',
-  spinning: 'gid://shopify/Collection/739155968382',
-  rods_main: 'gid://shopify/Collection/738867413374'
+  spinning: 'gid://shopify/Collection/739155968382'
+ 
 };
 
 // Категория ID-та за пръчки във Filstar
@@ -29,8 +29,8 @@ const FILSTAR_ROD_CATEGORY_IDS = {
   match_feeder: ['47'],
   specialty_rods: ['57'],
   kits: ['56'],
-  spinning: ['28'],
-  rods_main: ['2']
+  spinning: ['28']
+  
 };
 
 // Parent категория "Пръчки"
@@ -45,8 +45,8 @@ const stats = {
   match_feeder: { created: 0, updated: 0, images: 0 } , // ← Провери тази категория
   specialty_rods: { created: 0, updated: 0, images: 0 },
   kits: { created: 0, updated: 0, images: 0 } ,
-  spinning: { created: 0, updated: 0, images: 0 } ,
-  rods_main: { created: 0, updated: 0, images: 0 } ,
+  spinning: { created: 0, updated: 0, images: 0 } 
+  
 };
 
 
@@ -148,7 +148,11 @@ async function fetchAllFishingLines() {
     telescopes_with_guides: [],
     telescopes_without_guides: [],
     carp_rods: [],
-    match_feeder: []
+    match_feeder: [],
+    specialty_rods: [],
+    kits: [],
+    spinning: []
+   
   };
   
   allProducts.forEach(product => {
@@ -162,8 +166,15 @@ async function fetchAllFishingLines() {
       lines.carp_rods.push(product);
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.match_feeder.includes(id))) {
       lines.match_feeder.push(product);
-    }
-  });
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.specialty_rods.includes(id))) {
+      lines.specialty_rods.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id))) {
+      lines.kits.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.spinning.includes(id))) {
+      lines.spinning.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.rods_main.includes(id))) {
+      lines.rods_main.push(product);
+    }); 
   
   console.log(`\nCategorized fishing lines:`);
   console.log(`  - telescopes_with_guides: ${lines.telescopes_with_guides.length}`);
@@ -191,37 +202,44 @@ function filterLinesByCategory(allProducts) {
     telescopes_with_guides: [],
     telescopes_without_guides: [],
     carp_rods: [],
-    match_feeder: []
+    match_feeder: [],
+    specialty_rods: [],
+    kits: [],
+    spinning: [],
+    rods_main: []
   };
   
   allProducts.forEach(product => {
     const categoryIds = product.categories?.map(c => c.id.toString()) || [];
     const categoryNames = product.categories?.map(c => c.name) || [];
     
-    // Провери дали има parent "Влакна и поводи" (ID: 4)
-    const hasLineParent = product.categories?.some(c => 
-      c.parent_id === RODS_PARENT_ID || c.parent_id === parseInt(RODS_PARENT_ID)
-    );
-    
-    // Монофилни
+
+    // Телескопи без водачи
     if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_with_guides.includes(id)) ||
         categoryNames.some(name => name.includes('Монофилни') || name.toLowerCase().includes('telescopes_with_guides'))) {
       lines.telescopes_with_guides.push(product);
     }
-    // Плетени
+    // Телескопи с водачи
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_without_guides.includes(id)) ||
              categoryNames.some(name => name.includes('Плетени') || name.toLowerCase().includes('braid'))) {
       lines.telescopes_without_guides.push(product);
     }
-    // carp_rods
+    // Шарански пръчки
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('carp_rods'))) {
       lines.carp_rods.push(product);
     }
-    // Други - САМО ако има parent "Влакна и поводи"
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.match_feeder.includes(id)) && hasLineParent) {
-      lines.match_feeder.push(product);
+
+  // Шарански пръчки
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('carp_rods'))) {
+      lines.carp_rods.push(product);
     }
+
+
+
+
+    
   });
   
   console.log(`\nFiltered fishing lines:`);
