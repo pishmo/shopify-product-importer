@@ -13,7 +13,7 @@ async function fetchAllCategories() {
   for (let page = 1; page <= 20; page++) {
     console.log(`Fetching products page ${page}...`);
     
-    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
+    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=500`;
     
     try {
       const response = await fetch(url, {
