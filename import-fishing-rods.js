@@ -171,7 +171,8 @@ async function fetchAllFishingLines() {
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id))) {
       lines.kits.push(product);
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.spinning.includes(id))) {
-      lines.spinning.push(product);    
+      lines.spinning.push(product);  
+    }
     }); 
   
   console.log(`\nCategorized fishing lines:`);
