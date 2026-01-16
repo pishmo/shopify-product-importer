@@ -281,7 +281,74 @@ function formatVariantName(variant, categoryType) {
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
 
-
+async function addProductImages(productId, filstarProduct) {
+  console.log(`Adding images to product ${productId}...`);
+  
+  // Събери всички изображения
+  const images = [];
+  
+  // Главно изображение на продукта
+  if (filstarProduct.image) {
+    const imageUrl = filstarProduct.image.startsWith('http') 
+      ? filstarProduct.image 
+      : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
+    images.push({ src: imageUrl });
+    console.log(`  Found main image: ${imageUrl}`);
+  }
+  
+  // Допълнителни изображения
+  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+    for (const img of filstarProduct.images) {
+      const imageUrl = img.startsWith('http') 
+        ? img 
+        : `${FILSTAR_BASE_URL}/${img}`;
+      images.push({ src: imageUrl });
+      console.log(`  Found additional image: ${imageUrl}`);
+    }
+  }
+  
+  // Изображения на варианти
+  if (filstarProduct.variants) {
+    for (const variant of filstarProduct.variants) {
+      if (variant.image) {
+        const imageUrl = variant.image.startsWith('http') 
+          ? variant.image 
+          : `${FILSTAR_BASE_URL}/${variant.image}`;
+        images.push({ src: imageUrl });
+        console.log(`  Found variant image: ${imageUrl}`);
+      }
+    }
+  }
+  
+  if (images.length === 0) {
+    console.log(`  No images found for this product`);
+    return;
+  }
+  
+  // Добави изображенията към продукта
+  for (const image of images) {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image })
+      }
+    );
+    
+    if (response.ok) {
+      console.log(`  ✓ Added image: ${image.src}`);
+    } else {
+      const error = await response.text();
+      console.error(`  ✗ Failed to add image:`, error);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+}
 
 // Функция за създаване на нов продукт в Shopify
 async function createShopifyProduct(filstarProduct, category) {
