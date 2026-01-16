@@ -5,28 +5,41 @@ const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
 
-// Подобрена функция за извличане на filename
+
+
+
+// Функция за извличане на filename от URL (без Shopify UUID и hash-ове)
 function getImageFilename(src) {
+  if (!src || typeof src !== 'string') {
+    console.log('⚠️ Invalid image src:', src);
+    return null;
+  }
+  
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
-  // Премахни UUID с тирета (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '');
+  // Премахни Shopify UUID (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
+  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
   
-  // Премахни и hash без тирета (формат: _xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+  // Премахни и стари hex hash-ове (без тирета, ако има)
   const parts = cleanFilename.split('_');
   if (parts.length > 1) {
-    const lastPart = parts[parts.length - 1];
-    // Ако последната част е дълъг hex string (32+ chars), премахни го
-    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart.replace('.jpg', '').replace('.png', ''))) {
+    const lastPart = parts[parts.length - 1].split('.')[0]; // Вземи само името без extension
+    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
       parts.pop();
-      cleanFilename = parts.join('_') + withoutQuery.substring(withoutQuery.lastIndexOf('.'));
+      const extension = cleanFilename.split('.').pop();
+      cleanFilename = parts.join('_') + '.' + extension;
     }
   }
   
   return cleanFilename;
 }
+
+
+
+
+
 
 // Функция за вземане на всички продукти
 async function getAllProducts() {
