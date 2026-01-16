@@ -739,7 +739,7 @@ function getCategoryName(category) {
     telescopes_with_guides: 'Телескопи с водачи',
     telescopes_without_guides: 'Телескопи без водачи',
     carp_rods: 'Шарански пръчки',
-    match_feeder: 'Maч и Фидер',  specialty_rods: Специални пръчки',  kits: 'Комплекти',  spinning: 'Спининг'
+    match_feeder: 'Maч и Фидер',  specialty_rods: 'Специални пръчки',  kits: 'Комплекти',  spinning: 'Спининг'
   };
   return names[category] || category;
 }
