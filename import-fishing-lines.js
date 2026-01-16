@@ -6,7 +6,7 @@ const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
-
+const FILSTAR_BASE_URL = 'https://filstar.com';
 // ⭐ ДОБАВИ ТУК:
 const COLLECTION_MAPPING = {
   monofilament: 'gid://shopify/Collection/738965946750',
