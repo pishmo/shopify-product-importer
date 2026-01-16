@@ -171,28 +171,19 @@ async function fetchAllFishingLines() {
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id))) {
       lines.kits.push(product);
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.spinning.includes(id))) {
-      lines.spinning.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.rods_main.includes(id))) {
-      lines.rods_main.push(product);
+      lines.spinning.push(product);    
     }); 
   
   console.log(`\nCategorized fishing lines:`);
   console.log(`  - telescopes_with_guides: ${lines.telescopes_with_guides.length}`);
   console.log(`  - telescopes_without_guides: ${lines.telescopes_without_guides.length}`);
   console.log(`  - carp_rods: ${lines.carp_rods.length}`);
-  console.log(`  - match_feeder: ${lines.match_feeder.length}\n`);
-  
+  console.log(`  - match_feeder: ${lines.match_feeder.length}`);
+  console.log(`  - match_feeder: ${lines.specialty_rods.length}`);
+  console.log(`  - match_feeder: ${lines.kits.length}`);
+  console.log(`  - match_feeder: ${lines.spinning.length}\n`);
   return lines;
 }
-
-
-
-
-
-
-
-
-
 
 
 
