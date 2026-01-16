@@ -19,7 +19,7 @@ async function fetchMonofilamentProducts() {
   let hasMorePages = true;
   
   try {
-    while (hasMorePages) {  // Лимит от 5 страници за тест
+    while (hasMorePages) {  
       console.log(`Fetching page ${page}...`);
       
       const response = await fetch(`${FILSTAR_API_BASE}/products?page=${page}&limit=1000`, {
