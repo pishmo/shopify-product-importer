@@ -10,6 +10,56 @@ const TEST_SKUS = [
   // Добави още SKU-та тук ако искаш да тестваш повече
 ];
 
+// Функция за форматиране на variant име
+function formatVariantName(variant, categoryType) {
+  if (!variant.attributes || variant.attributes.length === 0) {
+    return variant.model || `SKU: ${variant.sku}`;
+  }
+  
+  const attributes = variant.attributes;
+  let parts = [];
+  
+  // Модел (ако има)
+  if (variant.model && variant.model.trim() && variant.model !== 'N/A') {
+    parts.push(variant.model.trim());
+  }
+  
+  // Дължина
+  const length = attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
+  if (length) {
+    parts.push(`${length}м`);
+  }
+  
+  // Диаметър
+  const diameter = attributes.find(a => 
+    a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM')
+  )?.value;
+  if (diameter) {
+    parts.push(`⌀${diameter}мм`);
+  }
+  
+  // Японска номерация (за плетени)
+  if (categoryType === 'braided') {
+    const japaneseSize = attributes.find(a => 
+      a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
+    )?.value;
+    if (japaneseSize) {
+      const formattedSize = japaneseSize.startsWith('#') ? japaneseSize : `#${japaneseSize}`;
+      parts.push(formattedSize);
+    }
+  }
+  
+  // Тест кг
+  const testKg = attributes.find(a => 
+    a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
+  )?.value;
+  if (testKg) {
+    parts.push(`${testKg}кг`);
+  }
+  
+  return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
+}
+
 async function testSku(sku) {
   console.log(`\n${'='.repeat(70)}`);
   console.log(`🔍 Testing SKU: ${sku}`);
@@ -84,6 +134,39 @@ async function testSku(sku) {
                 }
               }
             }
+            
+            // НОВА ЧАСТ: Форматирани имена и проверка за дубликати
+            console.log(`\n  📝 Formatted variant names:`);
+            const formattedNames = product.variants.map(v => {
+              const formatted = formatVariantName(v, 'braided');
+              console.log(`    ${v.sku}: ${formatted}`);
+              return formatted;
+            });
+            
+            // Провери за дубликати
+            const duplicates = [];
+            const seen = new Map();
+            
+            formattedNames.forEach((name, index) => {
+              if (seen.has(name)) {
+                duplicates.push({
+                  name: name,
+                  skus: [seen.get(name), product.variants[index].sku]
+                });
+              } else {
+                seen.set(name, product.variants[index].sku);
+              }
+            });
+            
+            if (duplicates.length > 0) {
+              console.log(`\n  ⚠️  DUPLICATE VARIANT NAMES FOUND:`);
+              duplicates.forEach(dup => {
+                console.log(`    ❌ "${dup.name}"`);
+                console.log(`       SKUs: ${dup.skus.join(', ')}`);
+              });
+            } else {
+              console.log(`\n  ✅ No duplicate variant names`);
+            }
           }
           
           console.log(`\n  Images: ${product.images ? product.images.length : 0}`);
@@ -109,7 +192,7 @@ async function testSku(sku) {
   }
   
   if (!found) {
-    console.log(`\n❌ SKU ${sku} NOT FOUND in first 85 pages `);
+    console.log(`\n❌ SKU ${sku} NOT FOUND in first 10 pages`);
     
     // Опитай директно търсене
     console.log(`\n🔍 Trying direct search...`);
@@ -159,7 +242,4 @@ async function main() {
   console.log('='.repeat(70));
 }
 
-main().catch(error => {
-  console.error('Test failed:', error);
-  process.exit(1);
-});
+main();
