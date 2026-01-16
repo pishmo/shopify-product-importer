@@ -14,6 +14,9 @@ const FILSTAR_LINE_CATEGORY_IDS = {
   fluorocarbon: ['106'],
   other: ['109']
 };
+// Parent категория "Влакна и поводи"
+const LINES_PARENT_ID = '4';
+
 
 // Статистика за импорта
 const stats = {
@@ -24,11 +27,6 @@ const stats = {
 };
 
 
-
-
-
-// Parent категория "Влакна и поводи"
-const LINES_PARENT_ID = '4';
 
 // Функция за извличане на filename от URL (без hash)
 function getImageFilename(src) {
@@ -184,6 +182,93 @@ async function findShopifyProductBySku(sku) {
   
   return null;
 }
+
+
+// Функция за създаване на нов продукт в Shopify
+async function createShopifyProduct(filstarProduct, category) {
+  console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
+  
+  try {
+    // 1. Подготви variants
+    const variants = filstarProduct.variants.map(variant => ({
+      option1: variant.option1 || variant.name,
+      price: variant.price?.toString() || '0',
+      sku: variant.sku,
+      barcode: variant.barcode || variant.sku,
+      inventory_quantity: variant.quantity || 0,
+      inventory_management: 'shopify',
+      weight: parseFloat(variant.weight) || 0,
+      weight_unit: 'kg'
+    }));
+
+    // 2. Подготви images
+    const images = filstarProduct.images?.map(imageUrl => ({
+      src: imageUrl
+    })) || [];
+
+    // 3. Извлечи vendor от Filstar response
+    const vendor = filstarProduct.manufacturer || 'Unknown';
+    console.log(`  🏷️  Vendor: ${vendor}`);
+
+    // 4. Създай продукта
+    const productData = {
+      product: {
+        title: filstarProduct.name,
+        body_html: filstarProduct.description || '',
+        vendor: vendor,
+        product_type: getCategoryName(category),
+        tags: ['Filstar', category, vendor],
+        status: 'active',
+        variants: variants,
+        images: images
+      }
+    };
+
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    const productId = result.product.id;
+    
+    console.log(`  ✅ Product created with ID: ${productId}`);
+    console.log(`  📦 Created ${variants.length} variants`);
+    console.log(`  🖼️  Uploaded ${images.length} images`);
+
+    // 5. Добави в колекция
+    await addProductToCollection(productId, category);
+
+    // 6. Обнови статистиката
+    stats[category].created++;
+    stats[category].images += images.length;
+
+    return result.product;
+
+  } catch (error) {
+    console.error(`  ❌ Error creating product:`, error.message);
+    throw error;
+  }
+}
+
+
+
+
+
+
+
 
 // Функция за upload на снимка (само ако не съществува)
 async function uploadProductImage(productId, imageUrl, existingImages) {
