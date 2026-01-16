@@ -10,9 +10,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN;
-const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
-const API_VERSION = '2024-10';
 
 // Fetch всички продукти с пагинация
 async function fetchAllProducts() {
