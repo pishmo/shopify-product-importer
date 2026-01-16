@@ -456,9 +456,10 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
    }
   
   console.log(`✅ Finished updating product`);
+
 }
 
-
+// край на апдейт на продукт
 
 
 // Функция за обработка на 1 продукт
