@@ -1,4 +1,4 @@
-// import-fishing-rods.js - Универсален импорт на всички категории влакна
+// import-fishing-rods.js - Универсален импорт на всички категории пръчки
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -8,33 +8,45 @@ const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 // ⭐ ДОБАВИ ТУК:
+
+
 const COLLECTION_MAPPING = {
-  monofilament: 'gid://shopify/Collection/738965946750',
-  braided: 'gid://shopify/Collection/738965979518',
-  fluorocarbon: 'gid://shopify/Collection/738987442558',
-  other: 'gid://shopify/Collection/739068576126'
+  telescopes_with_guides: 'gid://shopify/Collection/739156001150',
+  telescopes_without_guides: 'gid://shopify/Collection/739156033918',
+  carp_rods: 'gid://shopify/Collection/739156099454',
+  match_feeder: 'gid://shopify/Collection/739156132222',
+  specialty_rods: 'gid://shopify/Collection/739156230526',
+  kits: 'gid://shopify/Collection/739156164990',
+  spinning: 'gid://shopify/Collection/739155968382',
+  rods_main: 'gid://shopify/Collection/738867413374'
 };
 
-
-
-// Категория ID-та за влакна във Filstar
-const FILSTAR_LINE_CATEGORY_IDS = {
-  monofilament: ['41'],
-  braided: ['105'],
-  fluorocarbon: ['106'],
-  other: ['109']
+// Категория ID-та за пръчки във Filstar
+const FILSTAR_ROD_CATEGORY_IDS = {
+  telescopes_with_guides: ['33'],
+  telescopes_without_guides: ['38'],
+  carp_rods: ['44'],
+  match_feeder: ['47'],
+  specialty_rods: ['57'],
+  kits: ['56'],
+  spinning: ['28'],
+  rods_main: ['2']
 };
-// Parent категория "Влакна и поводи"
-const LINES_PARENT_ID = '4';
 
+// Parent категория "Пръчки"
+const RODS_PARENT_ID = '2';
 
 // Статистика за импорта
 
 const stats = {
-  monofilament: { created: 0, updated: 0, images: 0 },
-  braided: { created: 0, updated: 0, images: 0 },
-  fluorocarbon: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }  // ← Провери тази категория
+  telescopes_with_guides: { created: 0, updated: 0, images: 0 },
+  telescopes_without_guides: { created: 0, updated: 0, images: 0 },
+  carp_rods: { created: 0, updated: 0, images: 0 },
+  match_feeder: { created: 0, updated: 0, images: 0 } , // ← Провери тази категория
+  specialty_rods: { created: 0, updated: 0, images: 0 },
+  kits: { created: 0, updated: 0, images: 0 } ,
+  spinning: { created: 0, updated: 0, images: 0 } ,
+  rods_main: { created: 0, updated: 0, images: 0 } ,
 };
 
 
@@ -133,31 +145,31 @@ async function fetchAllFishingLines() {
   const allProducts = await fetchAllProducts();
   
   const lines = {
-    monofilament: [],
-    braided: [],
-    fluorocarbon: [],
-    other: []
+    telescopes_with_guides: [],
+    telescopes_without_guides: [],
+    carp_rods: [],
+    match_feeder: []
   };
   
   allProducts.forEach(product => {
     const categoryIds = product.categories?.map(c => c.id.toString()) || [];
     
-    if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.monofilament.includes(id))) {
-      lines.monofilament.push(product);
-    } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.braided.includes(id))) {
-      lines.braided.push(product);
-    } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(id))) {
-      lines.fluorocarbon.push(product);
-    } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.other.includes(id))) {
-      lines.other.push(product);
+    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_with_guides.includes(id))) {
+      lines.telescopes_with_guides.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_without_guides.includes(id))) {
+      lines.telescopes_without_guides.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id))) {
+      lines.carp_rods.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.match_feeder.includes(id))) {
+      lines.match_feeder.push(product);
     }
   });
   
   console.log(`\nCategorized fishing lines:`);
-  console.log(`  - Monofilament: ${lines.monofilament.length}`);
-  console.log(`  - Braided: ${lines.braided.length}`);
-  console.log(`  - Fluorocarbon: ${lines.fluorocarbon.length}`);
-  console.log(`  - Other: ${lines.other.length}\n`);
+  console.log(`  - telescopes_with_guides: ${lines.telescopes_with_guides.length}`);
+  console.log(`  - telescopes_without_guides: ${lines.telescopes_without_guides.length}`);
+  console.log(`  - carp_rods: ${lines.carp_rods.length}`);
+  console.log(`  - match_feeder: ${lines.match_feeder.length}\n`);
   
   return lines;
 }
@@ -176,10 +188,10 @@ async function fetchAllFishingLines() {
 // Функция за филтриране на влакна по категории
 function filterLinesByCategory(allProducts) {
   const lines = {
-    monofilament: [],
-    braided: [],
-    fluorocarbon: [],
-    other: []
+    telescopes_with_guides: [],
+    telescopes_without_guides: [],
+    carp_rods: [],
+    match_feeder: []
   };
   
   allProducts.forEach(product => {
@@ -188,36 +200,36 @@ function filterLinesByCategory(allProducts) {
     
     // Провери дали има parent "Влакна и поводи" (ID: 4)
     const hasLineParent = product.categories?.some(c => 
-      c.parent_id === LINES_PARENT_ID || c.parent_id === parseInt(LINES_PARENT_ID)
+      c.parent_id === RODS_PARENT_ID || c.parent_id === parseInt(RODS_PARENT_ID)
     );
     
     // Монофилни
-    if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.monofilament.includes(id)) ||
-        categoryNames.some(name => name.includes('Монофилни') || name.toLowerCase().includes('monofilament'))) {
-      lines.monofilament.push(product);
+    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_with_guides.includes(id)) ||
+        categoryNames.some(name => name.includes('Монофилни') || name.toLowerCase().includes('telescopes_with_guides'))) {
+      lines.telescopes_with_guides.push(product);
     }
     // Плетени
-    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.braided.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_without_guides.includes(id)) ||
              categoryNames.some(name => name.includes('Плетени') || name.toLowerCase().includes('braid'))) {
-      lines.braided.push(product);
+      lines.telescopes_without_guides.push(product);
     }
-    // Fluorocarbon
-    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('fluorocarbon'))) {
-      lines.fluorocarbon.push(product);
+    // carp_rods
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('carp_rods'))) {
+      lines.carp_rods.push(product);
     }
     // Други - САМО ако има parent "Влакна и поводи"
-    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.other.includes(id)) && hasLineParent) {
-      lines.other.push(product);
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.match_feeder.includes(id)) && hasLineParent) {
+      lines.match_feeder.push(product);
     }
   });
   
   console.log(`\nFiltered fishing lines:`);
-  console.log(`  - Monofilament: ${lines.monofilament.length}`);
-  console.log(`  - Braided: ${lines.braided.length}`);
-  console.log(`  - Fluorocarbon: ${lines.fluorocarbon.length}`);
-  console.log(`  - Other: ${lines.other.length}`);
-  console.log(`  - Total: ${lines.monofilament.length + lines.braided.length + lines.fluorocarbon.length + lines.other.length}\n`);
+  console.log(`  - telescopes_with_guides: ${lines.telescopes_with_guides.length}`);
+  console.log(`  - telescopes_without_guides: ${lines.telescopes_without_guides.length}`);
+  console.log(`  - carp_rods: ${lines.carp_rods.length}`);
+  console.log(`  - match_feeder: ${lines.match_feeder.length}`);
+  console.log(`  - Total: ${lines.telescopes_with_guides.length + lines.telescopes_without_guides.length + lines.carp_rods.length + lines.match_feeder.length}\n`);
   
   return lines;
 }
@@ -280,7 +292,7 @@ function formatVariantName(variant, categoryType) {
   }
   
   // Японска номерация (за плетени)
-  if (categoryType === 'braided') {
+  if (categoryType === 'telescopes_without_guides') {
     const japaneseSize = attributes.find(a => 
       a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
     )?.value;
@@ -698,10 +710,10 @@ async function processProduct(filstarProduct, category) {
 // Helper функция за име на категорията
 function getCategoryName(category) {
   const names = {
-    monofilament: 'Влакно монофилно',
-    braided: 'Влакно плетено',
-    fluorocarbon: 'Fluorocarbon',
-    other: 'Влакно Други'
+    telescopes_with_guides: 'Влакно монофилно',
+    telescopes_without_guides: 'Влакно плетено',
+    carp_rods: 'carp_rods',
+    match_feeder: 'Влакно Други'
   };
   return names[category] || category;
 }
