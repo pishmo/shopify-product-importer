@@ -142,8 +142,6 @@ async function fetchAllFishingLines() {
     baitrunner: [],
     multipliers: [],
     other: []
-   
-   
   };
   
   allProducts.forEach(product => {
@@ -167,25 +165,21 @@ async function fetchAllFishingLines() {
   console.log(`  - rear_drag: ${lines.rear_drag.length}`);
   console.log(`  - baitrunner: ${lines.baitrunner.length}`);
   console.log(`  - multipliers: ${lines.multipliers.length}`);
-  console.log(`  - other: ${lines.other.length}`);
-  console.log(`  - kits: ${lines.kits.length}`);
-  console.log(`  - spinning: ${lines.spinning.length}\n`);
+  console.log(`  - other: ${lines.other.length}\n`);
+  
   return lines;
 }
 
 
 
-// Функция за филтриране на влакна по категории
+// Функция за филтриране на макари по категории
 function filterLinesByCategory(allProducts) {
   const lines = {
     front_drag: [],
     rear_drag: [],
     baitrunner: [],
     multipliers: [],
-    other: [],
-    kits: [],
-    spinning: []
-   
+    other: []
   };
   
   allProducts.forEach(product => {
@@ -193,41 +187,31 @@ function filterLinesByCategory(allProducts) {
     const categoryNames = product.categories?.map(c => c.name) || [];
     
 
-    // Телескопи без водачи
+    //Макари Преден аванс
     if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.front_drag.includes(id)) ||
-        categoryNames.some(name => name.includes('Телескопи с водачи') || name.toLowerCase().includes('telescope swith guides'))) {
+        categoryNames.some(name => name.includes('Макари Преден аванс') || name.toLowerCase().includes('Reels Front'))) {
       lines.front_drag.push(product);
     }
-    // Телескопи с водачи
+    // Макари заден аванс
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.rear_drag.includes(id)) ||
-             categoryNames.some(name => name.includes('Телескопи без водачи') || name.toLowerCase().includes('telescopes without guides'))) {
+             categoryNames.some(name => name.includes('Макари заден аванс') || name.toLowerCase().includes('Reels Rear'))) {
       lines.rear_drag.push(product);
     }
-    // Шарански пръчки
+    // Баитрънър
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.baitrunner.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('Шарански пръчки'))) {
+             categoryNames.some(name => name.toLowerCase().includes('Баитрънър'))) {
       lines.baitrunner.push(product);
     }
 
-  // Мач и Фидер
+  // Мултипликатори
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.multipliers.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Мач и Фидеер'))) {
       lines.multipliers.push(product);
     }
    // Специални пръчки
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.other.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('Специални пръчки'))) {
+             categoryNames.some(name => name.toLowerCase().includes('Мултипликатори'))) {
       lines.other.push(product);
-    }   
- // Комплекти
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('Комплекти'))) {
-      lines.kits.push(product);
-    }
-// Спининг
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.spinning.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('Спининг'))) {
-      lines.spinning.push(product);
     } 
   });
   
@@ -237,12 +221,10 @@ function filterLinesByCategory(allProducts) {
   console.log(`  - baitrunner: ${lines.baitrunner.length}`);
   console.log(`  - multipliers: ${lines.multipliers.length}`);
   console.log(`  - other: ${lines.other.length}`);
-  console.log(`  - kits: ${lines.kits.length}`);
-  console.log(`  - spinning: ${lines.spinning.length}`);
+
   
   console.log(`  - Total: ${lines.front_drag.length + lines.rear_drag.length + 
-                            lines.baitrunner.length + lines.multipliers.length + lines.other.length + 
-                            lines.kits.length+ lines.spinning.length}\n`);
+                            lines.baitrunner.length + lines.multipliers.length + lines.other.length + }\n`);
   
   return lines;
 }
