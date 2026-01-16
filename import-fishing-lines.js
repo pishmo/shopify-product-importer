@@ -543,7 +543,7 @@ async function main() {
   console.log('Starting fishing lines import...\n');
 
   try {
-    const lines = await fetchAllFishingLines();
+    const lines = await fetchAllProducts();
 
     // Loop през 4-те категории
     for (const [category, products] of Object.entries(lines)) {
