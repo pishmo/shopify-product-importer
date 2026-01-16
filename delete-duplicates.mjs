@@ -1,4 +1,13 @@
 import fetch from 'node-fetch';
+
+const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN;
+const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+const API_VERSION = '2024-10';
+
+// ... останалата част на кода
+
+
+import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
 dotenv.config();
