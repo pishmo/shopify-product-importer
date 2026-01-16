@@ -12,7 +12,7 @@ const FILSTAR_LINE_CATEGORY_IDS = {
   monofilament: ['41'],
   braided: ['105'],
   fluorocarbon: ['106'],
-  other: ['107', '108', '109'] // Примерни ID-та - трябва да проверим реалните
+  other: ['109'] // Примерни ID-та - трябва да проверим реалните
 };
 
 // Parent категория "Влакна и поводи"
