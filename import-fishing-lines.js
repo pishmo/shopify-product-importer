@@ -448,6 +448,8 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
          
          if (updateResponse.ok) {
            console.log(`  ✓ Updated variant: ${newOptionName}`);
+           stats[categoryType].updated++;
+           stats[categoryType].images += uploadedImagesCount;
          }
          
          await new Promise(resolve => setTimeout(resolve, 300));
@@ -457,8 +459,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   
   console.log(`✅ Finished updating product`);
   // Обнови статистиката
-stats[categoryType].updated++;
-stats[categoryType].images += uploadedImagesCount;
+
 
 }
 
