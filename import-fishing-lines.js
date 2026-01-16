@@ -29,12 +29,15 @@ const LINES_PARENT_ID = '4';
 
 
 // Статистика за импорта
+
 const stats = {
   monofilament: { created: 0, updated: 0, images: 0 },
   braided: { created: 0, updated: 0, images: 0 },
   fluorocarbon: { created: 0, updated: 0, images: 0 },
-  other: { d: 0, updated: 0, images: 0 }
+  other: { created: 0, updated: 0, images: 0 }  // ← Провери тази категория
 };
+
+
 
 
 
