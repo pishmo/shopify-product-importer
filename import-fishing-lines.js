@@ -1,4 +1,4 @@
-// import-all-lines.js - Универсален импорт на всички влакна с пагинация
+// import-fishing-lines.js - Универсален импорт на всички категории влакна
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -7,16 +7,51 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// Категории
-const CATEGORIES = {
-  'Монофилни': '41',
-  'Плетени': '105',
-  'Fluorocarbon': '107',
-  'Други': '109'
+// Категория ID-та за влакна във Filstar
+const FILSTAR_LINE_CATEGORY_IDS = {
+  monofilament: ['41'],
+  braided: ['105'],
+  fluorocarbon: ['106'],
+  other: ['109']
 };
 
-// ========== FETCH ВСИЧКИ ПРОДУКТИ С ПАГИНАЦИЯ ==========
-async function fetchAllFilstarProducts() {
+// Parent категория "Влакна и поводи"
+const LINES_PARENT_ID = '4';
+
+// Функция за извличане на filename от URL (без hash)
+function getImageFilename(src) {
+  if (!src || typeof src !== 'string') {
+    console.log('⚠️ Invalid image src:', src);
+    return null;
+  }
+  
+  const urlParts = src.split('/').pop();
+  const withoutQuery = urlParts.split('?')[0];
+  
+  const parts = withoutQuery.split('_');
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length >= 32 && /^[a-f0-9]+/.test(lastPart)) {
+      parts.pop();
+    }
+  }
+  
+  return parts.join('_');
+}
+
+// Функция за проверка дали снимка съществува
+function imageExists(existingImages, newImageUrl) {
+  const newFilename = getImageFilename(newImageUrl);
+  if (!newFilename) return false;
+  
+  return existingImages.some(img => {
+    const existingFilename = getImageFilename(img.src);
+    return existingFilename && existingFilename === newFilename;
+  });
+}
+
+// Функция за извличане на всички продукти от Filstar с пагинация
+async function fetchAllProducts() {
   console.log('Fetching all products from Filstar API with pagination...');
   
   let allProducts = [];
@@ -24,7 +59,7 @@ async function fetchAllFilstarProducts() {
   let hasMorePages = true;
   
   try {
-    while (hasMorePages) {
+    while (hasMorePages) {  
       console.log(`Fetching page ${page}...`);
       
       const response = await fetch(`${FILSTAR_API_BASE}/products?page=${page}&limit=1000`, {
@@ -49,7 +84,8 @@ async function fetchAllFilstarProducts() {
       }
     }
     
-    console.log(`\n✅ Total products fetched: ${allProducts.length}\n`);
+    console.log(`\nTotal products fetched: ${allProducts.length}\n`);
+    
     return allProducts;
     
   } catch (error) {
@@ -58,45 +94,57 @@ async function fetchAllFilstarProducts() {
   }
 }
 
-// ========== ФИЛТРИРАНЕ ПО КАТЕГОРИЯ ==========
-function filterByCategory(allProducts, categoryId, categoryName) {
-  const filtered = allProducts.filter(product => 
-    product.categories?.some(cat => 
-      cat.id === categoryId || 
-      cat.name.includes(categoryName)
-    )
-  );
+// Функция за филтриране на влакна по категории
+function filterLinesByCategory(allProducts) {
+  const lines = {
+    monofilament: [],
+    braided: [],
+    fluorocarbon: [],
+    other: []
+  };
   
-  console.log(`Found ${filtered.length} products in category: ${categoryName}`);
-  return filtered;
-}
-
-// ========== HELPER ФУНКЦИИ ==========
-function getImageFilename(imageUrl) {
-  if (!imageUrl) return null;
-  try {
-    const url = new URL(imageUrl);
-    const pathname = url.pathname;
-    return pathname.substring(pathname.lastIndexOf('/') + 1);
-  } catch (e) {
-    return null;
-  }
-}
-
-function imageExists(existingImages, newImageUrl) {
-  const newFilename = getImageFilename(newImageUrl);
-  if (!newFilename) return false;
-  
-  return existingImages.some(img => {
-    const existingFilename = getImageFilename(img.src);
-    return existingFilename && existingFilename === newFilename;
+  allProducts.forEach(product => {
+    const categoryIds = product.categories?.map(c => c.id.toString()) || [];
+    const categoryNames = product.categories?.map(c => c.name) || [];
+    
+    // Провери дали има parent "Влакна и поводи" (ID: 4)
+    const hasLineParent = product.categories?.some(c => 
+      c.parent_id === LINES_PARENT_ID || c.parent_id === parseInt(LINES_PARENT_ID)
+    );
+    
+    // Монофилни
+    if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.monofilament.includes(id)) ||
+        categoryNames.some(name => name.includes('Монофилни') || name.toLowerCase().includes('monofilament'))) {
+      lines.monofilament.push(product);
+    }
+    // Плетени
+    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.braided.includes(id)) ||
+             categoryNames.some(name => name.includes('Плетени') || name.toLowerCase().includes('braid'))) {
+      lines.braided.push(product);
+    }
+    // Fluorocarbon
+    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('fluorocarbon'))) {
+      lines.fluorocarbon.push(product);
+    }
+    // Други - САМО ако има parent "Влакна и поводи"
+    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.other.includes(id)) && hasLineParent) {
+      lines.other.push(product);
+    }
   });
+  
+  console.log(`\nFiltered fishing lines:`);
+  console.log(`  - Monofilament: ${lines.monofilament.length}`);
+  console.log(`  - Braided: ${lines.braided.length}`);
+  console.log(`  - Fluorocarbon: ${lines.fluorocarbon.length}`);
+  console.log(`  - Other: ${lines.other.length}`);
+  console.log(`  - Total: ${lines.monofilament.length + lines.braided.length + lines.fluorocarbon.length + lines.other.length}\n`);
+  
+  return lines;
 }
 
-// ========== SHOPIFY ФУНКЦИИ ==========
+// Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
-  console.log(`Searching for product with SKU: ${sku}...`);
-  
   const response = await fetch(
     `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`,
     {
@@ -118,15 +166,14 @@ async function findShopifyProductBySku(sku) {
   for (const product of data.products) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
-      console.log(`Found existing product: ${product.title} (ID: ${product.id})`);
       return product;
     }
   }
   
-  console.log(`No existing product found with SKU: ${sku}`);
   return null;
 }
 
+// Функция за upload на снимка (само ако не съществува)
 async function uploadProductImage(productId, imageUrl, existingImages) {
   if (imageExists(existingImages, imageUrl)) {
     console.log(`  ⏭️  Image already exists, skipping: ${getImageFilename(imageUrl)}`);
@@ -162,8 +209,8 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
   return true;
 }
 
-// ========== ФОРМАТИРАНЕ НА VARIANT ИМЕНА ==========
-function formatVariantName(variant, categoryName) {
+// Функция за форматиране на variant име
+function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
   }
@@ -171,48 +218,40 @@ function formatVariantName(variant, categoryName) {
   const attributes = variant.attributes;
   let parts = [];
   
-  // 1. Модел
+  // Модел (ако има)
   if (variant.model && variant.model.trim()) {
     parts.push(variant.model.trim());
   }
   
-  // 2. Дължина
-  const length = attributes.find(a => 
-    a.attribute_name.includes('ДЪЛЖИНА')
-  )?.value;
-  
+  // Дължина
+  const length = attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
   if (length) {
     parts.push(`${length}м`);
   }
   
-  // 3. Диаметър
+  // Диаметър
   const diameter = attributes.find(a => 
-    a.attribute_name.includes('РАЗМЕР') && 
-    a.attribute_name.includes('MM')
+    a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM')
   )?.value;
-  
   if (diameter) {
     parts.push(`⌀${diameter}мм`);
   }
   
-  // 4. Японска номерация
-  const japaneseSize = attributes.find(a => 
-    a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
-  )?.value;
-  
-  if (japaneseSize) {
-    const formattedSize = japaneseSize.startsWith('#') 
-      ? japaneseSize 
-      : `#${japaneseSize}`;
-    parts.push(formattedSize);
+  // Японска номерация (за плетени)
+  if (categoryType === 'braided') {
+    const japaneseSize = attributes.find(a => 
+      a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
+    )?.value;
+    if (japaneseSize) {
+      const formattedSize = japaneseSize.startsWith('#') ? japaneseSize : `#${japaneseSize}`;
+      parts.push(formattedSize);
+    }
   }
   
-  // 5. Тест кг
+  // Тест кг
   const testKg = attributes.find(a => 
-    a.attribute_name.includes('ТЕСТ') && 
-    a.attribute_name.includes('KG')
+    a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
   )?.value;
-  
   if (testKg) {
     parts.push(`${testKg}кг`);
   }
@@ -220,9 +259,9 @@ function formatVariantName(variant, categoryName) {
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
 
-// ========== UPDATE ПРОДУКТ ==========
-async function updateProduct(shopifyProduct, filstarProduct, categoryName) {
-  console.log(`\nUpdating product: ${shopifyProduct.title} [${categoryName}]`);
+// Функция за update на продукт
+async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
+  console.log(`\nUpdating product: ${shopifyProduct.title}`);
   
   const productId = shopifyProduct.id;
   let imagesUploaded = 0;
@@ -252,7 +291,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryName) {
       const existingVariant = shopifyProduct.variants.find(v => v.sku === filstarVariant.sku);
       
       if (existingVariant) {
-        const newOptionName = formatVariantName(filstarVariant, categoryName);
+        const newOptionName = formatVariantName(filstarVariant, categoryType);
         
         const updateResponse = await fetch(
           `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
@@ -284,68 +323,51 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryName) {
   console.log(`✅ Finished updating product`);
 }
 
-// ========== ПРОЦЕСИРАНЕ НА КАТЕГОРИЯ ==========
-async function processCategory(allProducts, categoryId, categoryName) {
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`PROCESSING CATEGORY: ${categoryName} (ID: ${categoryId})`);
-  console.log(`${'='.repeat(60)}\n`);
-  
-  const categoryProducts = filterByCategory(allProducts, categoryId, categoryName);
-  
-  if (categoryProducts.length === 0) {
-    console.log(`No products found for category: ${categoryName}\n`);
-    return;
-  }
-  
-  let processed = 0;
-  let skipped = 0;
-  
-  for (const filstarProduct of categoryProducts) {
-    const firstSku = filstarProduct.variants?.[0]?.sku;
-    
-    if (!firstSku) {
-      console.log(`Skipping product without SKU: ${filstarProduct.name}`);
-      skipped++;
-      continue;
-    }
-    
-    const shopifyProduct = await findShopifyProductBySku(firstSku);
-    
-    if (shopifyProduct) {
-      await updateProduct(shopifyProduct, filstarProduct, categoryName);
-      processed++;
-    } else {
-      console.log(`Product not found in Shopify, skipping...`);
-      skipped++;
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  
-  console.log(`\n✅ Category ${categoryName} complete: ${processed} processed, ${skipped} skipped\n`);
-}
-
-// ========== ГЛАВНА ФУНКЦИЯ ==========
+// Главна функция
 async function main() {
   try {
-    console.log('Starting universal fishing line import...\n');
+    console.log('=== Starting Fishing Lines Import ===\n');
     
-    // 1. Fetch ВСИЧКИ продукти с пагинация
-    const allProducts = await fetchAllFilstarProducts();
+    // 1. Fetch всички продукти от Filstar
+    const allProducts = await fetchAllProducts();
     
-    if (allProducts.length === 0) {
-      console.log('No products found in Filstar');
-      return;
+    // 2. Филтрирай по категории
+    const lines = filterLinesByCategory(allProducts);
+    
+    // 3. Обработи всяка категория
+    const categories = [
+      { name: 'monofilament', products: lines.monofilament },
+      { name: 'braided', products: lines.braided },
+      { name: 'fluorocarbon', products: lines.fluorocarbon },
+      { name: 'other', products: lines.other }
+    ];
+    
+    for (const category of categories) {
+      console.log(`\n=== Processing ${category.name.toUpperCase()} (${category.products.length} products) ===\n`);
+      
+      for (const filstarProduct of category.products) {
+        const firstSku = filstarProduct.variants?.[0]?.sku;
+        
+        if (!firstSku) {
+          console.log(`Skipping product without SKU: ${filstarProduct.name}`);
+          continue;
+        }
+        
+        console.log(`Searching for product with SKU: ${firstSku}...`);
+        const shopifyProduct = await findShopifyProductBySku(firstSku);
+        
+        if (shopifyProduct) {
+          console.log(`Found existing product: ${shopifyProduct.title} (ID: ${shopifyProduct.id})`);
+          await updateProduct(shopifyProduct, filstarProduct, category.name);
+        } else {
+          console.log(`Product not found in Shopify, skipping...`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
     
-    // 2. Процесирай всяка категория
-    for (const [categoryName, categoryId] of Object.entries(CATEGORIES)) {
-      await processCategory(allProducts, categoryId, categoryName);
-    }
-    
-    console.log('\n' + '='.repeat(60));
-    console.log('✅ ALL CATEGORIES IMPORT COMPLETED!');
-    console.log('='.repeat(60));
+    console.log('\n=== Fishing Lines Import Completed! ===');
     
   } catch (error) {
     console.error('❌ Import failed:', error);
