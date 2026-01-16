@@ -226,6 +226,11 @@ function filterLinesByCategory(allProducts) {
              categoryNames.some(name => name.toLowerCase().includes('Мач и Фидеер'))) {
       lines.match_feeder.push(product);
     }
+   // Специални пръчки
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.specialty_rods.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('Специални пръчки))) {
+      lines.specialty_rods.push(product);
+    }   
  // Комплекти
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Комплекти'))) {
@@ -730,10 +735,10 @@ async function processProduct(filstarProduct, category) {
 // Helper функция за име на категорията
 function getCategoryName(category) {
   const names = {
-    telescopes_with_guides: 'Влакно монофилно',
-    telescopes_without_guides: 'Влакно плетено',
-    carp_rods: 'carp_rods',
-    match_feeder: 'Влакно Други'
+    telescopes_with_guides: 'Телескопи с водачи',
+    telescopes_without_guides: 'Телескопи без водачи',
+    carp_rods: 'Шарански пръчки',
+    match_feeder: 'Maч и Фидер',  specialty_rods: Специални пръчки',  kits: 'Комплекти',  spinning: 'Спининг'
   };
   return names[category] || category;
 }
