@@ -258,42 +258,23 @@ async function findShopifyProductBySku(sku) {
   
   return null;
 }
+
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
   }
   
   const attributes = variant.attributes;
-  let parts = [];
   
-  // 1. Модел (ако има)
-  if (variant.model && variant.model.trim() && variant.model !== 'N/A') {
-    parts.push(variant.model.trim());
+  // Размер на макарата
+  const size = attributes.find(a => a.attribute_name.includes('РАЗМЕР'))?.value;
+  
+  if (size) {
+    return `Размер ${size}`;
   }
   
-  // 2. Дължина (РАЗМЕР, M)
-  const length = attributes.find(a => 
-    a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('M')
-  )?.value;
-  if (length) {
-    parts.push(`${length}м`);
-  }
-  
-  // 3. Акция (АКЦИЯ, G или АКЦИЯ, LB)
-  const actionG = attributes.find(a => 
-    a.attribute_name.includes('АКЦИЯ') && a.attribute_name.includes('G')
-  )?.value;
-  const actionLB = attributes.find(a => 
-    a.attribute_name.includes('АКЦИЯ') && a.attribute_name.includes('LB')
-  )?.value;
-  
-  if (actionG) {
-    parts.push(`${actionG}g`);
-  } else if (actionLB) {
-    parts.push(`${actionLB}lb`);
-  }
-  
-  return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
+  // Fallback към model или SKU
+  return variant.model || `SKU: ${variant.sku}`;
 }
 
 
