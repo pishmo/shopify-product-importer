@@ -456,6 +456,9 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
    }
   
   console.log(`✅ Finished updating product`);
+  // Обнови статистиката
+stats[categoryType].updated++;
+stats[categoryType].images += uploadedImagesCount;
 
 }
 
