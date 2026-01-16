@@ -1,4 +1,4 @@
-// test-categories.js - Тест за извличане на монофилни влакна с пагинация
+// test-categories.js - Тест за извличане на всички категории влакна с пагинация
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -7,11 +7,19 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// Категория ID за монофилни влакна във Filstar
-const MONOFILAMENT_CATEGORY_ID = '41';
+// Категория ID-та за влакна във Filstar
+const FILSTAR_LINE_CATEGORY_IDS = {
+  monofilament: ['41'],
+  braided: ['105'],
+  fluorocarbon: ['106'],
+  other: ['107', '108', '109'] // Примерни ID-та - трябва да проверим реалните
+};
 
-// Функция за извличане на всички монофилни влакна от Filstar с пагинация
-async function fetchMonofilamentProducts() {
+// Parent категория "Влакна и поводи"
+const LINES_PARENT_ID = '4';
+
+// Функция за извличане на всички продукти от Filstar с пагинация
+async function fetchAllProducts() {
   console.log('Fetching all products from Filstar API with pagination...');
   
   let allProducts = [];
@@ -32,13 +40,6 @@ async function fetchMonofilamentProducts() {
         throw new Error(`Filstar API error: ${response.status}`);
       }
 
-      // Провери headers за total count
-      console.log('Response headers:', {
-        'x-total-count': response.headers.get('x-total-count'),
-        'x-total-pages': response.headers.get('x-total-pages'),
-        'link': response.headers.get('link')
-      });
-
       const pageProducts = await response.json();
       console.log(`Page ${page}: ${pageProducts.length} products`);
       
@@ -47,26 +48,13 @@ async function fetchMonofilamentProducts() {
         hasMorePages = false;
       } else {
         allProducts = allProducts.concat(pageProducts);
-        
-        // Винаги опитай следващата страница, дори ако е под 1000
         page++;
       }
     }
     
-    console.log(`Total products fetched: ${allProducts.length}`);
+    console.log(`\n=== Total products fetched: ${allProducts.length} ===\n`);
     
-    // Филтрирай само монофилните влакна
-    const monofilamentProducts = allProducts.filter(product => 
-      product.categories?.some(cat => 
-        cat.id === MONOFILAMENT_CATEGORY_ID ||
-        cat.name.includes('Монофилни') || 
-        cat.name.toLowerCase().includes('monofilament')
-      )
-    );
-    
-    console.log(`Found ${monofilamentProducts.length} monofilament products`);
-    
-    return monofilamentProducts;
+    return allProducts;
     
   } catch (error) {
     console.error('Error fetching products:', error.message);
@@ -74,13 +62,69 @@ async function fetchMonofilamentProducts() {
   }
 }
 
+// Функция за филтриране на влакна по категории
+function filterLinesByCategory(allProducts) {
+  const lines = {
+    monofilament: [],
+    braided: [],
+    fluorocarbon: [],
+    other: []
+  };
+  
+  allProducts.forEach(product => {
+    const categoryIds = product.categories?.map(c => c.id.toString()) || [];
+    const categoryNames = product.categories?.map(c => c.name) || [];
+    
+    // Провери дали има parent "Влакна и поводи" (ID: 4)
+    const hasLineParent = product.categories?.some(c => 
+      c.parent_id === LINES_PARENT_ID || c.parent_id === parseInt(LINES_PARENT_ID)
+    );
+    
+    // Монофилни
+    if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.monofilament.includes(id)) ||
+        categoryNames.some(name => name.includes('Монофилни') || name.toLowerCase().includes('monofilament'))) {
+      lines.monofilament.push(product);
+    }
+    // Плетени
+    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.braided.includes(id)) ||
+             categoryNames.some(name => name.includes('Плетени') || name.toLowerCase().includes('braid'))) {
+      lines.braided.push(product);
+    }
+    // Fluorocarbon
+    else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('fluorocarbon'))) {
+      lines.fluorocarbon.push(product);
+    }
+    // Други - САМО ако има parent "Влакна и поводи"
+    else if (hasLineParent) {
+      lines.other.push(product);
+      console.log(`  [OTHER] ${product.name} - Categories: ${categoryNames.join(', ')}`);
+    }
+  });
+  
+  return lines;
+}
+
 // Стартирай теста
 (async () => {
   try {
-    console.log('=== Starting Monofilament Products Test ===');
-    const products = await fetchMonofilamentProducts();
-    console.log('=== Test Complete ===');
-    console.log(`Successfully fetched ${products.length} monofilament products`);
+    console.log('=== Starting Fishing Lines Category Test ===\n');
+    
+    // Fetch всички продукти
+    const allProducts = await fetchAllProducts();
+    
+    // Филтрирай по категории
+    const lines = filterLinesByCategory(allProducts);
+    
+    console.log('\n=== Results ===');
+    console.log(`Monofilament: ${lines.monofilament.length} products`);
+    console.log(`Braided: ${lines.braided.length} products`);
+    console.log(`Fluorocarbon: ${lines.fluorocarbon.length} products`);
+    console.log(`Other (with parent check): ${lines.other.length} products`);
+    console.log(`Total lines: ${lines.monofilament.length + lines.braided.length + lines.fluorocarbon.length + lines.other.length}`);
+    
+    console.log('\n=== Test Complete ===');
+    
   } catch (error) {
     console.error('=== Test Failed ===');
     console.error(error);
