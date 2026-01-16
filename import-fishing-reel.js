@@ -147,15 +147,15 @@ async function fetchAllFishingLines() {
   allProducts.forEach(product => {
     const categoryIds = product.categories?.map(c => c.id.toString()) || [];
     
-    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.front_drag.includes(id))) {
+    if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.front_drag.includes(id))) {
       lines.front_drag.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.rear_drag.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.rear_drag.includes(id))) {
       lines.rear_drag.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.baitrunner.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.baitrunner.includes(id))) {
       lines.baitrunner.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.multipliers.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.multipliers.includes(id))) {
       lines.multipliers.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.other.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.other.includes(id))) {
       lines.other.push(product);  
     }
     }); 
@@ -188,28 +188,28 @@ function filterLinesByCategory(allProducts) {
     
 
     //Макари Преден аванс
-    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.front_drag.includes(id)) ||
+    if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.front_drag.includes(id)) ||
         categoryNames.some(name => name.includes('Макари Преден аванс') || name.toLowerCase().includes('Reels Front'))) {
       lines.front_drag.push(product);
     }
     // Макари заден аванс
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.rear_drag.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.rear_drag.includes(id)) ||
              categoryNames.some(name => name.includes('Макари заден аванс') || name.toLowerCase().includes('Reels Rear'))) {
       lines.rear_drag.push(product);
     }
     // Баитрънър
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.baitrunner.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.baitrunner.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Баитрънър'))) {
       lines.baitrunner.push(product);
     }
 
   // Мултипликатори
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.multipliers.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.multipliers.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Мач и Фидеер'))) {
       lines.multipliers.push(product);
     }
    // Специални пръчки
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.other.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.other.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Мултипликатори'))) {
       lines.other.push(product);
     } 
