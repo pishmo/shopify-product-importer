@@ -281,8 +281,11 @@ function formatVariantName(variant, categoryType) {
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
 
+
 async function addProductImages(productId, filstarProduct) {
   console.log(`Adding images to product ${productId}...`);
+  
+  let uploadedCount = 0; // ← Добави брояч
   
   // Събери всички изображения
   const images = [];
@@ -322,7 +325,7 @@ async function addProductImages(productId, filstarProduct) {
   
   if (images.length === 0) {
     console.log(`  No images found for this product`);
-    return;
+    return 0; // ← Върни 0
   }
   
   // Добави изображенията към продукта
@@ -341,6 +344,7 @@ async function addProductImages(productId, filstarProduct) {
     
     if (response.ok) {
       console.log(`  ✓ Added image: ${image.src}`);
+      uploadedCount++; // ← Increment при успех
     } else {
       const error = await response.text();
       console.error(`  ✗ Failed to add image:`, error);
@@ -348,7 +352,13 @@ async function addProductImages(productId, filstarProduct) {
     
     await new Promise(resolve => setTimeout(resolve, 500));
   }
+  
+  return uploadedCount; // ← Върни броя
 }
+
+
+
+
 
 // Функция за създаване на нов продукт в Shopify
 async function createShopifyProduct(filstarProduct, category) {
