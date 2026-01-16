@@ -504,13 +504,19 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
            console.log(`  ✓ Updated variant: ${newOptionName}`);
            stats[categoryType].updated++;
            stats[categoryType].images += uploadedImagesCount;
+
+           
          }
          
          await new Promise(resolve => setTimeout(resolve, 300));
        }
      }
    }
-  
+
+
+  // Обнови статистиката
+stats[categoryType].updated++;
+stats[categoryType].images += uploadedImagesCount;
   console.log(`✅ Finished updating product`);
   // Обнови статистиката
 
