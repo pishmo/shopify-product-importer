@@ -11,39 +11,32 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 
 
 const COLLECTION_MAPPING = {
-  telescopes_with_guides: 'gid://shopify/Collection/739156001150',
-  telescopes_without_guides: 'gid://shopify/Collection/739156033918',
-  carp_rods: 'gid://shopify/Collection/739156099454',
-  match_feeder: 'gid://shopify/Collection/739156132222',
-  specialty_rods: 'gid://shopify/Collection/739156230526',
-  kits: 'gid://shopify/Collection/739156164990',
-  spinning: 'gid://shopify/Collection/739155968382'
- 
+  front_drag: 'gid://shopify/Collection/739175301502',
+  rear_drag: 'gid://shopify/Collection/739175334270',
+  baitrunner: 'gid://shopify/Collection/739175399806',
+  multipliers: 'gid://shopify/Collection/739175432574',
+  other: 'gid://shopify/Collection/739175530878'
 };
 
-// Категория ID-та за пръчки във Filstar
-const FILSTAR_ROD_CATEGORY_IDS = {
-  telescopes_with_guides: ['33'],
-  telescopes_without_guides: ['38'],
-  carp_rods: ['44'],
-  match_feeder: ['47'],
-  specialty_rods: ['57'],
-  kits: ['56'],
-  spinning: ['28']
-  
+const FILSTAR_REEL_CATEGORY_IDS = {
+  front_drag: ['19'],
+  rear_drag: ['24'],
+  baitrunner: ['30'],
+  multipliers: ['34'],
+  other: ['43']
 };
 
-// Parent категория "Пръчки"
-const RODS_PARENT_ID = '2';
+const REELS_PARENT_ID = '6';
+
 
 // Статистика за импорта
 
 const stats = {
-  telescopes_with_guides: { created: 0, updated: 0, images: 0 },
-  telescopes_without_guides: { created: 0, updated: 0, images: 0 },
-  carp_rods: { created: 0, updated: 0, images: 0 },
-  match_feeder: { created: 0, updated: 0, images: 0 } , // ← Провери тази категория
-  specialty_rods: { created: 0, updated: 0, images: 0 },
+  front_drag: { created: 0, updated: 0, images: 0 },
+  rear_drag: { created: 0, updated: 0, images: 0 },
+  baitrunner: { created: 0, updated: 0, images: 0 },
+  multipliers: { created: 0, updated: 0, images: 0 } , // ← Провери тази категория
+  other: { created: 0, updated: 0, images: 0 },
   kits: { created: 0, updated: 0, images: 0 } ,
   spinning: { created: 0, updated: 0, images: 0 } 
   
@@ -145,11 +138,11 @@ async function fetchAllFishingLines() {
   const allProducts = await fetchAllProducts();
   
   const lines = {
-    telescopes_with_guides: [],
-    telescopes_without_guides: [],
-    carp_rods: [],
-    match_feeder: [],
-    specialty_rods: [],
+    front_drag: [],
+    rear_drag: [],
+    baitrunner: [],
+    multipliers: [],
+    other: [],
     kits: [],
     spinning: []
    
@@ -158,16 +151,16 @@ async function fetchAllFishingLines() {
   allProducts.forEach(product => {
     const categoryIds = product.categories?.map(c => c.id.toString()) || [];
     
-    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_with_guides.includes(id))) {
-      lines.telescopes_with_guides.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_without_guides.includes(id))) {
-      lines.telescopes_without_guides.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id))) {
-      lines.carp_rods.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.match_feeder.includes(id))) {
-      lines.match_feeder.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.specialty_rods.includes(id))) {
-      lines.specialty_rods.push(product);
+    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.front_drag.includes(id))) {
+      lines.front_drag.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.rear_drag.includes(id))) {
+      lines.rear_drag.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.baitrunner.includes(id))) {
+      lines.baitrunner.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.multipliers.includes(id))) {
+      lines.multipliers.push(product);
+    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.other.includes(id))) {
+      lines.other.push(product);
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id))) {
       lines.kits.push(product);
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.spinning.includes(id))) {
@@ -176,11 +169,11 @@ async function fetchAllFishingLines() {
     }); 
   
   console.log(`\nCategorized fishing lines:`);
-  console.log(`  - telescopes_with_guides: ${lines.telescopes_with_guides.length}`);
-  console.log(`  - telescopes_without_guides: ${lines.telescopes_without_guides.length}`);
-  console.log(`  - carp_rods: ${lines.carp_rods.length}`);
-  console.log(`  - match_feeder: ${lines.match_feeder.length}`);
-  console.log(`  - specialty_rods: ${lines.specialty_rods.length}`);
+  console.log(`  - front_drag: ${lines.front_drag.length}`);
+  console.log(`  - rear_drag: ${lines.rear_drag.length}`);
+  console.log(`  - baitrunner: ${lines.baitrunner.length}`);
+  console.log(`  - multipliers: ${lines.multipliers.length}`);
+  console.log(`  - other: ${lines.other.length}`);
   console.log(`  - kits: ${lines.kits.length}`);
   console.log(`  - spinning: ${lines.spinning.length}\n`);
   return lines;
@@ -191,11 +184,11 @@ async function fetchAllFishingLines() {
 // Функция за филтриране на влакна по категории
 function filterLinesByCategory(allProducts) {
   const lines = {
-    telescopes_with_guides: [],
-    telescopes_without_guides: [],
-    carp_rods: [],
-    match_feeder: [],
-    specialty_rods: [],
+    front_drag: [],
+    rear_drag: [],
+    baitrunner: [],
+    multipliers: [],
+    other: [],
     kits: [],
     spinning: []
    
@@ -207,30 +200,30 @@ function filterLinesByCategory(allProducts) {
     
 
     // Телескопи без водачи
-    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_with_guides.includes(id)) ||
+    if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.front_drag.includes(id)) ||
         categoryNames.some(name => name.includes('Телескопи с водачи') || name.toLowerCase().includes('telescope swith guides'))) {
-      lines.telescopes_with_guides.push(product);
+      lines.front_drag.push(product);
     }
     // Телескопи с водачи
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_without_guides.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.rear_drag.includes(id)) ||
              categoryNames.some(name => name.includes('Телескопи без водачи') || name.toLowerCase().includes('telescopes without guides'))) {
-      lines.telescopes_without_guides.push(product);
+      lines.rear_drag.push(product);
     }
     // Шарански пръчки
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.baitrunner.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Шарански пръчки'))) {
-      lines.carp_rods.push(product);
+      lines.baitrunner.push(product);
     }
 
   // Мач и Фидер
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.match_feeder.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.multipliers.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Мач и Фидеер'))) {
-      lines.match_feeder.push(product);
+      lines.multipliers.push(product);
     }
    // Специални пръчки
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.specialty_rods.includes(id)) ||
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.other.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Специални пръчки'))) {
-      lines.specialty_rods.push(product);
+      lines.other.push(product);
     }   
  // Комплекти
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id)) ||
@@ -245,16 +238,16 @@ function filterLinesByCategory(allProducts) {
   });
   
   console.log(`\nFiltered fishing lines:`);
-  console.log(`  - telescopes_with_guides: ${lines.telescopes_with_guides.length}`);
-  console.log(`  - telescopes_without_guides: ${lines.telescopes_without_guides.length}`);
-  console.log(`  - carp_rods: ${lines.carp_rods.length}`);
-  console.log(`  - match_feeder: ${lines.match_feeder.length}`);
-  console.log(`  - specialty_rods: ${lines.specialty_rods.length}`);
+  console.log(`  - front_drag: ${lines.front_drag.length}`);
+  console.log(`  - rear_drag: ${lines.rear_drag.length}`);
+  console.log(`  - baitrunner: ${lines.baitrunner.length}`);
+  console.log(`  - multipliers: ${lines.multipliers.length}`);
+  console.log(`  - other: ${lines.other.length}`);
   console.log(`  - kits: ${lines.kits.length}`);
   console.log(`  - spinning: ${lines.spinning.length}`);
   
-  console.log(`  - Total: ${lines.telescopes_with_guides.length + lines.telescopes_without_guides.length + 
-                            lines.carp_rods.length + lines.match_feeder.length + lines.specialty_rods.length + 
+  console.log(`  - Total: ${lines.front_drag.length + lines.rear_drag.length + 
+                            lines.baitrunner.length + lines.multipliers.length + lines.other.length + 
                             lines.kits.length+ lines.spinning.length}\n`);
   
   return lines;
@@ -715,10 +708,10 @@ async function processProduct(filstarProduct, category) {
 // Helper функция за име на категорията
 function getCategoryName(category) {
   const names = {
-    telescopes_with_guides: 'Телескопи с водачи',
-    telescopes_without_guides: 'Телескопи без водачи',
-    carp_rods: 'Шарански пръчки',
-    match_feeder: 'Maч и Фидер',  specialty_rods: 'Специални пръчки',  kits: 'Комплекти',  spinning: 'Спининг'
+    front_drag: 'Телескопи с водачи',
+    rear_drag: 'Телескопи без водачи',
+    baitrunner: 'Шарански пръчки',
+    multipliers: 'Maч и Фидер',  other: 'Специални пръчки',  kits: 'Комплекти',  spinning: 'Спининг'
   };
   return names[category] || category;
 }
