@@ -36,9 +36,8 @@ const stats = {
   rear_drag: { created: 0, updated: 0, images: 0 },
   baitrunner: { created: 0, updated: 0, images: 0 },
   multipliers: { created: 0, updated: 0, images: 0 } , // ← Провери тази категория
-  other: { created: 0, updated: 0, images: 0 },
-  kits: { created: 0, updated: 0, images: 0 } ,
-  spinning: { created: 0, updated: 0, images: 0 } 
+  other: { created: 0, updated: 0, images: 0 }
+
   
 };
 
@@ -142,9 +141,8 @@ async function fetchAllFishingLines() {
     rear_drag: [],
     baitrunner: [],
     multipliers: [],
-    other: [],
-    kits: [],
-    spinning: []
+    other: []
+   
    
   };
   
@@ -160,11 +158,7 @@ async function fetchAllFishingLines() {
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.multipliers.includes(id))) {
       lines.multipliers.push(product);
     } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.other.includes(id))) {
-      lines.other.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id))) {
-      lines.kits.push(product);
-    } else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.spinning.includes(id))) {
-      lines.spinning.push(product);  
+      lines.other.push(product);  
     }
     }); 
   
