@@ -443,6 +443,10 @@ function formatVariantName(variant, categoryType) {
 
 // Функция за update на продукт
 async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
+
+let uploadedImagesCount = 0; 
+
+  
   console.log(`\nUpdating product: ${shopifyProduct.title}`);
   
   const productId = shopifyProduct.id;
