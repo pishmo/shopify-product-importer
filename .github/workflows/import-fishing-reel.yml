@@ -2,7 +2,7 @@ name: Import Fishing Rods
 
 on:
   schedule:
-    - cron: '0 4 * * *'  # Всеки ден в 4:00 сутринта
+    - cron: '0 5 * * *'  # Всеки ден в 5:00 сутринта
   workflow_dispatch:
 
 jobs:
