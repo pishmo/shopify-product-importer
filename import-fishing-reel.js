@@ -684,10 +684,10 @@ async function processProduct(filstarProduct, category) {
 // Helper функция за име на категорията
 function getCategoryName(category) {
   const names = {
-    front_drag: 'Телескопи с водачи',
-    rear_drag: 'Телескопи без водачи',
-    baitrunner: 'Шарански пръчки',
-    multipliers: 'Maч и Фидер',  other: 'Специални пръчки',  kits: 'Комплекти',  spinning: 'Спининг'
+    front_drag: 'Макари с преден аванс',
+    rear_drag: 'Макари с заден аванс',
+    baitrunner: 'Байтрънър',
+    multipliers: 'Мултиплокатори',  other: 'Други'
   };
   return names[category] || category;
 }
