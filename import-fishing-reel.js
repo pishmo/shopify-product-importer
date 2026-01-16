@@ -224,7 +224,7 @@ function filterLinesByCategory(allProducts) {
 
   
   console.log(`  - Total: ${lines.front_drag.length + lines.rear_drag.length + 
-                            lines.baitrunner.length + lines.multipliers.length + lines.other.length + }\n`);
+                            lines.baitrunner.length + lines.multipliers.length + lines.other.length }\n`);
   
   return lines;
 }
