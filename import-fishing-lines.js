@@ -444,8 +444,10 @@ function formatVariantName(variant, categoryType) {
 // Функция за update на продукт
 async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
 
-let uploadedImagesCount = 0; 
 
+ let uploadedImagesCount = 0; // ← За статистиката
+  let imagesUploaded = 0;      // ← За локалния лог
+  let imagesSkipped = 0;       // ← За skip-натите
   
   console.log(`\nUpdating product: ${shopifyProduct.title}`);
   
@@ -461,6 +463,7 @@ let uploadedImagesCount = 0;
       const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
       if (uploaded) {
         imagesUploaded++;
+        uploadedImagesCount++;
       } else {
         imagesSkipped++;
       }
