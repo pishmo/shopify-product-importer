@@ -6,7 +6,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // SKU-та за тестване
 const TEST_SKUS = [
-  '955610',
+  '963098',
   // Добави още SKU-та тук ако искаш да тестваш повече
 ];
 
@@ -19,7 +19,7 @@ async function testSku(sku) {
   
   // Търси в първите 10 страници
   for (let page = 1; page <= 10; page++) {
-    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=50`;
+    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`;
     
     try {
       const response = await fetch(url, {
