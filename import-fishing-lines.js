@@ -452,8 +452,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\nUpdating product: ${shopifyProduct.title}`);
   
   const productId = shopifyProduct.id;
-  let imagesUploaded = 0;
-  let imagesSkipped = 0;
+ 
   
   // Upload снимки (само нови)
   if (filstarProduct.images && filstarProduct.images.length > 0) {
