@@ -196,8 +196,8 @@ function filterLinesByCategory(allProducts) {
     match_feeder: [],
     specialty_rods: [],
     kits: [],
-    spinning: [],
-    rods_main: []
+    spinning: []
+   
   };
   
   allProducts.forEach(product => {
@@ -207,26 +207,35 @@ function filterLinesByCategory(allProducts) {
 
     // Телескопи без водачи
     if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_with_guides.includes(id)) ||
-        categoryNames.some(name => name.includes('Монофилни') || name.toLowerCase().includes('telescopes_with_guides'))) {
+        categoryNames.some(name => name.includes('Телескопи с водачи') || name.toLowerCase().includes('telescope swith guides'))) {
       lines.telescopes_with_guides.push(product);
     }
     // Телескопи с водачи
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.telescopes_without_guides.includes(id)) ||
-             categoryNames.some(name => name.includes('Плетени') || name.toLowerCase().includes('braid'))) {
+             categoryNames.some(name => name.includes('Телескопи без водачи') || name.toLowerCase().includes('telescopes without guides'))) {
       lines.telescopes_without_guides.push(product);
     }
     // Шарански пръчки
     else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('carp_rods'))) {
+             categoryNames.some(name => name.toLowerCase().includes('Шарански пръчки'))) {
       lines.carp_rods.push(product);
     }
 
-  // Шарански пръчки
-    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.carp_rods.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('carp_rods'))) {
-      lines.carp_rods.push(product);
+  // Мач и Фидер
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.match_feeder.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('Мач и Фидеер'))) {
+      lines.match_feeder.push(product);
     }
-
+ // Комплекти
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.kits.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('Комплекти'))) {
+      lines.kits.push(product);
+    }
+// Спининг
+    else if (categoryIds.some(id => FILSTAR_ROD_CATEGORY_IDS.spinning.includes(id)) ||
+             categoryNames.some(name => name.toLowerCase().includes('Спининг'))) {
+      lines.spinning.push(product);
+    }
 
 
 
