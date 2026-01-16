@@ -20,7 +20,7 @@ async function findRodCategories() {
   allProducts.forEach(product => {
     product.categories?.forEach(cat => {
       const name = cat.name.toLowerCase();
-      if (name.includes('пръчк') || name.includes('въдиц') || name.includes('rod')) {
+      if (name.includes('пръчк') || name.includes('въдиц') || name.includes('rod') || name.includes('спиниг') || name.includes('телескоп') || name.includes('комплекти')) {
         if (!rodCategories.has(cat.id)) {
           rodCategories.set(cat.id, {
             id: cat.id,
