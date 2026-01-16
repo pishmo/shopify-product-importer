@@ -104,6 +104,53 @@ async function fetchAllProducts() {
   }
 }
 
+
+
+// Функция за категоризиране на продуктите
+async function fetchAllFishingLines() {
+  const allProducts = await fetchAllProducts();
+  
+  const lines = {
+    monofilament: [],
+    braided: [],
+    fluorocarbon: [],
+    other: []
+  };
+  
+  allProducts.forEach(product => {
+    const categoryIds = product.categories?.map(c => c.id.toString()) || [];
+    
+    if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.monofilament.includes(id))) {
+      lines.monofilament.push(product);
+    } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.braided.includes(id))) {
+      lines.braided.push(product);
+    } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(id))) {
+      lines.fluorocarbon.push(product);
+    } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.other.includes(id))) {
+      lines.other.push(product);
+    }
+  });
+  
+  console.log(`\nCategorized fishing lines:`);
+  console.log(`  - Monofilament: ${lines.monofilament.length}`);
+  console.log(`  - Braided: ${lines.braided.length}`);
+  console.log(`  - Fluorocarbon: ${lines.fluorocarbon.length}`);
+  console.log(`  - Other: ${lines.other.length}\n`);
+  
+  return lines;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // Функция за филтриране на влакна по категории
 function filterLinesByCategory(allProducts) {
   const lines = {
@@ -543,7 +590,7 @@ async function main() {
   console.log('Starting fishing lines import...\n');
 
   try {
-    const lines = await fetchAllProducts();
+  const lines = await fetchAllFishingLines(); // ← Обратно на старото име
 
     // Loop през 4-те категории
     for (const [category, products] of Object.entries(lines)) {
