@@ -240,8 +240,6 @@ async function findShopifyProductBySku(sku) {
   return null;
 }
 
-
-// Функция за форматиране на variant име
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
@@ -251,7 +249,7 @@ function formatVariantName(variant, categoryType) {
   let parts = [];
   
   // Модел (ако има)
-  if (variant.model && variant.model.trim()) {
+  if (variant.model && variant.model.trim() && variant.model !== 'N/A') {
     parts.push(variant.model.trim());
   }
   
@@ -288,8 +286,18 @@ function formatVariantName(variant, categoryType) {
     parts.push(`${testKg}кг`);
   }
   
+  // НОВО: Цвят (добави накрая)
+  const color = attributes.find(a => a.attribute_name.includes('ЦВЯТ'))?.value;
+  if (color) {
+    parts.push(color);
+  }
+  
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
+
+
+
+
 
 
 async function addProductImages(productId, filstarProduct) {
