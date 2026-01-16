@@ -40,8 +40,7 @@ const stats = {
 
 
 
-
-// Функция за извличане на filename от URL (без hash)
+// Функция за извличане на filename от URL (без Shopify UUID и hash-ове)
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     console.log('⚠️ Invalid image src:', src);
@@ -51,16 +50,26 @@ function getImageFilename(src) {
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
-  const parts = withoutQuery.split('_');
+  // Премахни Shopify UUID (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
+  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
+  
+  // Премахни и стари hex hash-ове (без тирета, ако има)
+  const parts = cleanFilename.split('_');
   if (parts.length > 1) {
-    const lastPart = parts[parts.length - 1];
-    if (lastPart.length >= 32 && /^[a-f0-9]+/.test(lastPart)) {
+    const lastPart = parts[parts.length - 1].split('.')[0]; // Вземи само името без extension
+    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
       parts.pop();
+      const extension = cleanFilename.split('.').pop();
+      cleanFilename = parts.join('_') + '.' + extension;
     }
   }
   
-  return parts.join('_');
+  return cleanFilename;
 }
+
+
+
 
 // Функция за проверка дали снимка съществува
 function imageExists(existingImages, newImageUrl) {
