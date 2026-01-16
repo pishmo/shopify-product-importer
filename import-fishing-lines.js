@@ -236,18 +236,44 @@ async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
   
   try {
-    // 1. Подготви variants
-    const variants = filstarProduct.variants.map(variant => ({
-      option1: variant.option1 || variant.name,
-      price: variant.price?.toString() || '0',
-      sku: variant.sku,
-      barcode: variant.barcode || variant.sku,
-      inventory_quantity: variant.quantity || 0,
-      inventory_management: 'shopify',
-      weight: parseFloat(variant.weight) || 0,
-      weight_unit: 'kg'
-    }));
+   // 1. Подготви variants
+const variants = filstarProduct.variants.map(variant => ({
+  option1: variant.option1 || variant.name,
+  price: variant.price?.toString() || '0',
+  sku: variant.sku,
+  barcode: variant.barcode || variant.sku,
+  inventory_quantity: variant.quantity || 0,
+  inventory_management: 'shopify',
+  weight: parseFloat(variant.weight) || 0,
+  weight_unit: 'kg'
+}));
 
+// DEBUG: Провери първия variant
+console.log(`  📦 Preparing ${variants.length} variants`);
+console.log(`  First variant:`, JSON.stringify(variants[0], null, 2));
+
+// Филтрирай невалидни варианти
+const validVariants = variants.filter(v => {
+  if (!v.sku) {
+    console.log(`  ⚠️  Skipping variant without SKU:`, v);
+    return false;
+  }
+  if (!v.price || parseFloat(v.price) < 0) {
+    console.log(`  ⚠️  Skipping variant with invalid price:`, v);
+    return false;
+  }
+  return true;
+});
+
+console.log(`  ✓ Valid variants: ${validVariants.length}/${variants.length}`);
+
+
+    
+
+// ⭐ ДОБАВИ DEBUG ТУК:
+console.log(`  📦 Preparing ${variants.length} variants`);
+console.log(`  First variant:`, JSON.stringify(variants[0], null, 2));
+    
     // 2. Подготви images
     const images = filstarProduct.images?.map(imageUrl => ({
       src: imageUrl
@@ -266,7 +292,7 @@ async function createShopifyProduct(filstarProduct, category) {
         product_type: getCategoryName(category),
         tags: ['Filstar', category, vendor],
         status: 'active',
-        variants: variants,
+        variants: validVariants,
         images: images
       }
     };
