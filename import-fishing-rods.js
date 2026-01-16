@@ -289,7 +289,6 @@ async function findShopifyProductBySku(sku) {
   
   return null;
 }
-
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
@@ -298,55 +297,35 @@ function formatVariantName(variant, categoryType) {
   const attributes = variant.attributes;
   let parts = [];
   
-  // Модел (ако има)
+  // 1. Модел (ако има)
   if (variant.model && variant.model.trim() && variant.model !== 'N/A') {
     parts.push(variant.model.trim());
   }
   
-  // Дължина
-  const length = attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
+  // 2. Дължина (РАЗМЕР, M)
+  const length = attributes.find(a => 
+    a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('M')
+  )?.value;
   if (length) {
     parts.push(`${length}м`);
   }
   
-  // Диаметър
-  const diameter = attributes.find(a => 
-    a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM')
+  // 3. Акция (АКЦИЯ, G или АКЦИЯ, LB)
+  const actionG = attributes.find(a => 
+    a.attribute_name.includes('АКЦИЯ') && a.attribute_name.includes('G')
   )?.value;
-  if (diameter) {
-    parts.push(`⌀${diameter}мм`);
-  }
-  
-  // Японска номерация (за плетени)
-  if (categoryType === 'telescopes_without_guides') {
-    const japaneseSize = attributes.find(a => 
-      a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
-    )?.value;
-    if (japaneseSize) {
-      const formattedSize = japaneseSize.startsWith('#') ? japaneseSize : `#${japaneseSize}`;
-      parts.push(formattedSize);
-    }
-  }
-  
-  // Тест кг
-  const testKg = attributes.find(a => 
-    a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
+  const actionLB = attributes.find(a => 
+    a.attribute_name.includes('АКЦИЯ') && a.attribute_name.includes('LB')
   )?.value;
-  if (testKg) {
-    parts.push(`${testKg}кг`);
-  }
   
-  // НОВО: Цвят (добави накрая)
-  const color = attributes.find(a => a.attribute_name.includes('ЦВЯТ'))?.value;
-  if (color) {
-    parts.push(color);
+  if (actionG) {
+    parts.push(`${actionG}g`);
+  } else if (actionLB) {
+    parts.push(`${actionLB}lb`);
   }
   
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
-
-
-
 
 
 
