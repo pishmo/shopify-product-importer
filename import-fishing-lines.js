@@ -7,6 +7,16 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
+// ⭐ ДОБАВИ ТУК:
+const COLLECTION_MAPPING = {
+  monofilament: 'gid://shopify/Collection/738965946750',
+  braided: 'gid://shopify/Collection/738965979518',
+  fluorocarbon: 'gid://shopify/Collection/738987442558',
+  other: 'gid://shopify/Collection/739068576126'
+};
+
+
+
 // Категория ID-та за влакна във Filstar
 const FILSTAR_LINE_CATEGORY_IDS = {
   monofilament: ['41'],
