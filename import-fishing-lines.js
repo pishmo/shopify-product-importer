@@ -259,6 +259,8 @@ function formatVariantName(variant, categoryType) {
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
 
+
+
 // Функция за update на продукт
 async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\nUpdating product: ${shopifyProduct.title}`);
@@ -283,45 +285,52 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
     console.log(`Images: ${imagesUploaded} uploaded, ${imagesSkipped} skipped (already exist)`);
   }
   
-  // Update варианти
-  if (filstarProduct.variants && filstarProduct.variants.length > 0) {
-    console.log(`Updating ${filstarProduct.variants.length} variants...`);
-    
-    for (const filstarVariant of filstarProduct.variants) {
-      const existingVariant = shopifyProduct.variants.find(v => v.sku === filstarVariant.sku);
-      
-      if (existingVariant) {
-        const newOptionName = formatVariantName(filstarVariant, categoryType);
-        
-        const updateResponse = await fetch(
-          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
-          {
-            method: 'PUT',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              variant: {
-                id: existingVariant.id,
-                option1: newOptionName,
-                price: filstarVariant.price || existingVariant.price
-              }
-            })
-          }
-        );
-        
-        if (updateResponse.ok) {
-          console.log(`  ✓ Updated variant: ${newOptionName}`);
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
-  }
+  // // Update варианти
+  // if (filstarProduct.variants && filstarProduct.variants.length > 0) {
+  //   console.log(`Updating ${filstarProduct.variants.length} variants...`);
+  //   
+  //   for (const filstarVariant of filstarProduct.variants) {
+  //     const existingVariant = shopifyProduct.variants.find(v => v.sku === filstarVariant.sku);
+  //     
+  //     if (existingVariant) {
+  //       const newOptionName = formatVariantName(filstarVariant, categoryType);
+  //       
+  //       const updateResponse = await fetch(
+  //         `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
+  //         {
+  //           method: 'PUT',
+  //           headers: {
+  //             'X-Shopify-Access-Token': ACCESS_TOKEN,
+  //             'Content-Type': 'application/json'
+  //           },
+  //           body: JSON.stringify({
+  //             variant: {
+  //               id: existingVariant.id,
+  //               option1: newOptionName,
+  //               price: filstarVariant.price || existingVariant.price
+  //             }
+  //           })
+  //         }
+  //       );
+  //       
+  //       if (updateResponse.ok) {
+  //         console.log(`  ✓ Updated variant: ${newOptionName}`);
+  //       }
+  //       
+  //       await new Promise(resolve => setTimeout(resolve, 300));
+  //     }
+  //   }
+  // }
   
   console.log(`✅ Finished updating product`);
 }
+
+
+
+
+
+
+
 
 // Главна функция
 async function main() {
