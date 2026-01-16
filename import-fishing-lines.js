@@ -15,6 +15,18 @@ const FILSTAR_LINE_CATEGORY_IDS = {
   other: ['109']
 };
 
+// Статистика за импорта
+const stats = {
+  monofilament: { created: 0, updated: 0, images: 0 },
+  braided: { created: 0, updated: 0, images: 0 },
+  fluorocarbon: { created: 0, updated: 0, images: 0 },
+  other: { d: 0, updated: 0, images: 0 }
+};
+
+
+
+
+
 // Parent категория "Влакна и поводи"
 const LINES_PARENT_ID = '4';
 
