@@ -1,4 +1,4 @@
-// import-fishing-lines.js - Универсален импорт на всички категории влакна
+// import-fishing-lines.js - Универсален импорт на всички категории влакна CARPLANDIA
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
