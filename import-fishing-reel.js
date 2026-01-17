@@ -1,4 +1,6 @@
 // import-fishing-reel.js - Универсален импорт на всички категории макари
+// Line 1 check
+console.log('File loaded successfully');
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
