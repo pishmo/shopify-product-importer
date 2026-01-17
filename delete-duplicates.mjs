@@ -1,9 +1,10 @@
 // cleanup-duplicate-images.js - ПОДОБРЕНА ВЕРСИЯ
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
+
 
 // Fetch всички продукти с пагинация
 async function fetchAllProducts() {
