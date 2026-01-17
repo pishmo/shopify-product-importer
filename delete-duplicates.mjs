@@ -1,11 +1,8 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
+
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
-
-// ... останалата част на кода
-
-
 
 // Fetch всички продукти с пагинация
 async function fetchAllProducts() {
