@@ -1,4 +1,4 @@
-// import-fishing-reel.js - Универсален импорт на всички категории макари
+// import-fishing-reel.js - Универсален импорт на всички категории макари CARPLANDIA 
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
