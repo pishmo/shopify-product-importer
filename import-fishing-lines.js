@@ -221,20 +221,17 @@ function filterLinesByCategory(allProducts) {
   
   return lines;
 }
-
 // Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
   console.log(`Searching for product with SKU: ${sku}...`);
   
   let allProducts = [];
   let hasNextPage = true;
-  let pageInfo = null;
+  let sinceId = 0;
   
   // Fetch всички продукти с пагинация
   while (hasNextPage) {
-    const url = pageInfo 
-      ? `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250&page_info=${pageInfo}`
-      : `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250`;
+    const url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250&since_id=${sinceId}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -250,20 +247,18 @@ async function findShopifyProductBySku(sku) {
     }
     
     const data = await response.json();
+    
+    if (!data.products || data.products.length === 0) {
+      hasNextPage = false;
+      break;
+    }
+    
     allProducts = allProducts.concat(data.products);
     
-    // Провери дали има следваща страница
-    const linkHeader = response.headers.get('Link');
-    if (linkHeader && linkHeader.includes('rel="next"')) {
-      const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-      if (nextMatch) {
-        pageInfo = nextMatch[1];
-      } else {
-        hasNextPage = false;
-      }
-    } else {
-      hasNextPage = false;
-    }
+    // Вземи ID на последния продукт за следващата страница
+    sinceId = data.products[data.products.length - 1].id;
+    
+    console.log(`  Fetched ${data.products.length} products (total: ${allProducts.length})`);
     
     await new Promise(resolve => setTimeout(resolve, 300));
   }
@@ -282,6 +277,10 @@ async function findShopifyProductBySku(sku) {
   console.log(`No existing product found with SKU: ${sku}`);
   return null;
 }
+
+
+
+
 
 
 function formatVariantName(variant, categoryType) {
