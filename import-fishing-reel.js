@@ -229,27 +229,55 @@ function filterLinesByCategory(allProducts) {
   return lines;
 }
 
-// Функция за намиране на продукт в Shopify по SKU
+// Функция за намиране на продукт в Shopify по SKU (с пагинация)
 async function findShopifyProductBySku(sku) {
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`,
-    {
+  let allProducts = [];
+  let pageInfo = null;
+  let hasNextPage = true;
+  
+  while (hasNextPage) {
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`;
+    
+    if (pageInfo) {
+      url += `&page_info=${pageInfo}`;
+    }
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       }
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch Shopify products');
+      return null;
     }
-  );
-  
-  if (!response.ok) {
-    console.error('Failed to fetch Shopify products');
-    return null;
+    
+    const data = await response.json();
+    allProducts = allProducts.concat(data.products);
+    
+    // Провери за следваща страница
+    const linkHeader = response.headers.get('Link');
+    if (linkHeader && linkHeader.includes('rel="next"')) {
+      const nextMatch = linkHeader.match(/<[^>]*[?&]page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+      if (nextMatch) {
+        pageInfo = nextMatch[1];
+      } else {
+        hasNextPage = false;
+      }
+    } else {
+      hasNextPage = false;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
   
-  const data = await response.json();
+  console.log(`  Searched ${allProducts.length} products for SKU: ${sku}`);
   
-  for (const product of data.products) {
+  // Търси в ВСИЧКИ продукти
+  for (const product of allProducts) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
       return product;
@@ -258,6 +286,9 @@ async function findShopifyProductBySku(sku) {
   
   return null;
 }
+
+
+
 
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
