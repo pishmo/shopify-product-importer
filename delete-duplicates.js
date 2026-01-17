@@ -6,7 +6,7 @@ const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
 
 // ID на колекцията "Макари с преден аванс"
-const COLLECTION_ID = '739254317310';
+const COLLECTION_ID = '739175301502';
 
 async function checkCollection() {
   console.log('Checking collection products...\n');
