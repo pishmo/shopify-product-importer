@@ -29,18 +29,16 @@ const LINES_PARENT_ID = '4';
 
 
 // Статистика за импорта
-
 const stats = {
   monofilament: { created: 0, updated: 0, images: 0 },
   braided: { created: 0, updated: 0, images: 0 },
   fluorocarbon: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }  // ← Провери тази категория
+  other: { d: 0, updated: 0, images: 0 }
 };
 
 
 
-
-// Функция за извличане на filename от URL (без Shopify UUID и hash-ове)
+// Функция за извличане на filename от URL (без hash)
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     console.log('⚠️ Invalid image src:', src);
@@ -50,26 +48,16 @@ function getImageFilename(src) {
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
-  // Премахни Shopify UUID (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
-  
-  // Премахни и стари hex hash-ове (без тирета, ако има)
-  const parts = cleanFilename.split('_');
+  const parts = withoutQuery.split('_');
   if (parts.length > 1) {
-    const lastPart = parts[parts.length - 1].split('.')[0]; // Вземи само името без extension
-    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length >= 32 && /^[a-f0-9]+/.test(lastPart)) {
       parts.pop();
-      const extension = cleanFilename.split('.').pop();
-      cleanFilename = parts.join('_') + '.' + extension;
     }
   }
   
-  return cleanFilename;
+  return parts.join('_');
 }
-
-
-
 
 // Функция за проверка дали снимка съществува
 function imageExists(existingImages, newImageUrl) {
@@ -221,67 +209,36 @@ function filterLinesByCategory(allProducts) {
   
   return lines;
 }
+
 // Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
-  console.log(`Searching for product with SKU: ${sku}...`);
-  
-  let allProducts = [];
-  let hasNextPage = true;
-  let sinceId = 0;
-  
-  // Fetch всички продукти с пагинация
-  while (hasNextPage) {
-    const url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250&since_id=${sinceId}`;
-    
-    const response = await fetch(url, {
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`,
+    {
       method: 'GET',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch Shopify products');
-      return null;
     }
-    
-    const data = await response.json();
-    
-    if (!data.products || data.products.length === 0) {
-      hasNextPage = false;
-      break;
-    }
-    
-    allProducts = allProducts.concat(data.products);
-    
-    // Вземи ID на последния продукт за следващата страница
-    sinceId = data.products[data.products.length - 1].id;
-    
-    console.log(`  Fetched ${data.products.length} products (total: ${allProducts.length})`);
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
+  );
+  
+  if (!response.ok) {
+    console.error('Failed to fetch Shopify products');
+    return null;
   }
   
-  console.log(`Searched ${allProducts.length} products in total`);
+  const data = await response.json();
   
-  // Търси продукт с този SKU
-  for (const product of allProducts) {
+  for (const product of data.products) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
-      console.log(`Found existing product: ${product.title} (ID: ${product.id})`);
       return product;
     }
   }
   
-  console.log(`No existing product found with SKU: ${sku}`);
   return null;
 }
-
-
-
-
-
 
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
@@ -802,4 +759,3 @@ async function main() {
 }
 
 main();
-
