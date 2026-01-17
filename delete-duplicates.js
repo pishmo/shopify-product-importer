@@ -5,7 +5,6 @@ const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
 
-// ID на колекцията "Макари с преден аванс"
 const COLLECTION_ID = '739175301502';
 
 async function checkCollection() {
@@ -22,30 +21,31 @@ async function checkCollection() {
   );
   
   const data = await response.json();
-  
-  console.log('API Response:', JSON.stringify(data, null, 2));
-  
-  if (!data.products) {
-    console.log('\n❌ No products found. Check collection ID!');
-    return;
-  }
-  
   const products = data.products;
   
-  console.log(`\nTotal products in collection: ${products.length}\n`);
+  console.log(`Total products: ${products.length}\n`);
   
-  // Групирай по vendor
-  const vendors = {};
+  // Групирай по title
+  const titleMap = {};
   products.forEach(p => {
-    const vendor = p.vendor || 'No vendor';
-    if (!vendors[vendor]) vendors[vendor] = 0;
-    vendors[vendor]++;
+    if (!titleMap[p.title]) {
+      titleMap[p.title] = [];
+    }
+    titleMap[p.title].push(p.id);
   });
   
-  console.log('Products by vendor:');
-  Object.entries(vendors).forEach(([vendor, count]) => {
-    console.log(`  ${vendor}: ${count}`);
-  });
+  // Намери дубликати
+  const duplicates = Object.entries(titleMap).filter(([title, ids]) => ids.length > 1);
+  
+  console.log(`Unique titles: ${Object.keys(titleMap).length}`);
+  console.log(`Duplicates: ${duplicates.length}\n`);
+  
+  if (duplicates.length > 0) {
+    console.log('DUPLICATES:');
+    duplicates.forEach(([title, ids]) => {
+      console.log(`"${title}" - ${ids.length} copies`);
+    });
+  }
 }
 
 checkCollection();
