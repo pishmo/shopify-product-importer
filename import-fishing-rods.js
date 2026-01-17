@@ -262,69 +262,33 @@ function filterLinesByCategory(allProducts) {
 
 // Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
-  console.log(`Searching for product with SKU: ${sku}...`);
-  
-  let allProducts = [];
-  let hasNextPage = true;
-  let pageInfo = null;
-  
-  // Fetch всички продукти с пагинация
-  while (hasNextPage) {
-    const url = pageInfo 
-      ? `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250&page_info=${pageInfo}`
-      : `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250`;
-    
-    const response = await fetch(url, {
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`,
+    {
       method: 'GET',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch Shopify products');
-      return null;
     }
-    
-    const data = await response.json();
-    allProducts = allProducts.concat(data.products);
-    
-    // Провери дали има следваща страница
-    const linkHeader = response.headers.get('Link');
-    if (linkHeader && linkHeader.includes('rel="next"')) {
-      const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-      if (nextMatch) {
-        pageInfo = nextMatch[1];
-      } else {
-        hasNextPage = false;
-      }
-    } else {
-      hasNextPage = false;
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
+  );
+  
+  if (!response.ok) {
+    console.error('Failed to fetch Shopify products');
+    return null;
   }
   
-  console.log(`Searched ${allProducts.length} products in total`);
+  const data = await response.json();
   
-  // Търси продукт с този SKU
-  for (const product of allProducts) {
+  for (const product of data.products) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
-      console.log(`Found existing product: ${product.title} (ID: ${product.id})`);
       return product;
     }
   }
   
-  console.log(`No existing product found with SKU: ${sku}`);
   return null;
 }
-
-
-
-
-
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
@@ -824,4 +788,3 @@ async function main() {
 }
 
 main();
-
