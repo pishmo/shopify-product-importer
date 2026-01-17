@@ -201,7 +201,7 @@ function filterLinesByCategory(allProducts) {
     }
     // Баитрънър
     else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.baitrunner.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('Баитрънър'))) {
+             categoryNames.some(name => name.toLowerCase().includes('Байтрънър'))) {
       lines.baitrunner.push(product);
     }
 
@@ -210,7 +210,7 @@ function filterLinesByCategory(allProducts) {
              categoryNames.some(name => name.toLowerCase().includes('Мач и Фидеер'))) {
       lines.multipliers.push(product);
     }
-   // Специални пръчки
+   // Мултипликатори
     else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.other.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Мултипликатори'))) {
       lines.other.push(product);
