@@ -1,13 +1,18 @@
-// find-duplicates.js
+// check-collection.js
+const fetch = require('node-fetch');
+
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
 
-async function findDuplicates() {
-  console.log('Searching for duplicate products...\n');
+// ID на колекцията "Макари с преден аванс"
+const COLLECTION_ID = '739254317310'; // Провери дали това е правилното ID
+
+async function checkCollection() {
+  console.log('Checking collection products...\n');
   
   const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${COLLECTION_ID}/products.json?limit=250`,
     {
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
@@ -19,30 +24,25 @@ async function findDuplicates() {
   const data = await response.json();
   const products = data.products;
   
-  // Групирай по title
-  const titleMap = {};
+  console.log(`Total products in collection: ${products.length}\n`);
+  
+  // Групирай по vendor
+  const vendors = {};
   products.forEach(p => {
-    if (!titleMap[p.title]) {
-      titleMap[p.title] = [];
-    }
-    titleMap[p.title].push({ id: p.id, title: p.title });
+    const vendor = p.vendor || 'No vendor';
+    if (!vendors[vendor]) vendors[vendor] = 0;
+    vendors[vendor]++;
   });
   
-  // Намери дубликати
-  const duplicates = Object.entries(titleMap).filter(([title, prods]) => prods.length > 1);
+  console.log('Products by vendor:');
+  Object.entries(vendors).forEach(([vendor, count]) => {
+    console.log(`  ${vendor}: ${count}`);
+  });
   
-  console.log(`Total products: ${products.length}`);
-  console.log(`Unique titles: ${Object.keys(titleMap).length}`);
-  console.log(`Duplicate titles: ${duplicates.length}\n`);
-  
-  if (duplicates.length > 0) {
-    console.log('DUPLICATES FOUND:');
-    console.log('='.repeat(60));
-    duplicates.forEach(([title, prods]) => {
-      console.log(`\n"${title}" - ${prods.length} copies`);
-      prods.forEach(p => console.log(`  ID: ${p.id}`));
-    });
-  }
+  console.log('\nFirst 10 products:');
+  products.slice(0, 10).forEach(p => {
+    console.log(`  - ${p.title} (ID: ${p.id}, Vendor: ${p.vendor})`);
+  });
 }
 
-findDuplicates();
+checkCollection();
