@@ -744,9 +744,18 @@ function printFinalStats() {
 
 
 // Главна функция
-async function main() {
+ async function main() {
   console.log('Starting fishing lines import...\n');
 
+try {
+  await addProductImages(productId, filstarProduct);
+} catch (error) {
+  console.error('Error in addProductImages:', error.message);
+  console.error('Stack trace:', error.stack); // ← Това ще покаже точния ред
+  throw error;
+}
+
+   
   try {
   const lines = await fetchAllFishingLines(); // ← Обратно на старото име
 
