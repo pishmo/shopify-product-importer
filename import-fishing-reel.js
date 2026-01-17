@@ -231,10 +231,9 @@ function filterLinesByCategory(allProducts) {
   return lines;
 }
 
-///////////////////////////////////////////////////////////////////////
 
-търсене по SKU
-/////////////////////////////////////////////////////////////////////////
+//  търсене по SKU
+
 async function findShopifyProductBySku(sku) {
   console.log(`Searching for product with SKU: ${sku}...`);
   
