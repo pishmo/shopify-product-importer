@@ -6,7 +6,7 @@ const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
 
 // ID на колекцията "Макари с преден аванс"
-const COLLECTION_ID = '739254317310'; // Провери дали това е правилното ID
+const COLLECTION_ID = '739254317310';
 
 async function checkCollection() {
   console.log('Checking collection products...\n');
@@ -22,9 +22,17 @@ async function checkCollection() {
   );
   
   const data = await response.json();
+  
+  console.log('API Response:', JSON.stringify(data, null, 2));
+  
+  if (!data.products) {
+    console.log('\n❌ No products found. Check collection ID!');
+    return;
+  }
+  
   const products = data.products;
   
-  console.log(`Total products in collection: ${products.length}\n`);
+  console.log(`\nTotal products in collection: ${products.length}\n`);
   
   // Групирай по vendor
   const vendors = {};
@@ -37,11 +45,6 @@ async function checkCollection() {
   console.log('Products by vendor:');
   Object.entries(vendors).forEach(([vendor, count]) => {
     console.log(`  ${vendor}: ${count}`);
-  });
-  
-  console.log('\nFirst 10 products:');
-  products.slice(0, 10).forEach(p => {
-    console.log(`  - ${p.title} (ID: ${p.id}, Vendor: ${p.vendor})`);
   });
 }
 
