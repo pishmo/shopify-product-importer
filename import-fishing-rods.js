@@ -1,4 +1,4 @@
-// import-fishing-rods.js - Универсален импорт на всички категории пръчки
+// import-fishing-rods.js - Универсален импорт на всички категории  CARPLANDIA
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
