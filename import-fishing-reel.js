@@ -1,6 +1,4 @@
 // import-fishing-reel.js - Универсален импорт на всички категории макари
-// Line 1 check
-console.log('File loaded successfully');
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -201,7 +199,7 @@ function filterLinesByCategory(allProducts) {
     }
     // Баитрънър
     else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.baitrunner.includes(id)) ||
-             categoryNames.some(name => name.toLowerCase().includes('Байтрънър'))) {
+             categoryNames.some(name => name.toLowerCase().includes('Баитрънър'))) {
       lines.baitrunner.push(product);
     }
 
@@ -210,7 +208,7 @@ function filterLinesByCategory(allProducts) {
              categoryNames.some(name => name.toLowerCase().includes('Мач и Фидеер'))) {
       lines.multipliers.push(product);
     }
-   // Мултипликатори
+   // Специални пръчки
     else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.other.includes(id)) ||
              categoryNames.some(name => name.toLowerCase().includes('Мултипликатори'))) {
       lines.other.push(product);
@@ -231,71 +229,35 @@ function filterLinesByCategory(allProducts) {
   return lines;
 }
 
-
-//  търсене по SKU
-
+// Функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
-  console.log(`Searching for product with SKU: ${sku}...`);
-  
-  let allProducts = [];
-  let hasNextPage = true;
-  let pageInfo = null;
-  
-  // Fetch всички продукти с пагинация
-  while (hasNextPage) {
-    const url = pageInfo 
-      ? `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250&page_info=${pageInfo}`
-      : `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants&limit=250`;
-    
-    const response = await fetch(url, {
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`,
+    {
       method: 'GET',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch Shopify products');
-      return null;
     }
-    
-    const data = await response.json();
-    allProducts = allProducts.concat(data.products);
-    
-    // Провери дали има следваща страница
-    const linkHeader = response.headers.get('Link');
-    if (linkHeader && linkHeader.includes('rel="next"')) {
-      const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-      if (nextMatch) {
-        pageInfo = nextMatch[1];
-      } else {
-        hasNextPage = false;
-      }
-    } else {
-      hasNextPage = false;
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
+  );
+  
+  if (!response.ok) {
+    console.error('Failed to fetch Shopify products');
+    return null;
   }
   
-  console.log(`Searched ${allProducts.length} products in total`);
+  const data = await response.json();
   
-  // Търси продукт с този SKU
-  for (const product of allProducts) {
+  for (const product of data.products) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
-      console.log(`Found existing product: ${product.title} (ID: ${product.id})`);
       return product;
     }
   }
   
-  console.log(`No existing product found with SKU: ${sku}`);
   return null;
 }
-
-// край на търсенето
-
 
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
@@ -744,12 +706,11 @@ function printFinalStats() {
 
 
 // Главна функция
-// Главна функция
 async function main() {
   console.log('Starting fishing lines import...\n');
-   
+
   try {
-    const lines = await fetchAllFishingLines();
+  const lines = await fetchAllFishingLines(); // ← Обратно на старото име
 
     // Loop през 4-те категории
     for (const [category, products] of Object.entries(lines)) {
@@ -775,8 +736,5 @@ async function main() {
     process.exit(1);
   }
 }
-
-main();
-
 
 main();
