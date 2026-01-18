@@ -744,37 +744,32 @@ function printFinalStats() {
 
 // Главна функция
 async function main() {
-  console.log('Starting fishing lines import...\n');
-
-// ТЕСТОВИ SKU-та
-  const TEST_SKUS = ['963102', '961406']; // Myth Feeder и FilStar Express
+  console.log('Starting import...\n');
   
-  try {
-  const lines = await fetchAllFishingLines(); // ← Обратно на старото име
-
-    // Loop през 4-те категории
-    for (const [category, products] of Object.entries(lines)) {
-      if (products.length === 0) continue;
-
-      console.log(`\n${'='.repeat(60)}`);
-      console.log(`Processing ${getCategoryName(category)}: ${products.length} products`);
-      console.log('='.repeat(60));
-
-      for (const product of products) {
-        await processProduct(product, category);
-        await new Promise(resolve => setTimeout(resolve, 500));
+  const allProducts = await fetchAllProducts();
+  
+  // ТЕСТОВИ SKU-та
+  const TEST_SKUS = ['963102', '961406'];
+  
+  let processedCount = 0;
+  
+  for (const product of allProducts) {
+    // Провери дали продуктът има тестово SKU
+    const hasTestSku = product.variants?.some(v => TEST_SKUS.includes(v.sku));
+    
+    if (hasTestSku) {
+      await processProduct(product, 'test');
+      processedCount++;
+      
+      // Спри след като обработиш тестовите
+      if (processedCount >= TEST_SKUS.length) {
+        console.log('\n✅ Test completed, stopping...');
+        return;
       }
     }
-
-    // Покажи финална статистика
-    printFinalStats();
-
-    console.log('✅ Import completed!');
-
-  } catch (error) {
-    console.error('❌ Import failed:', error.message);
-    process.exit(1);
   }
+  
+  printFinalStats();
 }
 
 main();
