@@ -44,7 +44,6 @@ const stats = {
 
 
 
-// Функция за извличане на filename от URL (без Shopify UUID и hash-ове)
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     console.log('⚠️ Invalid image src:', src);
@@ -68,9 +67,13 @@ function getImageFilename(src) {
       cleanFilename = parts.join('_') + '.' + extension;
     }
   }
-  cleanFilename.replace(/^_+/, '');
+  
+  // ⬇️ ДОБАВИ ТОЗИ РЕД ТУК (в края, преди return)
+  cleanFilename = cleanFilename.replace(/^_+/, '');
+  
   return cleanFilename;
 }
+
 
 
 
