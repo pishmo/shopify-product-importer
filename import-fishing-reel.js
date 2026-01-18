@@ -46,7 +46,7 @@ function getImageFilename(src) {
   const extension = cleanFilename.split('.').pop();
   const filteredParts = parts.filter(part => {
     const partWithoutExt = part.split('.')[0];
-    return !(partWithoutExt.length >= 32 &amp;&amp; /^[a-f0-9]+$/i.test(partWithoutExt));
+    return !(partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt));
   });
   cleanFilename = filteredParts.join('_');
   if (!cleanFilename.endsWith('.' + extension)) {
@@ -62,7 +62,7 @@ function imageExists(existingImages, newImageUrl) {
   if (!newFilename) return false;
   return existingImages.some(img => {
     const existingFilename = getImageFilename(img.src);
-    return existingFilename &amp;&amp; existingFilename === newFilename;
+    return existingFilename && existingFilename === newFilename;
   });
 }
 
@@ -81,7 +81,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   }
   
   // 2️⃣ Допълнителни снимки
-  if (filstarProduct.images &amp;&amp; Array.isArray(filstarProduct.images)) {
+  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
     for (const img of filstarProduct.images) {
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
       desiredOrder.push(imageUrl);
@@ -239,7 +239,7 @@ async function findShopifyProductBySku(sku) {
     const data = await response.json();
     allProducts = allProducts.concat(data.products);
     const linkHeader = response.headers.get('Link');
-    if (linkHeader &amp;&amp; linkHeader.includes('rel=\"next\"')) {
+    if (linkHeader && linkHeader.includes('rel=\"next\"')) {
       const nextMatch = linkHeader.match(/<[^>]*[?&amp;]page_info=([^>&amp;]+)[^>]*>;\s*rel=\"next\"/);
       if (nextMatch) {
         pageInfo = nextMatch[1];
@@ -290,7 +290,7 @@ async function addProductImages(productId, filstarProduct) {
   }
   
   // 2️⃣ Допълнителни снимки
-  if (filstarProduct.images &amp;&amp; Array.isArray(filstarProduct.images)) {
+  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
     for (const img of filstarProduct.images) {
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
       imagesToUpload.push({ src: imageUrl, type: 'additional' });
@@ -505,7 +505,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
     allImages.push(imageUrl);
   }
   
-  if (filstarProduct.images &amp;&amp; Array.isArray(filstarProduct.images)) {
+  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
     for (const img of filstarProduct.images) {
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
       allImages.push(imageUrl);
@@ -582,7 +582,7 @@ function printFinalStats() {
   let totalUpdated = 0;
   let totalImages = 0;
   for (const [category, data] of Object.entries(stats)) {
-    if (data.created === 0 &amp;&amp; data.updated === 0) continue;
+    if (data.created === 0 && data.updated === 0) continue;
     console.log(`\n${getCategoryName(category)}:`);
     console.log(` ✨ Created: ${data.created} products`);
     console.log(` 🔄 Updated: ${data.updated} products`);
