@@ -44,7 +44,7 @@ function getImageFilename(src) {
   let cleanFilename = withoutQuery.replace(uuidPattern, '');
   const parts = cleanFilename.split('_');
   const extension = cleanFilename.split('.').pop();
-  const filteredParts = parts.filter(part =&gt; {
+  const filteredParts = parts.filter(part => {
     const partWithoutExt = part.split('.')[0];
     return !(partWithoutExt.length &gt;= 32 &amp;&amp; /^[a-f0-9]+$/i.test(partWithoutExt));
   });
