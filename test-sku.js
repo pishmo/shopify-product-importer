@@ -13,20 +13,25 @@ const TEST_SKUS = [
   // Добави още SKU-та тук ако искаш да тестваш повече
 ];
 
-// Функция за извличане на filename от URL (без hash)
+// ПОДОБРЕНА функция за извличане на filename от URL
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
-    console.log('⚠️ Invalid image src:', src);
     return null;
   }
   
+  // Вземи последната част от URL-а
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
-  const parts = withoutQuery.split('_');
+  // Премахни UUID-та от края (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  const withoutUUID = withoutQuery.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g, '');
+  
+  // Премахни Shopify hash-а от края (формат: _xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+  const parts = withoutUUID.split('_');
   if (parts.length > 1) {
     const lastPart = parts[parts.length - 1];
-    if (lastPart.length >= 32 && /^[a-f0-9]+/.test(lastPart)) {
+    // Ако последната част е 32-символен hex hash, премахни го
+    if (lastPart.length >= 32 && /^[a-f0-9]+\.(jpg|jpeg|png|gif|webp)$/i.test(lastPart)) {
       parts.pop();
     }
   }
@@ -34,7 +39,7 @@ function getImageFilename(src) {
   return parts.join('_');
 }
 
-// Функция за намиране на продукт в Shopify по SKU
+// ПОДОБРЕНА функция за намиране на продукт в Shopify по SKU
 async function findShopifyProductBySku(sku) {
   console.log(`\n🔍 Searching in Shopify for SKU: ${sku}...`);
   
@@ -98,7 +103,6 @@ async function findShopifyProductBySku(sku) {
   
   return null;
 }
-
 
 // Функция за форматиране на variant име
 function formatVariantName(variant, categoryType) {
@@ -256,7 +260,7 @@ async function testSku(sku) {
             }
           }
           
-          // НОВА ЧАСТ: Покажи снимките от Filstar
+          // Покажи снимките от Filstar
           console.log(`\n  🖼️  Filstar Images (${product.images ? product.images.length : 0}):`);
           if (product.images && product.images.length > 0) {
             product.images.forEach((imgUrl, index) => {
@@ -308,23 +312,23 @@ async function testSku(sku) {
     console.log(`  🐛 DEBUG - Images is array: ${Array.isArray(shopifyProduct.images)}`);
     console.log(`  🐛 DEBUG - Full images object:`, JSON.stringify(shopifyProduct.images, null, 2));
     
-    // НОВА ЧАСТ: Покажи снимките от Shopify
+    // Покажи снимките от Shopify
     const shopifyImages = shopifyProduct.images || [];
     console.log(`\n  🖼️  Shopify Images (${shopifyImages.length}):`);
     
     if (shopifyImages.length > 0) {
       shopifyImages.forEach((img, index) => {
-        console.log(`    ${index + 1}. Full image object:`, JSON.stringify(img, null, 2));
         const src = img.src || img.url || img;
         const filename = getImageFilename(src);
-        console.log(`       URL: ${src}`);
+        console.log(`    ${index + 1}. ${src}`);
         console.log(`       Filename: ${filename}`);
+        console.log(`       Created: ${img.created_at}`);
       });
     } else {
       console.log(`    ⚠️  No images found in Shopify product`);
     }
     
-    // НОВА ЧАСТ: Сравни снимките
+    // ПОДОБРЕНО: Сравни снимките с детекция на дубликати
     console.log(`\n  🔍 Image Comparison:`);
     if (filstarProduct.images && filstarProduct.images.length > 0 && shopifyImages.length > 0) {
       const filstarFilenames = filstarProduct.images
@@ -338,32 +342,59 @@ async function testSku(sku) {
         })
         .filter(fn => fn !== null);
       
+      // Премахни дубликатите от Shopify за по-ясно сравнение
+      const uniqueShopifyFilenames = [...new Set(shopifyFilenames)];
+      
       console.log(`\n    Filstar filenames (${filstarFilenames.length}):`);
       filstarFilenames.forEach((fn, i) => console.log(`      ${i + 1}. ${fn}`));
       
-      console.log(`\n    Shopify filenames (${shopifyFilenames.length}):`);
-      shopifyFilenames.forEach((fn, i) => console.log(`      ${i + 1}. ${fn}`));
+      console.log(`\n    Shopify filenames (${shopifyFilenames.length} total, ${uniqueShopifyFilenames.length} unique):`);
+      uniqueShopifyFilenames.forEach((fn, i) => {
+        const count = shopifyFilenames.filter(f => f === fn).length;
+        console.log(`      ${i + 1}. ${fn} ${count > 1 ? `⚠️ (${count}x DUPLICATE!)` : ''}`);
+      });
       
-      // Провери за дубликати
-      const duplicateFilenames = filstarFilenames.filter(fn => 
-        shopifyFilenames.includes(fn)
+      // Провери за съвпадения
+      const matchingFilenames = filstarFilenames.filter(fn => 
+        uniqueShopifyFilenames.includes(fn)
       );
       
-      if (duplicateFilenames.length > 0) {
-        console.log(`\n    ✅ Matching filenames (${duplicateFilenames.length}):`);
-        duplicateFilenames.forEach(fn => console.log(`      - ${fn}`));
+      if (matchingFilenames.length > 0) {
+        console.log(`\n    ✅ Matching filenames (${matchingFilenames.length}):`);
+        matchingFilenames.forEach(fn => {
+          const duplicateCount = shopifyFilenames.filter(f => f === fn).length;
+          console.log(`      - ${fn} ${duplicateCount > 1 ? `⚠️ (uploaded ${duplicateCount} times!)` : ''}`);
+        });
       } else {
         console.log(`\n    ⚠️  No matching filenames found!`);
       }
       
       const newImages = filstarFilenames.filter(fn => 
-        !shopifyFilenames.includes(fn)
+        !uniqueShopifyFilenames.includes(fn)
       );
       
       if (newImages.length > 0) {
         console.log(`\n    🆕 New images from Filstar (${newImages.length}):`);
         newImages.forEach(fn => console.log(`      - ${fn}`));
+      } else {
+        console.log(`\n    ℹ️  All Filstar images already exist in Shopify`);
       }
+      
+      // НОВО: Покажи кои Shopify снимки трябва да се изтрият
+      if (shopifyFilenames.length > uniqueShopifyFilenames.length) {
+        console.log(`\n    🗑️  Duplicate images to DELETE from Shopify:`);
+        const seenFilenames = new Set();
+        shopifyImages.forEach((img, index) => {
+          const filename = getImageFilename(img.src);
+          if (seenFilenames.has(filename)) {
+            console.log(`      - Position ${index + 1}: ${img.id} (${filename})`);
+            console.log(`        Created: ${img.created_at}`);
+          } else {
+            seenFilenames.add(filename);
+          }
+        });
+      }
+      
     } else {
       if (!filstarProduct.images || filstarProduct.images.length === 0) {
         console.log(`    ⚠️  No images in Filstar product`);
@@ -379,7 +410,7 @@ async function testSku(sku) {
 }
 
 async function main() {
-  console.log('Starting SKU test with image comparison...\n');
+  console.log('Starting SKU test with image duplicate detection...\n');
   
   for (const sku of TEST_SKUS) {
     await testSku(sku);
