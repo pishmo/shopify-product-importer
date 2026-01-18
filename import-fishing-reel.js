@@ -150,10 +150,23 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   }
   
+  // ✅ НОВО: Дедуплицирай по filename
+  const seen = new Set();
+  const uniqueDesiredOrder = desiredOrder.filter(url => {
+    const filename = getImageFilename(url);
+    if (seen.has(filename)) {
+      return false; // Пропусни дубликат
+    }
+    seen.add(filename);
+    return true;
+  });
+  
+  console.log(`   📊 Total images: ${desiredOrder.length}, Unique: ${uniqueDesiredOrder.length}`);
+  
   // Намери съответните Shopify image IDs
   const reorderedImages = [];
-  for (let i = 0; i < desiredOrder.length; i++) {
-    const desiredUrl = desiredOrder[i];
+  for (let i = 0; i < uniqueDesiredOrder.length; i++) {
+    const desiredUrl = uniqueDesiredOrder[i];
     const desiredFilename = getImageFilename(desiredUrl);
     
     const existingImage = existingImages.find(img => {
@@ -201,6 +214,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   
   return false;
 }
+
 
 async function fetchAllProducts() {
   console.log('Fetching all products from Filstar API with pagination...');
