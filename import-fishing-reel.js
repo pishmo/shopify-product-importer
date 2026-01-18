@@ -680,6 +680,15 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     }
     
     stats[categoryType].updated++;
+
+console.log(`  🐛 DEBUG: categoryType = "${categoryType}"`);
+
+if (stats[categoryType]) {
+  stats[categoryType].updated++;
+} else {
+  console.error(`❌ Category "${categoryType}" not found in stats object`);
+}
+
     
   } else {
     // CREATE NEW PRODUCT
