@@ -712,17 +712,28 @@ function printFinalStats() {
 async function main() {
   console.log('Starting import...\n');
   
-  const fishingReels = await fetchAllFishingLines();
+  const categorizedReels = await fetchAllFishingLines();
   
-  console.log(`\n📊 Found ${fishingReels.length} fishing reels\n`);
+  // Обедини всички категории в един масив
+  const allReels = [
+    ...(categorizedReels.front_drag || []),
+    ...(categorizedReels.rear_drag || []),
+    ...(categorizedReels.baitrunner || []),
+    ...(categorizedReels.multipliers || []),
+    ...(categorizedReels.other || [])
+  ];
   
-  for (const reel of fishingReels) {
+  console.log(`\n📊 Found ${allReels.length} fishing reels total\n`);
+  
+  for (const reel of allReels) {
     const categoryType = getCategoryName(reel) || 'other';
     await processProduct(reel, categoryType);
   }
   
   printFinalStats();
 }
+
+main();
 
 main();
 
