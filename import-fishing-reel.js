@@ -712,47 +712,17 @@ function printFinalStats() {
 async function main() {
   console.log('Starting import...\n');
   
- 
   const fishingReels = await fetchAllFishingLines();
   
-  // Категоризирай макарите
-  const frontDragReels = filterLinesByCategory(fishingReels, FRONT_DRAG_CATEGORY_IDS);
-  const rearDragReels = filterLinesByCategory(fishingReels, REAR_DRAG_CATEGORY_IDS);
-  const baitrunnerReels = filterLinesByCategory(fishingReels, BAITRUNNER_CATEGORY_IDS);
-  const multiplierReels = filterLinesByCategory(fishingReels, MULTIPLIER_CATEGORY_IDS);
-  const otherReels = filterLinesByCategory(fishingReels, OTHER_CATEGORY_IDS);
+  console.log(`\n📊 Found ${fishingReels.length} fishing reels\n`);
   
-  console.log(`\n📊 Found fishing reels:`);
-  console.log(`  Макари с преден аванс: ${frontDragReels.length}`);
-  console.log(`  Макари с заден аванс: ${rearDragReels.length}`);
-  console.log(`  Байтрънър: ${baitrunnerReels.length}`);
-  console.log(`  Мултиплокатори: ${multiplierReels.length}`);
-  console.log(`  Други: ${otherReels.length}\n`);
-  
-  // Обработи всяка категория
-  for (const reel of frontDragReels) {
-    await processProduct(reel, 'frontDrag');
-  }
-  
-  for (const reel of rearDragReels) {
-    await processProduct(reel, 'rearDrag');
-  }
-  
-  for (const reel of baitrunnerReels) {
-    await processProduct(reel, 'baitrunner');
-  }
-  
-  for (const reel of multiplierReels) {
-    await processProduct(reel, 'multiplier');
-  }
-  
-  for (const reel of otherReels) {
-    await processProduct(reel, 'other');
+  for (const reel of fishingReels) {
+    const categoryType = getCategoryName(reel) || 'other';
+    await processProduct(reel, categoryType);
   }
   
   printFinalStats();
 }
 
 main();
-
 
