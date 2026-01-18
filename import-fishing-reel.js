@@ -599,15 +599,17 @@ function printFinalStats() {
 async function main() {
   console.log('Starting import...\n');
 
+  const TEST_MODE = true;
+  const TEST_PRODUCT_NAME = 'Макара FilStar Target RD';
 
-// 🧪 TEST MODE - импортвай само конкретен продукт
-const TEST_MODE = true;
-const TEST_PRODUCT_NAME = 'Макара FilStar Target RD';
-
-if (TEST_MODE) {
-  console.log(`⚠️  TEST MODE: Will process only "${TEST_PRODUCT_NAME}"\n`);
-}
-
+  if (TEST_MODE) {
+    console.log(`⚠️  TEST MODE: Will process only "${TEST_PRODUCT_NAME}"\n`);
+  }
+  
+  // 🚀 КЕШИРАЙ всички Shopify продукти в началото
+  console.log('📦 Fetching all Shopify products...');
+  const allShopifyProducts = await getAllShopifyProducts();
+  console.log(`✅ Cached ${allShopifyProducts.length} Shopify products\n`);
   
   const categorizedReels = await fetchAllFishingLines();
   const allReels = [
@@ -617,23 +619,23 @@ if (TEST_MODE) {
     ...(categorizedReels.multipliers || []),
     ...(categorizedReels.other || [])
   ];
+  
   console.log(`\n📊 Found ${allReels.length} fishing reels total\n`);
-for (const reel of allReels) {
-  // 🧪 TEST MODE check
-  if (TEST_MODE && reel.name !== TEST_PRODUCT_NAME) {
-    continue; // Пропусни всички други продукти
+  
+  for (const reel of allReels) {
+    if (TEST_MODE && reel.name !== TEST_PRODUCT_NAME) {
+      continue;
+    }
+    
+    const categoryType = getCategoryName(reel) || 'other';
+    await processProduct(reel, categoryType, allShopifyProducts); // Подай кеша
+    
+    if (TEST_MODE) {
+      console.log(`\n✅ Test completed, stopping...`);
+      break;
+    }
   }
   
-  const categoryType = getCategoryName(reel) || 'other';
-  await processProduct(reel, categoryType);
-  
-  // 🧪 TEST MODE - спри след първия намерен продукт
-  if (TEST_MODE) {
-    console.log(`\n✅ Test completed, stopping...`);
-    break;
-  }
-}
-
   printFinalStats();
 }
 
