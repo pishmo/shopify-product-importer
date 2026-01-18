@@ -712,7 +712,7 @@ function printFinalStats() {
 async function main() {
   console.log('Starting import...\n');
   
-  const allProducts = await fetchAllProducts();
+ 
   const fishingReels = await fetchAllFishingLines();
   
   // Категоризирай макарите
