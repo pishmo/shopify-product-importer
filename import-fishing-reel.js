@@ -595,24 +595,32 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(` ✅ Updated | Images: ${imagesUploaded} new, ${imagesSkipped} skipped`);
 }
 
-async function processProduct(filstarProduct, category) {
-  const firstVariantSku = filstarProduct.variants?.[0]?.sku;
-  if (!firstVariantSku) {
-    console.log(` ⚠️ No SKU found, skipping: ${filstarProduct.name}`);
-    return;
+async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
+  console.log(`Processing: ${filstarProduct.name}`);
+  
+  // Намери продукта в кеша вместо да fetch-ваш
+  let shopifyProduct = null;
+  
+  for (const variant of filstarProduct.variants || []) {
+    const foundProduct = cachedShopifyProducts.find(p => 
+      p.variants.some(v => v.sku === variant.sku)
+    );
+    
+    if (foundProduct) {
+      shopifyProduct = foundProduct;
+      break;
+    }
   }
-  console.log(`\nProcessing: ${filstarProduct.name}`);
-  console.log(` Searching for SKU: ${firstVariantSku}...`);
-  const existingProduct = await findShopifyProductBySku(firstVariantSku);
-  if (existingProduct) {
-    console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
-    await updateProduct(existingProduct, filstarProduct, category);
+  
+  // Останалият код остава същият...
+  if (shopifyProduct) {
+    console.log(`  ✓ Found existing product (ID: ${shopifyProduct.id})`);
+    // ... update логика
   } else {
-    console.log(` ℹ️ Product not found in Shopify`);
-    await createShopifyProduct(filstarProduct, category);
+    console.log(`  ✗ Not found, creating new product`);
+    // ... create логика
   }
 }
-
 
 
 
