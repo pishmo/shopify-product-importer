@@ -76,7 +76,8 @@ function getImageFilename(src) {
       cleanFilename = parts.join('_') + '.' + extension;
     }
   }
-  
+  cleanFilename = cleanFilename.replace(/^_+/, '');
+
   return cleanFilename;
 }
 
