@@ -38,25 +38,51 @@ function getImageFilename(src) {
 async function findShopifyProductBySku(sku) {
   console.log(`\n🔍 Searching in Shopify for SKU: ${sku}...`);
   
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`,
-    {
+  let allProducts = [];
+  let hasNextPage = true;
+  let pageInfo = null;
+  
+  // Fetch all products with pagination
+  while (hasNextPage) {
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`;
+    
+    if (pageInfo) {
+      url += `&page_info=${pageInfo}`;
+    }
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       }
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch Shopify products:', response.status);
+      return null;
     }
-  );
-  
-  if (!response.ok) {
-    console.error('Failed to fetch Shopify products');
-    return null;
+    
+    const data = await response.json();
+    allProducts = allProducts.concat(data.products);
+    
+    // Check for next page
+    const linkHeader = response.headers.get('Link');
+    if (linkHeader && linkHeader.includes('rel="next"')) {
+      const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+      pageInfo = nextMatch ? nextMatch[1] : null;
+      hasNextPage = !!pageInfo;
+    } else {
+      hasNextPage = false;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  const data = await response.json();
+  console.log(`  📊 Total products fetched: ${allProducts.length}`);
   
-  for (const product of data.products) {
+  // Search for SKU
+  for (const product of allProducts) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
       // DEBUG: Покажи какво съдържа product
@@ -72,6 +98,7 @@ async function findShopifyProductBySku(sku) {
   
   return null;
 }
+
 
 // Функция за форматиране на variant име
 function formatVariantName(variant, categoryType) {
