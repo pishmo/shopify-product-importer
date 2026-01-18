@@ -715,8 +715,7 @@ async function main() {
   
   const allProducts = await fetchAllProducts();
   
-  // ТЕСТОВИ SKU-та
-  const TEST_SKUS = ['963102', '961406'];
+  
   
   let processedCount = 0;
   
