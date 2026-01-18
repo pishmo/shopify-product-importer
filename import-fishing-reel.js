@@ -746,6 +746,9 @@ function printFinalStats() {
 async function main() {
   console.log('Starting fishing lines import...\n');
 
+// ТЕСТОВИ SKU-та
+  const TEST_SKUS = ['963102', '961406']; // Myth Feeder и FilStar Express
+  
   try {
   const lines = await fetchAllFishingLines(); // ← Обратно на старото име
 
