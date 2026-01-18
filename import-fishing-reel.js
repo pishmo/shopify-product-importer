@@ -75,6 +75,7 @@ function getImageFilename(src) {
 
 
 
+
 // Функция за проверка дали снимка съществува
 function imageExists(existingImages, newImageUrl) {
   const newFilename = getImageFilename(newImageUrl);
