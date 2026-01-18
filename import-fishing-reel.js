@@ -592,23 +592,25 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   
   const productId = shopifyProduct.id;
  
+// Upload снимки (само нови)
+if (filstarProduct.images && filstarProduct.images.length > 0) {
+  console.log(`Processing ${filstarProduct.images.length} images from Filstar...`);
   
-  // Upload снимки (само нови)
-  if (filstarProduct.images && filstarProduct.images.length > 0) {
-    console.log(`Processing ${filstarProduct.images.length} images from Filstar...`);
+  for (const imageUrl of filstarProduct.images) {
+    const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
     
-    for (const imageUrl of filstarProduct.images) {
-      const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
-      if (uploaded) {
-        imagesUploaded++;
-        uploadedImagesCount++;
-      } else {
-        imagesSkipped++;
-      }
+    if (uploaded) {
+      // Добави новата снимка към масива, за да се избегне дублиране в същия batch
+      shopifyProduct.images.push({
+        src: imageUrl,
+        id: null
+      });
     }
-    
-    console.log(`Images: ${imagesUploaded} uploaded, ${imagesSkipped} skipped (already exist)`);
   }
+}
+
+
+
   
   // // Update варианти
    if (filstarProduct.variants && filstarProduct.variants.length > 0) {
