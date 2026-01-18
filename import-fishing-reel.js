@@ -733,7 +733,7 @@ async function main() {
   printFinalStats();
 }
 
-main();
+
 
 main();
 
