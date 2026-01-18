@@ -46,7 +46,7 @@ function getImageFilename(src) {
   const extension = cleanFilename.split('.').pop();
   const filteredParts = parts.filter(part => {
     const partWithoutExt = part.split('.')[0];
-    return !(partWithoutExt.length &gt;= 32 &amp;&amp; /^[a-f0-9]+$/i.test(partWithoutExt));
+    return !(partWithoutExt.length >= 32 &amp;&amp; /^[a-f0-9]+$/i.test(partWithoutExt));
   });
   cleanFilename = filteredParts.join('_');
   if (!cleanFilename.endsWith('.' + extension)) {
@@ -60,7 +60,7 @@ function getImageFilename(src) {
 function imageExists(existingImages, newImageUrl) {
   const newFilename = getImageFilename(newImageUrl);
   if (!newFilename) return false;
-  return existingImages.some(img =&gt; {
+  return existingImages.some(img => {
     const existingFilename = getImageFilename(img.src);
     return existingFilename &amp;&amp; existingFilename === newFilename;
   });
@@ -102,11 +102,11 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   
   // Намери съответните Shopify image IDs
   const reorderedImages = [];
-  for (let i = 0; i &lt; desiredOrder.length; i++) {
+  for (let i = 0; i < desiredOrder.length; i++) {
     const desiredUrl = desiredOrder[i];
     const desiredFilename = getImageFilename(desiredUrl);
     
-    const existingImage = existingImages.find(img =&gt; {
+    const existingImage = existingImages.find(img => {
       const existingFilename = getImageFilename(img.src);
       return existingFilename === desiredFilename;
     });
@@ -121,7 +121,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   }
   
   // Update позициите
-  if (reorderedImages.length &gt; 0) {
+  if (reorderedImages.length > 0) {
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
       {
@@ -193,17 +193,17 @@ async function fetchAllFishingLines() {
     multipliers: [],
     other: []
   };
-  allProducts.forEach(product =&gt; {
-    const categoryIds = product.categories?.map(c =&gt; c.id.toString()) || [];
-    if (categoryIds.some(id =&gt; FILSTAR_REEL_CATEGORY_IDS.front_drag.includes(id))) {
+  allProducts.forEach(product => {
+    const categoryIds = product.categories?.map(c => c.id.toString()) || [];
+    if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.front_drag.includes(id))) {
       lines.front_drag.push(product);
-    } else if (categoryIds.some(id =&gt; FILSTAR_REEL_CATEGORY_IDS.rear_drag.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.rear_drag.includes(id))) {
       lines.rear_drag.push(product);
-    } else if (categoryIds.some(id =&gt; FILSTAR_REEL_CATEGORY_IDS.baitrunner.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.baitrunner.includes(id))) {
       lines.baitrunner.push(product);
-    } else if (categoryIds.some(id =&gt; FILSTAR_REEL_CATEGORY_IDS.multipliers.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.multipliers.includes(id))) {
       lines.multipliers.push(product);
-    } else if (categoryIds.some(id =&gt; FILSTAR_REEL_CATEGORY_IDS.other.includes(id))) {
+    } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.other.includes(id))) {
       lines.other.push(product);
     }
   });
@@ -240,7 +240,7 @@ async function findShopifyProductBySku(sku) {
     allProducts = allProducts.concat(data.products);
     const linkHeader = response.headers.get('Link');
     if (linkHeader &amp;&amp; linkHeader.includes('rel=\"next\"')) {
-      const nextMatch = linkHeader.match(/&lt;[^&gt;]*[?&amp;]page_info=([^&gt;&amp;]+)[^&gt;]*&gt;;\s*rel=\"next\"/);
+      const nextMatch = linkHeader.match(/<[^>]*[?&amp;]page_info=([^>&amp;]+)[^>]*>;\s*rel=\"next\"/);
       if (nextMatch) {
         pageInfo = nextMatch[1];
       } else {
@@ -249,11 +249,11 @@ async function findShopifyProductBySku(sku) {
     } else {
       hasNextPage = false;
     }
-    await new Promise(resolve =&gt; setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
   console.log(` Searched ${allProducts.length} products for SKU: ${sku}`);
   for (const product of allProducts) {
-    const hasVariant = product.variants.some(v =&gt; v.sku === sku);
+    const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
       return product;
     }
@@ -266,7 +266,7 @@ function formatVariantName(variant, categoryType) {
     return variant.model || `SKU: ${variant.sku}`;
   }
   const attributes = variant.attributes;
-  const size = attributes.find(a =&gt; a.attribute_name.includes('РАЗМЕР'))?.value;
+  const size = attributes.find(a => a.attribute_name.includes('РАЗМЕР'))?.value;
   if (size) {
     return `Размер ${size}`;
   }
@@ -317,7 +317,7 @@ async function addProductImages(productId, filstarProduct) {
   }
   
   // Upload в правилния ред
-  for (let i = 0; i &lt; imagesToUpload.length; i++) {
+  for (let i = 0; i < imagesToUpload.length; i++) {
     const imageData = imagesToUpload[i];
     
     const response = await fetch(
@@ -345,28 +345,28 @@ async function addProductImages(productId, filstarProduct) {
       console.error(` ✗ Failed:`, error);
     }
     
-    await new Promise(resolve =&gt; setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
   return uploadedCount;
 }
 
 function ensureUniqueVariantNames(variants, categoryType) {
-  const formattedVariants = variants.map(v =&gt; ({
+  const formattedVariants = variants.map(v => ({
     original: v,
     name: formatVariantName(v, categoryType),
     sku: v.sku
   }));
   const nameCounts = {};
-  formattedVariants.forEach(v =&gt; {
+  formattedVariants.forEach(v => {
     nameCounts[v.name] = (nameCounts[v.name] || 0) + 1;
   });
-  const hasDuplicates = Object.values(nameCounts).some(count =&gt; count &gt; 1);
+  const hasDuplicates = Object.values(nameCounts).some(count => count > 1);
   if (hasDuplicates) {
     console.log(' ⚠️ Duplicates detected - adding SKU to all variant names');
-    return formattedVariants.map(v =&gt; `SKU ${v.sku}: ${v.name}`);
+    return formattedVariants.map(v => `SKU ${v.sku}: ${v.name}`);
   }
-  return formattedVariants.map(v =&gt; v.name);
+  return formattedVariants.map(v => v.name);
 }
 
 async function createShopifyProduct(filstarProduct, category) {
@@ -383,7 +383,7 @@ async function createShopifyProduct(filstarProduct, category) {
         product_type: getCategoryName(category),
         tags: ['Filstar', category, vendor],
         status: 'active',
-        variants: filstarProduct.variants.map((variant, index) =&gt; ({
+        variants: filstarProduct.variants.map((variant, index) => ({
           sku: variant.sku,
           price: variant.price,
           inventory_quantity: parseInt(variant.quantity) || 0,
@@ -483,7 +483,7 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
     return false;
   }
   console.log(` ✓ Image uploaded successfully`);
-  await new Promise(resolve =&gt; setTimeout(resolve, 300));
+  await new Promise(resolve => setTimeout(resolve, 300));
   return true;
 }
 
@@ -523,7 +523,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
     }
   }
   
-  if (allImages.length &gt; 0) {
+  if (allImages.length > 0) {
     console.log(`Processing ${allImages.length} images from Filstar...`);
     for (const imageUrl of allImages) {
       const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
