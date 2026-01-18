@@ -563,6 +563,10 @@ async function processProduct(filstarProduct, category) {
   }
 }
 
+
+
+
+
 function getCategoryName(category) {
   const names = {
     front_drag: 'Макари с преден аванс',
