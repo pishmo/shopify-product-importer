@@ -693,7 +693,12 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
       }
     }
     
-    stats[categoryType].updated++;
+    if (!stats[categoryType]) {
+  console.warn(`⚠️  Unknown categoryType: "${categoryType}", using "other"`);
+  categoryType = 'other';
+}
+stats[categoryType].updated++;
+
 
 console.log(`  🐛 DEBUG: categoryType = "${categoryType}"`);
 
