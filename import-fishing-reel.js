@@ -605,13 +605,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   if (filstarProduct.images && filstarProduct.images.length > 0) {
     console.log(`Processing ${filstarProduct.images.length} images from Filstar...`);
     
-    // DEBUG: Провери какво съдържа shopifyProduct.images
-    console.log(`  🐛 DEBUG: shopifyProduct.images exists: ${!!shopifyProduct.images}`);
-    console.log(`  🐛 DEBUG: shopifyProduct.images length: ${shopifyProduct.images?.length || 0}`);
-    if (shopifyProduct.images && shopifyProduct.images.length > 0) {
-      console.log(`  🐛 DEBUG: First image has src: ${!!shopifyProduct.images[0].src}`);
-      console.log(`  🐛 DEBUG: First image src value: ${shopifyProduct.images[0].src || 'MISSING'}`);
-    }
+   
     
     for (const imageUrl of filstarProduct.images) {
       const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
