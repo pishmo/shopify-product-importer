@@ -33,6 +33,56 @@ const stats = {
   other: { created: 0, updated: 0, images: 0 }
 };
 
+
+
+async function getAllShopifyProducts() {
+  let allProducts = [];
+  let hasNextPage = true;
+  let pageInfo = null;
+  
+  while (hasNextPage) {
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`;
+    
+    if (pageInfo) {
+      url += `&page_info=${pageInfo}`;
+    }
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch Shopify products:', response.status);
+      break;
+    }
+    
+    const data = await response.json();
+    allProducts = allProducts.concat(data.products);
+    
+    const linkHeader = response.headers.get('Link');
+    if (linkHeader && linkHeader.includes('rel="next"')) {
+      const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+      pageInfo = nextMatch ? nextMatch[1] : null;
+      hasNextPage = !!pageInfo;
+    } else {
+      hasNextPage = false;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
+  return allProducts;
+}
+
+
+
+
+
+
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     console.log('⚠️ Invalid image src:', src);
