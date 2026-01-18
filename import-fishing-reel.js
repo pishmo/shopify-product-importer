@@ -586,85 +586,45 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
 
 // Функция за update на продукт
 async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
-
-
- let uploadedImagesCount = 0; // ← За статистиката
-  let imagesUploaded = 0;      // ← За локалния лог
-  let imagesSkipped = 0;       // ← За skip-натите
+  let uploadedImagesCount = 0;
+  let imagesUploaded = 0;
+  let imagesSkipped = 0;
   
   console.log(`\nUpdating product: ${shopifyProduct.title}`);
   
   const productId = shopifyProduct.id;
  
-// Upload снимки (само нови)
-if (filstarProduct.images && filstarProduct.images.length > 0) {
-  console.log(`Processing ${filstarProduct.images.length} images from Filstar...`);
-  
-  for (const imageUrl of filstarProduct.images) {
-    const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
+  // Upload снимки (само нови)
+  if (filstarProduct.images && filstarProduct.images.length > 0) {
+    console.log(`Processing ${filstarProduct.images.length} images from Filstar...`);
     
-    if (uploaded) {
-      // Добави новата снимка към масива, за да се избегне дублиране в същия batch
-      shopifyProduct.images.push({
-        src: imageUrl,
-        id: null
-      });
+    // DEBUG: Провери какво съдържа shopifyProduct.images
+    console.log(`  🐛 DEBUG: shopifyProduct.images exists: ${!!shopifyProduct.images}`);
+    console.log(`  🐛 DEBUG: shopifyProduct.images length: ${shopifyProduct.images?.length || 0}`);
+    if (shopifyProduct.images && shopifyProduct.images.length > 0) {
+      console.log(`  🐛 DEBUG: First image has src: ${!!shopifyProduct.images[0].src}`);
+      console.log(`  🐛 DEBUG: First image src value: ${shopifyProduct.images[0].src || 'MISSING'}`);
+    }
+    
+    for (const imageUrl of filstarProduct.images) {
+      const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
+      
+      if (uploaded) {
+        uploadedImagesCount++;
+        imagesUploaded++;
+        
+        // Добави новата снимка към масива, за да се избегне дублиране в същия batch
+        shopifyProduct.images.push({
+          src: imageUrl,
+          id: null
+        });
+      } else {
+        imagesSkipped++;
+      }
     }
   }
-}
-
-
-
   
-  // // Update варианти
-   if (filstarProduct.variants && filstarProduct.variants.length > 0) {
-     console.log(`Updating ${filstarProduct.variants.length} variants...`);
-     
-     for (const filstarVariant of filstarProduct.variants) {
-       const existingVariant = shopifyProduct.variants.find(v => v.sku === filstarVariant.sku);
-       
-       if (existingVariant) {
-         const newOptionName = formatVariantName(filstarVariant, categoryType);
-         
-         const updateResponse = await fetch(
-           `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${existingVariant.id}.json`,
-           {
-             method: 'PUT',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-               'Content-Type': 'application/json'
-             },
-             body: JSON.stringify({
-               variant: {
-                 id: existingVariant.id,
-                 option1: newOptionName,
-                 price: filstarVariant.price || existingVariant.price
-               }
-             })
-           }
-      );
-         
-         if (updateResponse.ok) {
-           console.log(`  ✓ Updated variant: ${newOptionName}`);
-           stats[categoryType].updated++;
-           stats[categoryType].images += uploadedImagesCount;
-
-           
-         }
-         
-         await new Promise(resolve => setTimeout(resolve, 300));
-       }
-     }
-   }
-
-
-  // Обнови статистиката
-stats[categoryType].updated++;
-stats[categoryType].images += uploadedImagesCount;
-  console.log(`✅ Finished updating product`);
-  // Обнови статистиката
-
-
+  // Останалата част на функцията...
 }
 
 // край на апдейт на продукт
