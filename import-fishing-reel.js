@@ -707,35 +707,52 @@ function printFinalStats() {
 }
 
 
-
-
 // Главна функция
+
 async function main() {
   console.log('Starting import...\n');
   
   const allProducts = await fetchAllProducts();
+  const fishingReels = await fetchAllFishingLines();
   
+  // Категоризирай макарите
+  const frontDragReels = filterLinesByCategory(fishingReels, FRONT_DRAG_CATEGORY_IDS);
+  const rearDragReels = filterLinesByCategory(fishingReels, REAR_DRAG_CATEGORY_IDS);
+  const baitrunnerReels = filterLinesByCategory(fishingReels, BAITRUNNER_CATEGORY_IDS);
+  const multiplierReels = filterLinesByCategory(fishingReels, MULTIPLIER_CATEGORY_IDS);
+  const otherReels = filterLinesByCategory(fishingReels, OTHER_CATEGORY_IDS);
   
+  console.log(`\n📊 Found fishing reels:`);
+  console.log(`  Макари с преден аванс: ${frontDragReels.length}`);
+  console.log(`  Макари с заден аванс: ${rearDragReels.length}`);
+  console.log(`  Байтрънър: ${baitrunnerReels.length}`);
+  console.log(`  Мултиплокатори: ${multiplierReels.length}`);
+  console.log(`  Други: ${otherReels.length}\n`);
   
-  let processedCount = 0;
+  // Обработи всяка категория
+  for (const reel of frontDragReels) {
+    await processProduct(reel, 'frontDrag');
+  }
   
-  for (const product of allProducts) {
-    // Провери дали продуктът има тестово SKU
-    const hasTestSku = product.variants?.some(v => TEST_SKUS.includes(v.sku));
-    
-    if (hasTestSku) {
-      await processProduct(product, 'test');
-      processedCount++;
-      
-      // Спри след като обработиш тестовите
-      if (processedCount >= TEST_SKUS.length) {
-        console.log('\n✅ Test completed, stopping...');
-        return;
-      }
-    }
+  for (const reel of rearDragReels) {
+    await processProduct(reel, 'rearDrag');
+  }
+  
+  for (const reel of baitrunnerReels) {
+    await processProduct(reel, 'baitrunner');
+  }
+  
+  for (const reel of multiplierReels) {
+    await processProduct(reel, 'multiplier');
+  }
+  
+  for (const reel of otherReels) {
+    await processProduct(reel, 'other');
   }
   
   printFinalStats();
 }
+
+main();
 
 main();
