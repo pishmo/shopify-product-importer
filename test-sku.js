@@ -1,4 +1,4 @@
-// test-sku.js - Тестване на конкретни SKU-та
+// test-sku.js - Тестване на конкретни SKU-та с image sync анализ
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -13,33 +13,204 @@ const TEST_SKUS = [
   // Добави още SKU-та тук ако искаш да тестваш повече
 ];
 
-// ПОДОБРЕНА функция за извличане на filename от URL
+// ============================================
+// IMAGE HELPER FUNCTIONS
+// ============================================
+
+function normalizeFilename(url) {
+  if (!url || typeof url !== 'string') return null;
+  
+  const filename = url.split('/').pop().split('?')[0];
+  return filename
+    .replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g, '')
+    .replace(/_[a-f0-9]{32}/g, '');
+}
+
 function getImageFilename(src) {
-  if (!src || typeof src !== 'string') {
-    return null;
+  return normalizeFilename(src);
+}
+
+function extractFilename(url) {
+  const filename = url.split('/').pop();
+  return filename.replace(/\.[^/.]+$/, '');
+}
+
+// ============================================
+// IMAGE SYNC ANALYSIS (COMPACT VERSION)
+// ============================================
+
+function analyzeImageSync(shopifyProduct, filstarProduct) {
+  console.log('\n🖼️  IMAGE SYNC ANALYSIS');
+  console.log('═'.repeat(60));
+  
+  const shopifyImages = shopifyProduct.images || [];
+  const filstarImages = filstarProduct.images || [];
+  
+  // Build ordered Filstar image list (product + variants)
+  const orderedFilstarImages = [];
+  let position = 1;
+  
+  // Product images first
+  filstarImages.forEach(imgUrl => {
+    orderedFilstarImages.push({
+      src: imgUrl,
+      filename: normalizeFilename(imgUrl),
+      position: position++,
+      type: 'product'
+    });
+  });
+  
+  // Variant images after (if any)
+  if (filstarProduct.variants?.length > 0) {
+    filstarProduct.variants.forEach((variant, idx) => {
+      if (variant.images?.length > 0) {
+        variant.images.forEach(imgUrl => {
+          orderedFilstarImages.push({
+            src: imgUrl,
+            filename: normalizeFilename(imgUrl),
+            position: position++,
+            type: `variant-${idx + 1}`,
+            variantSku: variant.sku
+          });
+        });
+      }
+    });
   }
   
-  // Вземи последната част от URL-а
-  const urlParts = src.split('/').pop();
-  const withoutQuery = urlParts.split('?')[0];
+  // Create map of existing Shopify images
+  const existingImageMap = new Map();
+  shopifyImages.forEach(img => {
+    const normalized = normalizeFilename(img.src);
+    if (!existingImageMap.has(normalized)) {
+      existingImageMap.set(normalized, []);
+    }
+    existingImageMap.get(normalized).push({
+      id: img.id,
+      position: img.position,
+      created: img.created_at
+    });
+  });
   
-  // Премахни UUID-та от края (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-  const withoutUUID = withoutQuery.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g, '');
+  // Categorize images
+  const imagesToUpload = [];
+  const imagesToKeep = [];
+  const imagesToDelete = [];
   
-  // Премахни Shopify hash-а от края (формат: _xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
-  const parts = withoutUUID.split('_');
-  if (parts.length > 1) {
-    const lastPart = parts[parts.length - 1];
-    // Ако последната част е 32-символен hex hash, премахни го
-    if (lastPart.length >= 32 && /^[a-f0-9]+\.(jpg|jpeg|png|gif|webp)$/i.test(lastPart)) {
-      parts.pop();
+  orderedFilstarImages.forEach(filstarImg => {
+    if (existingImageMap.has(filstarImg.filename)) {
+      const existing = existingImageMap.get(filstarImg.filename);
+      // Keep first occurrence
+      imagesToKeep.push({
+        id: existing[0].id,
+        pos: existing[0].position,
+        target: filstarImg.position,
+        name: filstarImg.filename.substring(0, 35),
+        type: filstarImg.type
+      });
+      
+      // Mark duplicates for deletion
+      if (existing.length > 1) {
+        existing.slice(1).forEach(dup => {
+          imagesToDelete.push({
+            id: dup.id,
+            pos: dup.position,
+            name: filstarImg.filename.substring(0, 35),
+            created: dup.created,
+            reason: 'duplicate'
+          });
+        });
+      }
+      
+      existingImageMap.delete(filstarImg.filename);
+    } else {
+      imagesToUpload.push({
+        pos: filstarImg.position,
+        name: filstarImg.filename.substring(0, 35),
+        type: filstarImg.type
+      });
+    }
+  });
+  
+  // Remaining images = obsolete
+  existingImageMap.forEach((imgs, filename) => {
+    imgs.forEach(img => {
+      imagesToDelete.push({
+        id: img.id,
+        pos: img.position,
+        name: filename.substring(0, 35),
+        created: img.created,
+        reason: 'obsolete'
+      });
+    });
+  });
+  
+  // Summary
+  console.log(`Filstar: ${orderedFilstarImages.length} | Shopify: ${shopifyImages.length}`);
+  console.log(`✅ Keep: ${imagesToKeep.length} | ⬆️  Upload: ${imagesToUpload.length} | 🗑️  Delete: ${imagesToDelete.length}`);
+  
+  // Expected order
+  if (orderedFilstarImages.length > 0) {
+    console.log('\n📋 Expected order (Filstar):');
+    orderedFilstarImages.forEach(img => {
+      console.log(`  ${img.position}. ${img.filename.substring(0, 40)}... [${img.type}]`);
+    });
+  }
+  
+  // New images
+  if (imagesToUpload.length > 0) {
+    console.log('\n⬆️  NEW IMAGES TO UPLOAD:');
+    imagesToUpload.forEach(img => 
+      console.log(`  Pos ${img.pos}: ${img.name}... [${img.type}]`)
+    );
+  }
+  
+  // Duplicates/obsolete
+  if (imagesToDelete.length > 0) {
+    console.log('\n🗑️  IMAGES TO DELETE:');
+    const duplicates = imagesToDelete.filter(i => i.reason === 'duplicate');
+    const obsolete = imagesToDelete.filter(i => i.reason === 'obsolete');
+    
+    if (duplicates.length > 0) {
+      console.log(`  Duplicates (${duplicates.length}):`);
+      duplicates.forEach(img => 
+        console.log(`    Pos ${img.pos}: ${img.name}... (ID: ${img.id})`)
+      );
+    }
+    
+    if (obsolete.length > 0) {
+      console.log(`  Obsolete (${obsolete.length}):`);
+      obsolete.forEach(img => 
+        console.log(`    Pos ${img.pos}: ${img.name}... (ID: ${img.id})`)
+      );
     }
   }
   
-  return parts.join('_');
+  // Position updates
+  const needsReorder = imagesToKeep.some(img => img.pos !== img.target);
+  if (needsReorder) {
+    console.log('\n🔄 POSITION UPDATES NEEDED:');
+    imagesToKeep
+      .filter(img => img.pos !== img.target)
+      .forEach(img => 
+        console.log(`  ${img.name}... ${img.pos} → ${img.target}`)
+      );
+  }
+  
+  console.log('═'.repeat(60));
+  
+  return {
+    kept: imagesToKeep.length,
+    uploaded: imagesToUpload.length,
+    deleted: imagesToDelete.length,
+    reordered: needsReorder,
+    deleteIds: imagesToDelete.map(i => i.id)
+  };
 }
 
-// ПОДОБРЕНА функция за намиране на продукт в Shopify по SKU
+// ============================================
+// SHOPIFY & FILSTAR FUNCTIONS
+// ============================================
+
 async function findShopifyProductBySku(sku) {
   console.log(`\n🔍 Searching in Shopify for SKU: ${sku}...`);
   
@@ -47,7 +218,6 @@ async function findShopifyProductBySku(sku) {
   let hasNextPage = true;
   let pageInfo = null;
   
-  // Fetch all products with pagination
   while (hasNextPage) {
     let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`;
     
@@ -71,7 +241,6 @@ async function findShopifyProductBySku(sku) {
     const data = await response.json();
     allProducts = allProducts.concat(data.products);
     
-    // Check for next page
     const linkHeader = response.headers.get('Link');
     if (linkHeader && linkHeader.includes('rel="next"')) {
       const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
@@ -86,17 +255,9 @@ async function findShopifyProductBySku(sku) {
   
   console.log(`  📊 Total products fetched: ${allProducts.length}`);
   
-  // Search for SKU
   for (const product of allProducts) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
-      // DEBUG: Покажи какво съдържа product
-      console.log(`\n  🐛 DEBUG - Raw product data:`);
-      console.log(`    - Product ID: ${product.id}`);
-      console.log(`    - Images exists: ${!!product.images}`);
-      console.log(`    - Images is array: ${Array.isArray(product.images)}`);
-      console.log(`    - Images length: ${product.images?.length || 0}`);
-      
       return product;
     }
   }
@@ -104,7 +265,6 @@ async function findShopifyProductBySku(sku) {
   return null;
 }
 
-// Функция за форматиране на variant име
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
@@ -113,26 +273,18 @@ function formatVariantName(variant, categoryType) {
   const attributes = variant.attributes;
   let parts = [];
   
-  // Модел (ако има)
   if (variant.model && variant.model.trim() && variant.model !== 'N/A') {
     parts.push(variant.model.trim());
   }
   
-  // Дължина
   const length = attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
-  if (length) {
-    parts.push(`${length}м`);
-  }
+  if (length) parts.push(`${length}м`);
   
-  // Диаметър
   const diameter = attributes.find(a => 
     a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM')
   )?.value;
-  if (diameter) {
-    parts.push(`⌀${diameter}мм`);
-  }
+  if (diameter) parts.push(`⌀${diameter}мм`);
   
-  // Японска номерация (за плетени)
   if (categoryType === 'braided') {
     const japaneseSize = attributes.find(a => 
       a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ')
@@ -143,16 +295,17 @@ function formatVariantName(variant, categoryType) {
     }
   }
   
-  // Тест кг
   const testKg = attributes.find(a => 
     a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
   )?.value;
-  if (testKg) {
-    parts.push(`${testKg}кг`);
-  }
+  if (testKg) parts.push(`${testKg}кг`);
   
   return parts.length > 0 ? parts.join(' / ') : `SKU: ${variant.sku}`;
 }
+
+// ============================================
+// MAIN TEST FUNCTION
+// ============================================
 
 async function testSku(sku) {
   console.log(`\n${'='.repeat(70)}`);
@@ -161,7 +314,7 @@ async function testSku(sku) {
   
   let filstarProduct = null;
   
-  // Търси в Filstar
+  // Search in Filstar
   for (let page = 1; page <= 10; page++) {
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`;
     
@@ -181,12 +334,8 @@ async function testSku(sku) {
       
       const data = await response.json();
       
-      if (!data || data.length === 0) {
-        console.log(`📄 Page ${page}: No more products`);
-        break;
-      }
+      if (!data || data.length === 0) break;
       
-      // Търси продукта
       for (const product of data) {
         let hasSku = false;
         
@@ -197,82 +346,11 @@ async function testSku(sku) {
         if (hasSku || product.id === sku) {
           filstarProduct = product;
           
-          console.log(`\n✅ FOUND in Filstar on page ${page}!`);
-          console.log(`\n📦 Filstar Product Details:`);
-          console.log(`  ID: ${product.id}`);
-          console.log(`  Name: ${product.name}`);
-          console.log(`  Slug: ${product.slug}`);
-          
-          if (product.categories && product.categories.length > 0) {
-            console.log(`\n  Categories:`);
-            for (const cat of product.categories) {
-              console.log(`    - ID: ${cat.id} | Name: ${cat.name}`);
-              if (cat.parent_id) {
-                console.log(`      Parent ID: ${cat.parent_id} | Parent: ${cat.parent_name}`);
-              }
-              console.log(`      Slug: ${cat.slug}`);
-            }
-          } else {
-            console.log(`\n  ⚠️  NO CATEGORIES!`);
-          }
-          
-          if (product.variants && product.variants.length > 0) {
-            console.log(`\n  Variants (${product.variants.length}):`);
-            for (const variant of product.variants) {
-              console.log(`    - SKU: ${variant.sku} | Model: ${variant.model || 'N/A'}`);
-              if (variant.attributes && variant.attributes.length > 0) {
-                console.log(`      Attributes:`);
-                for (const attr of variant.attributes) {
-                  console.log(`        ${attr.attribute_name}: ${attr.value}`);
-                }
-              }
-            }
-            
-            console.log(`\n  📝 Formatted variant names:`);
-            const formattedNames = product.variants.map(v => {
-              const formatted = formatVariantName(v, 'braided');
-              console.log(`    ${v.sku}: ${formatted}`);
-              return formatted;
-            });
-            
-            const duplicates = [];
-            const seen = new Map();
-            
-            formattedNames.forEach((name, index) => {
-              if (seen.has(name)) {
-                duplicates.push({
-                  name: name,
-                  skus: [seen.get(name), product.variants[index].sku]
-                });
-              } else {
-                seen.set(name, product.variants[index].sku);
-              }
-            });
-            
-            if (duplicates.length > 0) {
-              console.log(`\n  ⚠️  DUPLICATE VARIANT NAMES FOUND:`);
-              duplicates.forEach(dup => {
-                console.log(`    ❌ "${dup.name}"`);
-                console.log(`       SKUs: ${dup.skus.join(', ')}`);
-              });
-            } else {
-              console.log(`\n  ✅ No duplicate variant names`);
-            }
-          }
-          
-          // Покажи снимките от Filstar
-          console.log(`\n  🖼️  Filstar Images (${product.images ? product.images.length : 0}):`);
-          if (product.images && product.images.length > 0) {
-            product.images.forEach((imgUrl, index) => {
-              const filename = getImageFilename(imgUrl);
-              console.log(`    ${index + 1}. ${imgUrl}`);
-              console.log(`       Filename: ${filename}`);
-            });
-          } else {
-            console.log(`    ⚠️  No images`);
-          }
-          
-          console.log(`\n  Manufacturer: ${product.manufacturer || 'N/A'}`);
+          console.log(`\n✅ FOUND in Filstar (page ${page})!`);
+          console.log(`\n📦 Filstar Product:`);
+          console.log(`  ID: ${product.id} | Name: ${product.name}`);
+          console.log(`  Variants: ${product.variants?.length || 0} | Images: ${product.images?.length || 0}`);
+          console.log(`  Manufacturer: ${product.manufacturer || 'N/A'}`);
           
           break;
         }
@@ -297,112 +375,20 @@ async function testSku(sku) {
     return;
   }
   
-  // Търси в Shopify
+  // Search in Shopify
   const shopifyProduct = await findShopifyProductBySku(sku);
   
   if (shopifyProduct) {
     console.log(`\n✅ FOUND in Shopify!`);
-    console.log(`\n🛍️  Shopify Product Details:`);
-    console.log(`  ID: ${shopifyProduct.id}`);
-    console.log(`  Title: ${shopifyProduct.title}`);
-    console.log(`  Variants: ${shopifyProduct.variants.length}`);
+    console.log(`\n🛍️  Shopify Product:`);
+    console.log(`  ID: ${shopifyProduct.id} | Title: ${shopifyProduct.title}`);
+    console.log(`  Variants: ${shopifyProduct.variants.length} | Images: ${shopifyProduct.images?.length || 0}`);
     
-    // DEBUG: Покажи пълния images обект
-    console.log(`\n  🐛 DEBUG - Images object type: ${typeof shopifyProduct.images}`);
-    console.log(`  🐛 DEBUG - Images is array: ${Array.isArray(shopifyProduct.images)}`);
-    console.log(`  🐛 DEBUG - Full images object:`, JSON.stringify(shopifyProduct.images, null, 2));
+    // Run image sync analysis
+    const syncResult = analyzeImageSync(shopifyProduct, filstarProduct);
     
-    // Покажи снимките от Shopify
-    const shopifyImages = shopifyProduct.images || [];
-    console.log(`\n  🖼️  Shopify Images (${shopifyImages.length}):`);
-    
-    if (shopifyImages.length > 0) {
-      shopifyImages.forEach((img, index) => {
-        const src = img.src || img.url || img;
-        const filename = getImageFilename(src);
-        console.log(`    ${index + 1}. ${src}`);
-        console.log(`       Filename: ${filename}`);
-        console.log(`       Created: ${img.created_at}`);
-      });
-    } else {
-      console.log(`    ⚠️  No images found in Shopify product`);
-    }
-    
-    // ПОДОБРЕНО: Сравни снимките с детекция на дубликати
-    console.log(`\n  🔍 Image Comparison:`);
-    if (filstarProduct.images && filstarProduct.images.length > 0 && shopifyImages.length > 0) {
-      const filstarFilenames = filstarProduct.images
-        .map(url => getImageFilename(url))
-        .filter(fn => fn !== null);
-      
-      const shopifyFilenames = shopifyImages
-        .map(img => {
-          const src = img.src || img.url || img;
-          return getImageFilename(src);
-        })
-        .filter(fn => fn !== null);
-      
-      // Премахни дубликатите от Shopify за по-ясно сравнение
-      const uniqueShopifyFilenames = [...new Set(shopifyFilenames)];
-      
-      console.log(`\n    Filstar filenames (${filstarFilenames.length}):`);
-      filstarFilenames.forEach((fn, i) => console.log(`      ${i + 1}. ${fn}`));
-      
-      console.log(`\n    Shopify filenames (${shopifyFilenames.length} total, ${uniqueShopifyFilenames.length} unique):`);
-      uniqueShopifyFilenames.forEach((fn, i) => {
-        const count = shopifyFilenames.filter(f => f === fn).length;
-        console.log(`      ${i + 1}. ${fn} ${count > 1 ? `⚠️ (${count}x DUPLICATE!)` : ''}`);
-      });
-      
-      // Провери за съвпадения
-      const matchingFilenames = filstarFilenames.filter(fn => 
-        uniqueShopifyFilenames.includes(fn)
-      );
-      
-      if (matchingFilenames.length > 0) {
-        console.log(`\n    ✅ Matching filenames (${matchingFilenames.length}):`);
-        matchingFilenames.forEach(fn => {
-          const duplicateCount = shopifyFilenames.filter(f => f === fn).length;
-          console.log(`      - ${fn} ${duplicateCount > 1 ? `⚠️ (uploaded ${duplicateCount} times!)` : ''}`);
-        });
-      } else {
-        console.log(`\n    ⚠️  No matching filenames found!`);
-      }
-      
-      const newImages = filstarFilenames.filter(fn => 
-        !uniqueShopifyFilenames.includes(fn)
-      );
-      
-      if (newImages.length > 0) {
-        console.log(`\n    🆕 New images from Filstar (${newImages.length}):`);
-        newImages.forEach(fn => console.log(`      - ${fn}`));
-      } else {
-        console.log(`\n    ℹ️  All Filstar images already exist in Shopify`);
-      }
-      
-      // НОВО: Покажи кои Shopify снимки трябва да се изтрият
-      if (shopifyFilenames.length > uniqueShopifyFilenames.length) {
-        console.log(`\n    🗑️  Duplicate images to DELETE from Shopify:`);
-        const seenFilenames = new Set();
-        shopifyImages.forEach((img, index) => {
-          const filename = getImageFilename(img.src);
-          if (seenFilenames.has(filename)) {
-            console.log(`      - Position ${index + 1}: ${img.id} (${filename})`);
-            console.log(`        Created: ${img.created_at}`);
-          } else {
-            seenFilenames.add(filename);
-          }
-        });
-      }
-      
-    } else {
-      if (!filstarProduct.images || filstarProduct.images.length === 0) {
-        console.log(`    ⚠️  No images in Filstar product`);
-      }
-      if (shopifyImages.length === 0) {
-        console.log(`    ⚠️  No images in Shopify product`);
-      }
-    }
+    console.log(`\n📊 SUMMARY: ${syncResult.kept} kept | ${syncResult.uploaded} new | ${syncResult.deleted} remove`);
+    if (syncResult.reordered) console.log('⚠️  Positions need update');
     
   } else {
     console.log(`\n❌ NOT FOUND in Shopify`);
@@ -410,7 +396,7 @@ async function testSku(sku) {
 }
 
 async function main() {
-  console.log('Starting SKU test with image duplicate detection...\n');
+  console.log('🚀 Starting SKU test with image sync analysis...\n');
   
   for (const sku of TEST_SKUS) {
     await testSku(sku);
