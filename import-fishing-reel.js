@@ -598,7 +598,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
   console.log(`Processing: ${filstarProduct.name}`);
   
-  // Намери продукта в кеша вместо да fetch-ваш
+  // Намери продукта в кеша
   let shopifyProduct = null;
   
   for (const variant of filstarProduct.variants || []) {
@@ -612,16 +612,163 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     }
   }
   
-  // Останалият код остава същият...
   if (shopifyProduct) {
+    // UPDATE EXISTING PRODUCT
     console.log(`  ✓ Found existing product (ID: ${shopifyProduct.id})`);
-    // ... update логика
+    console.log(`Updating product: ${filstarProduct.name}`);
+    
+    // Обработка на снимки
+    const imagesToUpload = [];
+    
+    console.log(`Processing ${filstarProduct.images ? filstarProduct.images.length : 0} images from Filstar...`);
+    
+    // Главна снимка
+    if (filstarProduct.image) {
+      const imageUrl = filstarProduct.image.startsWith('http') 
+        ? filstarProduct.image 
+        : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
+      
+      if (!imageExists(shopifyProduct.images, imageUrl)) {
+        imagesToUpload.push({ src: imageUrl });
+        console.log(`  📸 New main image to upload`);
+      } else {
+        console.log(`  ⏭️  Main image already exists, skipping`);
+      }
+    }
+    
+    // Допълнителни снимки
+    if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+      for (const img of filstarProduct.images) {
+        const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
+        const filename = getImageFilename(imageUrl);
+        
+        if (!imageExists(shopifyProduct.images, imageUrl)) {
+          imagesToUpload.push({ src: imageUrl });
+          console.log(`  📸 Uploading new image: ${filename}`);
+        } else {
+          console.log(`  ⏭️  Image already exists, skipping: ${filename}`);
+        }
+      }
+    }
+    
+    // Качи новите снимки
+    if (imagesToUpload.length > 0) {
+      for (const imageData of imagesToUpload) {
+        await addProductImages(shopifyProduct.id, [imageData]);
+        stats[categoryType].images++;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    // 🔄 Reorder снимките (винаги, дори ако няма нови)
+    if (shopifyProduct.images && shopifyProduct.images.length > 0) {
+      // Refresh images след upload
+      const updatedProduct = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${shopifyProduct.id}.json?fields=images`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (updatedProduct.ok) {
+        const data = await updatedProduct.json();
+        await reorderProductImages(shopifyProduct.id, filstarProduct, data.product.images);
+      }
+    }
+    
+    stats[categoryType].updated++;
+    
   } else {
+    // CREATE NEW PRODUCT
     console.log(`  ✗ Not found, creating new product`);
-    // ... create логика
+    
+    const collectionId = COLLECTION_MAPPING[categoryType];
+    
+    const productData = {
+      title: filstarProduct.name,
+      body_html: filstarProduct.description || '',
+      vendor: filstarProduct.manufacturer || 'Unknown',
+      product_type: 'Fishing Reel',
+      variants: filstarProduct.variants.map(v => ({
+        sku: v.sku,
+        price: v.price || '0.00',
+        inventory_management: 'shopify',
+        inventory_quantity: v.stock || 0
+      }))
+    };
+    
+    // Създай продукта
+    const createResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ product: productData })
+      }
+    );
+    
+    if (!createResponse.ok) {
+      const error = await createResponse.text();
+      console.error(`  ❌ Failed to create product:`, error);
+      return;
+    }
+    
+    const createdData = await createResponse.json();
+    const newProductId = createdData.product.id;
+    console.log(`  ✅ Created product ID: ${newProductId}`);
+    
+    // Добави към колекция
+    await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          collect: {
+            product_id: newProductId,
+            collection_id: collectionId.replace('gid://shopify/Collection/', '')
+          }
+        })
+      }
+    );
+    
+    // Качи снимки
+    const imagesToUpload = [];
+    
+    if (filstarProduct.image) {
+      const imageUrl = filstarProduct.image.startsWith('http') 
+        ? filstarProduct.image 
+        : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
+      imagesToUpload.push({ src: imageUrl });
+    }
+    
+    if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+      for (const img of filstarProduct.images) {
+        const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
+        imagesToUpload.push({ src: imageUrl });
+      }
+    }
+    
+    if (imagesToUpload.length > 0) {
+      console.log(`  📸 Uploading ${imagesToUpload.length} images...`);
+      await addProductImages(newProductId, imagesToUpload);
+      stats[categoryType].images += imagesToUpload.length;
+    }
+    
+    stats[categoryType].created++;
   }
+  
+  await new Promise(resolve => setTimeout(resolve, 1000));
 }
-
 
 
 
