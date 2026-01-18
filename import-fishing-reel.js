@@ -240,7 +240,8 @@ async function findShopifyProductBySku(sku) {
   let hasNextPage = true;
   
   while (hasNextPage) {
-    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`;
+    // ПОПРАВКА: Премахнат fields параметър за да се вземат всички полета включително images.src
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250`;
     
     if (pageInfo) {
       url += `&page_info=${pageInfo}`;
@@ -290,7 +291,6 @@ async function findShopifyProductBySku(sku) {
   
   return null;
 }
-
 
 
 
