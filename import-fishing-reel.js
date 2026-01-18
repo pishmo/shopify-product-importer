@@ -42,8 +42,6 @@ const stats = {
 };
 
 
-
-
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     console.log('⚠️ Invalid image src:', src);
@@ -54,26 +52,35 @@ function getImageFilename(src) {
   const withoutQuery = urlParts.split('?')[0];
   
   // Премахни Shopify UUID (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
+  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g;
+  let cleanFilename = withoutQuery.replace(uuidPattern, '');
   
-  // Премахни и стари hex hash-ове (без тирета, ако има)
+  // Премахни hex hash-ове (32+ символа, само a-f0-9)
   const parts = cleanFilename.split('_');
-  if (parts.length > 1) {
-    const lastPart = parts[parts.length - 1].split('.')[0]; // Вземи само името без extension
-    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
-      parts.pop();
-      const extension = cleanFilename.split('.').pop();
-      cleanFilename = parts.join('_') + '.' + extension;
-    }
+  const extension = cleanFilename.split('.').pop();
+  
+  // Филтрирай всички части - премахни тези които са hash-ове
+  const filteredParts = parts.filter(part => {
+    const partWithoutExt = part.split('.')[0];
+    // Ако частта е 32+ hex символа, премахни я
+    return !(partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt));
+  });
+  
+  cleanFilename = filteredParts.join('_');
+  
+  // Ако няма extension в края, добави го
+  if (!cleanFilename.endsWith('.' + extension)) {
+    cleanFilename += '.' + extension;
   }
   
-  // ⬇️ ДОБАВИ ТОЗИ РЕД ТУК (в края, преди return)
+  // Премахни leading underscores
   cleanFilename = cleanFilename.replace(/^_+/, '');
+  
+  // Нормализирай extension (.jpg и .jpeg са еднакви)
+  cleanFilename = cleanFilename.replace(/\.jpeg$/i, '.jpg');
   
   return cleanFilename;
 }
-
 
 
 
