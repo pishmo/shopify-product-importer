@@ -34,6 +34,17 @@ const stats = {
 };
 
 
+// Добави тази функция след константите в началото
+function convertToGid(numericId) {
+  if (typeof numericId === 'string' && numericId.startsWith('gid://')) {
+    return numericId; // Вече е в GID формат
+  }
+  return `gid://shopify/Product/${numericId}`;
+}
+
+
+
+
 async function shopifyGraphQL(query, variables = {}) {
   const url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`;
   
