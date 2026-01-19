@@ -89,30 +89,42 @@ async function getAllShopifyProducts() {
 
 
 
-
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
-    console.log('⚠️ Invalid image src:', src);
     return null;
   }
+  
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '');
+  
+  let cleanFilename = withoutQuery;
+  
+  // 1. Премахни UUID
+  cleanFilename = cleanFilename.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '');
+  
+  // 2. Премахни timestamp и random number
+  cleanFilename = cleanFilename.replace(/-\d{14}-\d+/g, '');
+  
+  // 3. Премахни hex hash-ове
   const parts = cleanFilename.split('_');
-  const extension = cleanFilename.split('.').pop();
-  const filteredParts = parts.filter(part => {
-    const partWithoutExt = part.split('.')[0];
-    return !(partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt));
-  });
-  cleanFilename = filteredParts.join('_');
-  if (!cleanFilename.endsWith('.' + extension)) {
-    cleanFilename += '.' + extension;
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1].split('.')[0];
+    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
+      parts.pop();
+      const extension = cleanFilename.split('.').pop();
+      cleanFilename = parts.join('_') + '.' + extension;
+    }
   }
+  
+  // 4. Премахни водещи долни черти
   cleanFilename = cleanFilename.replace(/^_+/, '');
-  cleanFilename = cleanFilename.replace(/\.jpeg$/i, '.jpg');
+  
+  // 5. Премахни trailing underscores
+  cleanFilename = cleanFilename.replace(/_+(\.[a-z]+)$/i, '$1');
+  
   return cleanFilename;
 }
+
 
 
 // Функция за извличане на SKU от име на снимка
