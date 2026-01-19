@@ -923,8 +923,10 @@ async function main() {
   
   // Обработи ВСИЧКИ макари
   for (const reel of allReels) {
-    const categoryType = getCategoryName(reel) || 'other';
-    await processProduct(reel, 'reels', allShopifyProducts);
+
+const categoryType = getCategoryName(reel) || 'other';
+await processProduct(reel, categoryType, allShopifyProducts);
+
   }
   
   // Покажи финална статистика
