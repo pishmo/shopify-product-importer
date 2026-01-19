@@ -277,110 +277,84 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(`  🔄 Reordering images...`);
   
   if (!existingImages || existingImages.length === 0) {
-    console.log(`    ⚠️ No existing images to reorder`);
+    console.log(`    ⚠️ No existing images`);
     return false;
   }
 
-  const desiredOrder = [];
+  const allImages = [];
   const seenFilenames = new Set();
 
-  const addUniqueImage = (imageUrl) => {
-    if (!imageUrl) return;
-    const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${FILSTAR_BASE_URL}/${imageUrl}`;
+  const addImage = (url, type, sku = null) => {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
     const filename = getImageFilename(fullUrl);
     if (filename && !seenFilenames.has(filename)) {
       seenFilenames.add(filename);
-      desiredOrder.push({ url: fullUrl, filename });
+      const extractedSku = extractSkuFromImageFilename(filename);
+      allImages.push({ url: fullUrl, filename, type, sku: sku || extractedSku });
     }
   };
 
-  // ✅ 1️⃣ Главна снимка от Filstar (ВИНАГИ ПЪРВА)
-  if (filstarProduct.image) {
-    addUniqueImage(filstarProduct.image);
+  // Събери ВСИЧКИ снимки
+  if (filstarProduct.image) addImage(filstarProduct.image, 'main');
+  if (filstarProduct.images) {
+    filstarProduct.images.forEach(img => addImage(img, 'additional'));
   }
-
-  // ✅ 2️⃣ Допълнителни снимки В ОРИГИНАЛНИЯ РЕД от Filstar
-  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
-    filstarProduct.images.forEach(img => addUniqueImage(img));
-  }
-
-  // ✅ 3️⃣ Снимки на варианти (сортирани по SKU на варианта)
   if (filstarProduct.variants) {
-    const sortedVariants = [...filstarProduct.variants].sort((a, b) => {
-      const skuA = a.sku || '';
-      const skuB = b.sku || '';
-      return skuA.localeCompare(skuB);
-    });
-    
-    sortedVariants.forEach(variant => {
-      if (variant.image) addUniqueImage(variant.image);
+    filstarProduct.variants.forEach(v => {
+      if (v.image) addImage(v.image, 'variant', v.sku);
     });
   }
 
-  console.log(`    📋 Desired order (Filstar order):`);
-  desiredOrder.forEach((img, i) => {
-    console.log(`      ${i + 1}. ${img.filename}`);
-  });
+  // ✅ НОВА ЛОГИКА: Раздели на групи
+  const withoutSku = allImages.filter(img => img.sku === '999999');
+  const withSku = allImages.filter(img => img.sku !== '999999');
 
-  // Намери Shopify image IDs
+  // Сортирай без SKU по азбучен ред
+  withoutSku.sort((a, b) => a.filename.localeCompare(b.filename));
+  
+  // Сортирай със SKU по SKU номер
+  withSku.sort((a, b) => a.sku.localeCompare(b.sku));
+
+  const finalOrder = [...withoutSku, ...withSku];
+
+  console.log(`    📋 Final order:`);
+  console.log(`    🔤 Without SKU: ${withoutSku.length}`);
+  withoutSku.forEach((img, i) => console.log(`      ${i+1}. ${img.filename}`));
+  console.log(`    🔢 With SKU: ${withSku.length}`);
+  withSku.forEach((img, i) => console.log(`      ${withoutSku.length+i+1}. [${img.sku}] ${img.filename}`));
+
   const reorderedImages = [];
-  for (let i = 0; i < desiredOrder.length; i++) {
-    const desired = desiredOrder[i];
-    const existingImage = existingImages.find(img => {
-      const existingFilename = getImageFilename(img.src);
-      return existingFilename === desired.filename;
-    });
-
-    if (existingImage) {
-      reorderedImages.push({ id: existingImage.id, position: i + 1 });
-    }
-  }
-
-  // Добави неразпознати снимки в края
-  const unmatchedImages = existingImages.filter(img => {
-    const filename = getImageFilename(img.src);
-    return !seenFilenames.has(filename);
-  });
-
-  for (const img of unmatchedImages) {
-    reorderedImages.push({ id: img.id, position: reorderedImages.length + 1 });
-  }
-
-  console.log(`    📊 Reordering ${reorderedImages.length} images (${desiredOrder.length} matched, ${unmatchedImages.length} unmatched)`);
-
-  try {
-    const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
-      {
-        method: 'PUT',
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          product: {
-            id: productId,
-            images: reorderedImages
-          }
-        })
-      }
+  for (let i = 0; i < finalOrder.length; i++) {
+    const match = existingImages.find(img => 
+      getImageFilename(img.src) === finalOrder[i].filename
     );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`    ❌ Failed to reorder: ${response.status} - ${errorText}`);
-      return false;
+    if (match) {
+      reorderedImages.push({ id: match.id, position: i + 1 });
     }
+  }
 
-    console.log(`    ✅ Reordered successfully`);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return true;
-  } catch (error) {
-    console.error(`    ❌ Reorder error:`, error.message);
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+    {
+      method: 'PUT',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ product: { id: productId, images: reorderedImages } })
+    }
+  );
+
+  if (!response.ok) {
+    console.error(`    ❌ Failed: ${response.status}`);
     return false;
   }
-}
 
+  console.log(`    ✅ Reordered ${reorderedImages.length} images`);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return true;
+}
 
 
 async function fetchAllProducts() {
