@@ -94,39 +94,49 @@ async function getAllProducts() {
 }
 
 // Функция за намиране на дублирани снимки в продукт
+// Функция за намиране на дублирани снимки в продукт
 function findDuplicateImages(product) {
   if (!product.images || product.images.length === 0) {
     return [];
   }
   
   const imageMap = new Map();
-  const duplicates = [];
   
+  // Първо групирай всички снимки по нормализирано име
   for (const image of product.images) {
     const normalizedFilename = getImageFilename(image.src);
     
     if (!normalizedFilename) continue;
     
-    if (imageMap.has(normalizedFilename)) {
-      // Това е дубликат - запази по-новата снимка, изтрий по-старата
-      const existing = imageMap.get(normalizedFilename);
-      const existingDate = new Date(existing.created_at);
-      const currentDate = new Date(image.created_at);
+    if (!imageMap.has(normalizedFilename)) {
+      imageMap.set(normalizedFilename, []);
+    }
+    
+    imageMap.get(normalizedFilename).push(image);
+  }
+  
+  const duplicates = [];
+  
+  // За всяка група снимки с еднакво име
+  for (const [filename, images] of imageMap.entries()) {
+    if (images.length > 1) {
+      // Сортирай по created_at (най-новата първа)
+      images.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       
-      // Изтрий по-старата снимка
-      if (currentDate > existingDate) {
-        duplicates.push(existing);
-        imageMap.set(normalizedFilename, image);
-      } else {
-        duplicates.push(image);
+      // Запази първата (най-новата), изтрий останалите
+      console.log(`  Found ${images.length} duplicates of "${filename}"`);
+      console.log(`    Keeping: ${images[0].id} (created: ${images[0].created_at})`);
+      
+      for (let i = 1; i < images.length; i++) {
+        console.log(`    Deleting: ${images[i].id} (created: ${images[i].created_at})`);
+        duplicates.push(images[i]);
       }
-    } else {
-      imageMap.set(normalizedFilename, image);
     }
   }
   
   return duplicates;
 }
+
 
 // Функция за изтриване на снимка
 async function deleteProductImage(productId, imageId) {
