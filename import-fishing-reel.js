@@ -41,50 +41,62 @@ function debugProductImages(filstarProduct) {
   console.log('\n');
 }
 
-
 async function getAllShopifyProducts() {
+  console.log('📦 Fetching all Shopify products...');
+  
   let allProducts = [];
   let hasNextPage = true;
   let pageInfo = null;
+  let pageCount = 0;
   
   while (hasNextPage) {
+    pageCount++;
     let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`;
     
     if (pageInfo) {
       url += `&page_info=${pageInfo}`;
     }
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`  ❌ Failed to fetch products (page ${pageCount}): ${response.status}`);
+        break;
       }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch Shopify products:', response.status);
+      
+      const data = await response.json();
+      allProducts = allProducts.concat(data.products);
+      
+      console.log(`  ✓ Page ${pageCount}: ${data.products.length} products (Total: ${allProducts.length})`);
+      
+      // Провери за следваща страница
+      const linkHeader = response.headers.get('Link');
+      if (linkHeader && linkHeader.includes('rel="next"')) {
+        const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+        pageInfo = nextMatch ? nextMatch[1] : null;
+        hasNextPage = !!pageInfo;
+      } else {
+        hasNextPage = false;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+    } catch (error) {
+      console.error(`  ❌ Error fetching products (page ${pageCount}):`, error.message);
       break;
     }
-    
-    const data = await response.json();
-    allProducts = allProducts.concat(data.products);
-    
-    const linkHeader = response.headers.get('Link');
-    if (linkHeader && linkHeader.includes('rel="next"')) {
-      const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-      pageInfo = nextMatch ? nextMatch[1] : null;
-      hasNextPage = !!pageInfo;
-    } else {
-      hasNextPage = false;
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
+  console.log(`✅ Fetched ${allProducts.length} products from ${pageCount} pages`);
   return allProducts;
 }
-
 
 
 
