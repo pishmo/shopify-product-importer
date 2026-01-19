@@ -731,7 +731,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\n🔄 Updating product: ${shopifyProduct.title}`);
   const productId = shopifyProduct.id;
   
-  // Upload нови снимки (ако има)
+  // Събери всички снимки от Filstar
   const allImages = [];
   
   if (filstarProduct.image) {
@@ -759,12 +759,15 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
     }
   }
   
+  // Качи нови снимки
   if (allImages.length > 0) {
     console.log(`Processing ${allImages.length} images from Filstar...`);
+    
     for (const imageUrl of allImages) {
       const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
       if (uploaded) {
         imagesUploaded++;
+        // ✅ ПОПРАВЕНО: Добави снимката към локалния кеш
         shopifyProduct.images.push({ src: imageUrl, id: null });
       } else {
         imagesSkipped++;
@@ -772,7 +775,28 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
     }
   }
   
-  // 🆕 Пренареди снимките в правилния ред
+  // ✅ ПОПРАВЕНО: Refresh images след upload преди reorder
+  if (imagesUploaded > 0) {
+    console.log(`  🔄 Refreshing product images after upload...`);
+    
+    const refreshResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json?fields=images`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (refreshResponse.ok) {
+      const refreshData = await refreshResponse.json();
+      shopifyProduct.images = refreshData.product.images;
+      console.log(`  ✓ Refreshed ${shopifyProduct.images.length} images`);
+    }
+  }
+  
+  // Пренареди снимките в правилния ред
   await reorderProductImages(productId, filstarProduct, shopifyProduct.images);
   
   stats[categoryType].updated++;
@@ -780,6 +804,7 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   
   console.log(` ✅ Updated | Images: ${imagesUploaded} new, ${imagesSkipped} skipped`);
 }
+
 
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
   console.log(`Processing: ${filstarProduct.name}`);
