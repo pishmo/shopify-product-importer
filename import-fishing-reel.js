@@ -114,6 +114,29 @@ function getImageFilename(src) {
   return cleanFilename;
 }
 
+
+// Функция за извличане на SKU от име на снимка
+function extractSkuFromImageFilename(filename) {
+  const match = filename.match(/^(\d+)/);
+  return match ? match[1] : '999999';
+}
+
+// Функция за сортиране на снимките по SKU
+function sortImagesBySku(imageUrls) {
+  return [...imageUrls].sort((a, b) => {
+    const filenameA = getImageFilename(a);
+    const filenameB = getImageFilename(b);
+    const skuA = extractSkuFromImageFilename(filenameA);
+    const skuB = extractSkuFromImageFilename(filenameB);
+    return skuA.localeCompare(skuB);
+  });
+}
+
+
+
+
+
+
 function imageExists(existingImages, newImageUrl) {
   const newFilename = getImageFilename(newImageUrl);
   if (!newFilename) return false;
@@ -122,8 +145,6 @@ function imageExists(existingImages, newImageUrl) {
     return existingFilename && existingFilename === newFilename;
   });
 }
-
-// 🆕 Функция за пренареждане на снимките в правилния ред
 
 // 🆕 Функция за пренареждане на снимките в правилния ред
 async function reorderProductImages(productId, filstarProduct, existingImages) {
@@ -139,6 +160,13 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     });
   }
   
+  // 🆕 Сортирай снимките по SKU
+  const sortedImages = sortImagesBySku(filstarProduct.images || []);
+  console.log(`\n   🔄 Sorted images by SKU:`);
+  sortedImages.forEach((img, idx) => {
+    console.log(`      [${idx}] ${getImageFilename(img)}`);
+  });
+  
   const desiredOrder = [];
   
   // 1️⃣ Главна снимка
@@ -148,21 +176,21 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
     desiredOrder.push(imageUrl);
     console.log(`   ✅ Added main image: ${getImageFilename(imageUrl)}`);
-  } else if (filstarProduct.images && filstarProduct.images.length > 0) {
-    const imageUrl = filstarProduct.images[0].startsWith('http') 
-      ? filstarProduct.images[0] 
-      : `${FILSTAR_BASE_URL}/${filstarProduct.images[0]}`;
+  } else if (sortedImages && sortedImages.length > 0) {
+    const imageUrl = sortedImages[0].startsWith('http') 
+      ? sortedImages[0] 
+      : `${FILSTAR_BASE_URL}/${sortedImages[0]}`;
     desiredOrder.push(imageUrl);
     console.log(`   ✅ Added first image as main: ${getImageFilename(imageUrl)}`);
   }
   
   // 2️⃣ Допълнителни снимки
-  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+  if (sortedImages && Array.isArray(sortedImages)) {
     const startIndex = (!filstarProduct.image) ? 1 : 0;
     console.log(`   📝 Processing additional images, startIndex: ${startIndex}`);
     
-    for (let i = startIndex; i < filstarProduct.images.length; i++) {
-      const img = filstarProduct.images[i];
+    for (let i = startIndex; i < sortedImages.length; i++) {
+      const img = sortedImages[i];
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
       desiredOrder.push(imageUrl);
       console.log(`      [${i}] Added: ${getImageFilename(imageUrl)}`);
