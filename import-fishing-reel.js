@@ -683,7 +683,8 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
 
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
   console.log(`Processing: ${filstarProduct.name}`);
- // Ensure categoryType е валиден
+  
+  // Ensure categoryType е валиден
   if (!categoryType || typeof categoryType !== 'string') {
     console.log(`  ⚠️  Invalid categoryType: ${categoryType}, using "other"`);
     categoryType = 'other';
@@ -742,11 +743,32 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
       }
     }
     
-    // Качи новите снимки
+    // ✅ ПОПРАВЕНО: Качи новите снимки директно
     if (imagesToUpload.length > 0) {
+      console.log(`  📤 Uploading ${imagesToUpload.length} new images...`);
+      
       for (const imageData of imagesToUpload) {
-        await addProductImages(shopifyProduct.id, [imageData]);
-        stats[categoryType].images++;
+        const response = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${shopifyProduct.id}/images.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ image: imageData })
+          }
+        );
+        
+        if (response.ok) {
+          const filename = getImageFilename(imageData.src);
+          console.log(`    ✓ Uploaded: ${filename}`);
+          stats[categoryType].images++;
+        } else {
+          const error = await response.text();
+          console.error(`    ✗ Failed to upload image:`, error);
+        }
+        
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
@@ -770,21 +792,9 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
       }
     }
     
-    if (!stats[categoryType]) {
-  console.warn(`⚠️  Unknown categoryType: "${categoryType}", using "other"`);
-  categoryType = 'other';
-}
-stats[categoryType].updated++;
-
-
-console.log(`  🐛 DEBUG: categoryType = "${categoryType}"`);
-
-if (stats[categoryType]) {
-  stats[categoryType].updated++;
-} else {
-  console.error(`❌ Category "${categoryType}" not found in stats object`);
-}
-
+    // ✅ ПОПРАВЕНО: Премахнат дублиран код за stats
+    stats[categoryType].updated++;
+    console.log(`  🐛 DEBUG: categoryType = "${categoryType}"`);
     
   } else {
     // CREATE NEW PRODUCT
@@ -865,8 +875,32 @@ if (stats[categoryType]) {
     
     if (imagesToUpload.length > 0) {
       console.log(`  📸 Uploading ${imagesToUpload.length} images...`);
-      await addProductImages(newProductId, imagesToUpload);
-      stats[categoryType].images += imagesToUpload.length;
+      
+      // ✅ ПОПРАВЕНО: Качи снимките директно
+      for (const imageData of imagesToUpload) {
+        const response = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${newProductId}/images.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ image: imageData })
+          }
+        );
+        
+        if (response.ok) {
+          const filename = getImageFilename(imageData.src);
+          console.log(`    ✓ Uploaded: ${filename}`);
+          stats[categoryType].images++;
+        } else {
+          const error = await response.text();
+          console.error(`    ✗ Failed to upload:`, error);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
     
     stats[categoryType].created++;
@@ -874,7 +908,6 @@ if (stats[categoryType]) {
   
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
-
 
 
 function getCategoryName(category) {
