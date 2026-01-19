@@ -956,7 +956,6 @@ async function addProductToCollection(productId, category) {
   }
 }
 
-
 async function updateProduct(shopifyProduct, filstarProduct) {
   try {
     console.log(`\n📝 Updating product: ${shopifyProduct.title}`);
@@ -965,7 +964,7 @@ async function updateProduct(shopifyProduct, filstarProduct) {
       id: convertToGid(shopifyProduct.id),
       title: filstarProduct.name,
       descriptionHtml: generateDescription(filstarProduct),
-      vendor: filstarProduct.brand || 'Filstar',
+      vendor: filstarProduct.manufacturer || 'Unknown', // ПРОМЯНА: manufacturer вместо brand
       productType: 'Fishing Reel',
       tags: generateTags(filstarProduct)
     };
@@ -1008,6 +1007,7 @@ async function updateProduct(shopifyProduct, filstarProduct) {
     throw error;
   }
 }
+
 
 
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
