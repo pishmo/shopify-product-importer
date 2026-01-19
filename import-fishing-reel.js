@@ -164,6 +164,11 @@ function imageExists(existingImages, newImageUrl) {
 async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(`  🔄 Reordering images...`);
   
+  if (!existingImages || existingImages.length === 0) {
+    console.log(`    ⚠️  No existing images to reorder`);
+    return false;
+  }
+  
   const desiredOrder = [];
   const seenFilenames = new Set();
   
@@ -211,6 +216,11 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   }
   
+  if (desiredOrder.length === 0) {
+    console.log(`    ⚠️  No images found in Filstar data`);
+    return false;
+  }
+  
   // Намери съответните Shopify image IDs
   const reorderedImages = [];
   
@@ -231,44 +241,62 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   }
   
-  // REST API Update
-  if (reorderedImages.length > 0) {
-    try {
-      const response = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
-        {
-          method: 'PUT',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            product: {
-              id: productId,
-              images: reorderedImages
-            }
-          })
-        }
-      );
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`    ❌ Failed to reorder: ${response.status}`);
-        return false;
-      }
-      
-      console.log(`    ✅ Reordered ${reorderedImages.length} images`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return true;
-      
-    } catch (error) {
-      console.error(`    ❌ Reorder error:`, error.message);
-      return false;
-    }
+  if (reorderedImages.length === 0) {
+    console.log(`    ⚠️  No matching images found to reorder`);
+    return false;
   }
   
-  return false;
+  // ✅ ПОПРАВЕНО: Добавени всички останали снимки, които не са в desiredOrder
+  // Това гарантира, че всички снимки остават в продукта
+  const unmatchedImages = existingImages.filter(img => {
+    const filename = getImageFilename(img.src);
+    return !seenFilenames.has(filename);
+  });
+  
+  // Добави неразпознатите снимки в края
+  for (const img of unmatchedImages) {
+    reorderedImages.push({
+      id: img.id,
+      position: reorderedImages.length + 1
+    });
+  }
+  
+  console.log(`    📊 Reordering ${reorderedImages.length} images (${desiredOrder.length} matched, ${unmatchedImages.length} unmatched)`);
+  
+  // REST API Update
+  try {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+      {
+        method: 'PUT',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          product: {
+            id: productId,
+            images: reorderedImages
+          }
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`    ❌ Failed to reorder: ${response.status} - ${errorText}`);
+      return false;
+    }
+    
+    console.log(`    ✅ Reordered ${reorderedImages.length} images successfully`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return true;
+    
+  } catch (error) {
+    console.error(`    ❌ Reorder error:`, error.message);
+    return false;
+  }
 }
 
 
