@@ -41,6 +41,75 @@ function debugProductImages(filstarProduct) {
   console.log('\n');
 }
 
+
+async function addProductImages(productId, imageUrls) {
+  if (!imageUrls || imageUrls.length === 0) {
+    console.log('  ⚠️ No images to add');
+    return;
+  }
+
+  try {
+    console.log(`  📸 Adding ${imageUrls.length} images to product...`);
+    
+    const media = imageUrls.map(url => ({
+      originalSource: url,
+      mediaContentType: 'IMAGE'
+    }));
+
+    const mutation = `
+      mutation productCreateMedia($media: [CreateMediaInput!]!, $productId: ID!) {
+        productCreateMedia(media: $media, productId: $productId) {
+          media {
+            ... on MediaImage {
+              id
+              image {
+                url
+              }
+            }
+          }
+          mediaUserErrors {
+            field
+            message
+          }
+          product {
+            id
+          }
+        }
+      }
+    `;
+
+    const response = await shopifyGraphQL(mutation, {
+      productId: productId,
+      media: media
+    });
+
+    if (response.productCreateMedia.mediaUserErrors.length > 0) {
+      console.error('  ❌ Errors adding images:', response.productCreateMedia.mediaUserErrors);
+      return;
+    }
+
+    console.log(`  ✓ Added ${response.productCreateMedia.media.length} images`);
+    
+    // Изчакай малко преди refresh
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Refresh product images
+    console.log('  🔄 Refreshing product images after upload...');
+    const refreshedProduct = await getProductById(productId);
+    const imageCount = refreshedProduct?.images?.edges?.length || 0;
+    console.log(`  ✓ Refreshed ${imageCount} images`);
+    
+  } catch (error) {
+    console.error('  ❌ Error adding images:', error.message);
+    throw error;
+  }
+}
+
+
+
+
+
+
 async function getAllShopifyProducts() {
   console.log('📦 Fetching all Shopify products...');
   
