@@ -164,7 +164,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(`   📊 Total images: ${desiredOrder.length}, Unique: ${uniqueDesiredOrder.length}`);
   
   // Намери съответните Shopify image IDs в желания ред
-  const reorderedImages = [];
+  const reorderedImageIds = [];
   for (let i = 0; i < uniqueDesiredOrder.length; i++) {
     const desiredUrl = uniqueDesiredOrder[i];
     const desiredFilename = getImageFilename(desiredUrl);
@@ -175,33 +175,59 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     });
     
     if (existingImage) {
-      // ✅ ПРОМЯНА: Добави само id, без position
-      reorderedImages.push({
-        id: existingImage.id
-      });
-      console.log(`   📍 Position ${i + 1}: ${desiredFilename}`);
+      // Извлечи numeric ID от image.id
+      const numericId = existingImage.id.toString().split('/').pop();
+      reorderedImageIds.push(numericId);
+      console.log(`   📍 Position ${i + 1}: ${desiredFilename} (ID: ${numericId})`);
     }
   }
   
-  // ✅ ПРОМЯНА: Update с пълния масив от images
-  if (reorderedImages.length > 0) {
+  // GraphQL mutation за reorder
+  if (reorderedImageIds.length > 0) {
+    const mutation = `
+      mutation productReorderImages($id: ID!, $moves: [MoveInput!]!) {
+        productReorderImages(id: $id, moves: $moves) {
+          job {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    
+    // Създай moves масив
+    const moves = reorderedImageIds.map((imageId, index) => ({
+      id: `gid://shopify/ProductImage/${imageId}`,
+      newPosition: `${index}`
+    }));
+    
     const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
       {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'X-Shopify-Access-Token': ACCESS_TOKEN,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          product: {
-            images: reorderedImages  // Само масив от {id: ...}
+          query: mutation,
+          variables: {
+            id: `gid://shopify/Product/${productId}`,
+            moves: moves
           }
         })
       }
     );
     
     if (response.ok) {
+      const result = await response.json();
+      if (result.data?.productReorderImages?.userErrors?.length > 0) {
+        console.error(`   ❌ Reorder errors:`, result.data.productReorderImages.userErrors);
+        return false;
+      }
       console.log(`   ✅ Images reordered successfully`);
       return true;
     } else {
