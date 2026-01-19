@@ -959,13 +959,12 @@ async function addProductToCollection(productId, category) {
 }
 
 
-
 async function updateProduct(shopifyProduct, filstarProduct) {
   try {
     console.log(`\n📝 Updating product: ${shopifyProduct.title}`);
     
     const productData = {
-      id: convertToGid(shopifyProduct.id), // Конвертирай ID в GID формат
+      id: convertToGid(shopifyProduct.id),
       title: filstarProduct.name,
       descriptionHtml: generateDescription(filstarProduct),
       vendor: filstarProduct.brand || 'Filstar',
@@ -1002,8 +1001,6 @@ async function updateProduct(shopifyProduct, filstarProduct) {
       console.error('❌ Errors updating product:', response.productUpdate.userErrors);
       return null;
     }
-
-    const existingImageIds = shopifyProduct.images?.edges.map(edge => edge.node.id) || [];
     
     console.log('✓ Product updated successfully');
     return response.productUpdate.product;
