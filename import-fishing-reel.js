@@ -140,9 +140,27 @@ function getImageFilename(src) {
 
 // Функция за извличане на SKU от име на снимка
 function extractSkuFromImageFilename(filename) {
+  if (!filename || typeof filename !== 'string') {
+    return '999999';
+  }
+  
+  // ✅ ПОПРАВЕНО: Търси SKU в началото на filename-а (цифри)
   const match = filename.match(/^(\d+)/);
-  return match ? match[1] : '999999';
+  
+  if (match && match[1]) {
+    return match[1];
+  }
+  
+  // ✅ НОВО: Опитай да намериш SKU след тире или долна черта
+  const altMatch = filename.match(/[-_](\d{6,})/);
+  if (altMatch && altMatch[1]) {
+    return altMatch[1];
+  }
+  
+  // Ако няма SKU, върни голямо число за да отиде в края при сортиране
+  return '999999';
 }
+
 
 // Функция за сортиране на снимките по SKU
 function sortImagesBySku(imageUrls) {
