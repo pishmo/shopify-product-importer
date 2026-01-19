@@ -730,6 +730,10 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
 
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
   console.log(`Processing: ${filstarProduct.name}`);
+
+debugProductImages(product);
+
+
   
   // Намери продукта в кеша
   let shopifyProduct = null;
