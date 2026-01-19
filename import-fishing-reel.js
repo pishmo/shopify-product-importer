@@ -1016,7 +1016,12 @@ async function main() {
     // Обработи ВСИЧКИ макари
     for (let i = 0; i < allReels.length; i++) {
       const reel = allReels[i];
-      const categoryType = getCategoryName(reel) || 'other';
+      
+      // КОРИГИРАН КОД: Намери категорията на текущата макара
+      const categoryType = Object.keys(categorizedReels).find(cat => 
+        categorizedReels[cat].includes(reel)
+      ) || 'other';
+      
       console.log(`\n[${i + 1}/${allReels.length}] Processing: ${reel.name || 'Unknown'}`);
       await processProduct(reel, categoryType, allShopifyProducts);
     }
@@ -1037,6 +1042,5 @@ async function main() {
   }
 }
 
-// ✅ САМО ЕДИН ИЗВИК
 main();
 
