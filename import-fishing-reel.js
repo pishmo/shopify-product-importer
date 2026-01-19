@@ -675,31 +675,53 @@ async function addProductToCollection(productId, category) {
 }
 
 async function uploadProductImage(productId, imageUrl, existingImages) {
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    console.error(`  ✗ Invalid image URL`);
+    return false;
+  }
+  
   if (imageExists(existingImages, imageUrl)) {
     console.log(`  ⏭️  Image already exists, skipping: ${getImageFilename(imageUrl)}`);
     return false;
   }
-  console.log(` 📸 Uploading new image: ${getImageFilename(imageUrl)}`);
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
-    {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ image: { src: imageUrl } })
+  
+  console.log(`  📸 Uploading new image: ${getImageFilename(imageUrl)}`);
+  
+  try {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          image: { 
+            src: imageUrl 
+          } 
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`  ✗ Failed to upload image: ${response.status} - ${error}`);
+      return false;
     }
-  );
-  if (!response.ok) {
-    const error = await response.text();
-    console.error(` ✗ Failed to upload image:`, error);
+    
+    const result = await response.json();
+    console.log(`  ✓ Image uploaded successfully (ID: ${result.image.id})`);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
+    
+  } catch (error) {
+    console.error(`  ✗ Upload error:`, error.message);
     return false;
   }
-  console.log(` ✓ Image uploaded successfully`);
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return true;
 }
+
 
 // 🆕 Подобрена функция за update с пренареждане
 async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
