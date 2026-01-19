@@ -394,17 +394,15 @@ function formatVariantName(variant, categoryType) {
 }
 
 // 🆕 Подобрена функция за добавяне на снимки с правилна подредба
-async function addProductImages(productId, filstarProduct) {
+async function addProductImages(productId, filstarProduct, existingImages = []) {
   console.log(`Adding images to product ${productId}...`);
   let uploadedCount = 0;
   
-  // 🆕 Сортирай снимките по SKU
   const sortedImages = sortImagesBySku(filstarProduct.images || []);
   console.log(` 🔄 Images sorted by SKU for upload`);
   
   const imagesToUpload = [];
   
-  // 1️⃣ Главна снимка (макарата)
   if (filstarProduct.image) {
     const imageUrl = filstarProduct.image.startsWith('http') 
       ? filstarProduct.image 
@@ -413,7 +411,6 @@ async function addProductImages(productId, filstarProduct) {
     console.log(` 🎯 Main image: ${getImageFilename(imageUrl)}`);
   }
   
-  // 2️⃣ Допълнителни снимки - ИЗПОЛЗВАЙ sortedImages
   if (sortedImages && Array.isArray(sortedImages)) {
     for (const img of sortedImages) {
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
@@ -422,7 +419,6 @@ async function addProductImages(productId, filstarProduct) {
     }
   }
   
-  // 3️⃣ Снимки на варианти (шпули)
   if (filstarProduct.variants) {
     for (const variant of filstarProduct.variants) {
       if (variant.image) {
@@ -440,9 +436,24 @@ async function addProductImages(productId, filstarProduct) {
     return 0;
   }
   
-  // Upload в правилния ред
-  for (let i = 0; i < imagesToUpload.length; i++) {
-    const imageData = imagesToUpload[i];
+  // 🆕 ФИЛТРИРАЙ ДУБЛИКАТИТЕ ПРЕДИ КАЧВАНЕ!
+  const newImages = imagesToUpload.filter(img => {
+    const exists = imageExists(existingImages, img.src);
+    if (exists) {
+      console.log(` ⏭️  Skipping duplicate: ${getImageFilename(img.src)}`);
+    }
+    return !exists;
+  });
+  
+  console.log(` 📊 Total: ${imagesToUpload.length} images, ${newImages.length} new, ${imagesToUpload.length - newImages.length} duplicates skipped`);
+  
+  if (newImages.length === 0) {
+    console.log(` ✅ All images already exist, skipping upload`);
+    return 0;
+  }
+  
+  for (let i = 0; i < newImages.length; i++) {
+    const imageData = newImages[i];
     
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
