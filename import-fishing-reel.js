@@ -1008,7 +1008,6 @@ async function updateProduct(shopifyProduct, filstarProduct) {
   }
 }
 
-
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
   console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`📦 Processing: ${filstarProduct.name}`);
@@ -1054,15 +1053,13 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
       stats[categoryType].created++;
     }
     
-    // 📸 ДОБАВИ ТОВА - Обработка на снимки
+    // 📸 Обработка на снимки
     console.log('📸 Checking images...');
     const numericId = productId.toString().replace(/\D/g, '');
     
-    // Вземи текущите снимки
     const currentProduct = cachedShopifyProducts.find(p => p.id.toString() === numericId);
     const existingImages = currentProduct?.images || [];
     
-    // Качи нови снимки
     let uploadedCount = 0;
     const allImageUrls = [];
     
@@ -1084,9 +1081,25 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
       stats[categoryType].images += uploadedCount;
       console.log(`  ✅ Uploaded ${uploadedCount} new images`);
       
-      // Пренареди снимките
-      const refreshed = cachedShopifyProducts.find(p => p.id.toString() === numericId);
-      await reorderProductImages(numericId, filstarProduct, refreshed?.images || []);
+      // Refresh продукта за актуални снимки
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const refreshResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}.json?fields=id,images`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const refreshedData = await refreshResponse.json();
+      const refreshedImages = refreshedData.product?.images || [];
+      
+      console.log(`  🔄 Refreshed product, found ${refreshedImages.length} total images`);
+      
+      await reorderProductImages(numericId, filstarProduct, refreshedImages);
     }
     
     console.log(`  ✅ Processing completed successfully`);
@@ -1097,7 +1110,6 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     return false;
   }
 }
-
 
 
 
