@@ -1031,7 +1031,7 @@ async function main() {
     
     // Fetch всички макари от Filstar
     console.log('🌐 Fetching fishing reels from Filstar API...');
-    const categorizedReels = await fetchAllFishingReel();
+    const categorizedReels = await fetchAllFishingReels();
     
     const allReels = [
       ...(categorizedReels.front_drag || []),
