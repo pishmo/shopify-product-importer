@@ -33,6 +33,13 @@ const stats = {
   other: { created: 0, updated: 0, images: 0 }
 };
 
+// суров апи за тест
+// Debug функция - добави я в началото на файла
+function debugProductImages(filstarProduct) {
+  console.log('\n🔍 RAW FILSTAR PRODUCT DATA:');
+  console.log(JSON.stringify(filstarProduct, null, 2));
+  console.log('\n');
+}
 
 
 async function getAllShopifyProducts() {
