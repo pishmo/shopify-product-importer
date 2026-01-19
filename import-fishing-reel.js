@@ -150,23 +150,12 @@ function imageExists(existingImages, newImageUrl) {
 async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(` 🔄 Reordering images for product ${productId}...`);
   
-  // 🆕 DEBUG: Покажи какво идва от Filstar
-  console.log(`\n   🔍 RAW FILSTAR DATA:`);
-  console.log(`      filstarProduct.image: ${filstarProduct.image || 'undefined'}`);
-  console.log(`      filstarProduct.images array (${filstarProduct.images?.length || 0} items):`);
-  if (filstarProduct.images) {
-    filstarProduct.images.forEach((img, idx) => {
-      console.log(`         [${idx}] ${getImageFilename(img)}`);
-    });
+  
   }
   
   // 🆕 Сортирай снимките по SKU
   const sortedImages = sortImagesBySku(filstarProduct.images || []);
-  console.log(`\n   🔄 Sorted images by SKU:`);
-  sortedImages.forEach((img, idx) => {
-    console.log(`      [${idx}] ${getImageFilename(img)}`);
-  });
-  
+ 
   const desiredOrder = [];
   
   // 1️⃣ Главна снимка
@@ -196,12 +185,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       console.log(`      [${i}] Added: ${getImageFilename(imageUrl)}`);
     }
   }
-  
-  console.log(`\n   📋 DESIRED ORDER BEFORE DEDUP (${desiredOrder.length} images):`);
-  desiredOrder.forEach((url, idx) => {
-    console.log(`      ${idx + 1}. ${getImageFilename(url)}`);
-  });
-  
+    
   // Дедуплицирай по filename
   const seen = new Set();
   const uniqueDesiredOrder = desiredOrder.filter(url => {
@@ -214,18 +198,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     return true;
   });
   
-  // 🆕 DEBUG LOG 1: Подредба от Filstar
-  console.log(`\n   📥 FILSTAR IMAGE ORDER (${uniqueDesiredOrder.length} images):`);
-  uniqueDesiredOrder.forEach((url, idx) => {
-    console.log(`      ${idx + 1}. ${getImageFilename(url)}`);
-  });
   
-  // 🆕 DEBUG LOG 2: Текуща подредба в Shopify ПРЕДИ реордера
-  console.log(`\n   📦 SHOPIFY IMAGE ORDER BEFORE (${existingImages.length} images):`);
-  existingImages.forEach((img, idx) => {
-    const numericId = img.id.toString().split('/').pop();
-    console.log(`      ${idx + 1}. ${getImageFilename(img.src)} (ID: ${numericId}, position: ${img.position})`);
-  });
   
   console.log(`\n   📊 Total images: ${desiredOrder.length}, Unique: ${uniqueDesiredOrder.length}`);
   
@@ -271,12 +244,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       id: `gid://shopify/ProductImage/${imageId}`,
       newPosition: `${index}`
     }));
-    
-    console.log(`\n   🔧 MUTATION MOVES:`);
-    moves.forEach((move, idx) => {
-      console.log(`      ${idx + 1}. ${move.id} → position ${move.newPosition}`);
-    });
-    
+  
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
       {
@@ -304,52 +272,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       
       console.log(`   ✅ Images reordered successfully`);
       
-      // 🆕 DEBUG LOG 3: Провери подредбата СЛЕД реордера
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Изчакай 2 сек
-      
-      const checkQuery = `
-        query getProduct($id: ID!) {
-          product(id: $id) {
-            images(first: 50) {
-              edges {
-                node {
-                  id
-                  url
-                  altText
-                }
-              }
-            }
-          }
-        }
-      `;
-      
-      const checkResponse = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            query: checkQuery,
-            variables: {
-              id: `gid://shopify/Product/${productId}`
-            }
-          })
-        }
-      );
-      
-      if (checkResponse.ok) {
-        const checkResult = await checkResponse.json();
-        const imagesAfter = checkResult.data?.product?.images?.edges?.map(e => e.node) || [];
-        
-        console.log(`\n   ✅ SHOPIFY IMAGE ORDER AFTER (${imagesAfter.length} images):`);
-        imagesAfter.forEach((img, idx) => {
-          const numericId = img.id.toString().split('/').pop();
-          console.log(`      ${idx + 1}. ${getImageFilename(img.url)} (ID: ${numericId})`);
-        });
-      }
+  
       
       return true;
     } else {
