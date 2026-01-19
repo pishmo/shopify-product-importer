@@ -653,21 +653,24 @@ function ensureUniqueVariantNames(variants, categoryType) {
 
 async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
+  
   try {
     const vendor = filstarProduct.manufacturer || 'Unknown';
-    console.log(` 🏷️ Vendor: ${vendor}`);
+    console.log(`  🏷️ Vendor: ${vendor}`);
+
     const variantNames = ensureUniqueVariantNames(filstarProduct.variants, category);
+
     const productData = {
       product: {
         title: filstarProduct.name,
         body_html: filstarProduct.description || '',
         vendor: vendor,
         product_type: getCategoryName(category),
-        tags: ['Filstar', category, vendor],
+        tags: ['Filstar', category, vendor].filter(Boolean).join(', '),
         status: 'active',
         variants: filstarProduct.variants.map((variant, index) => ({
           sku: variant.sku,
-          price: variant.price,
+          price: parseFloat(variant.price) || '0.00',
           inventory_quantity: parseInt(variant.quantity) || 0,
           inventory_management: 'shopify',
           option1: variantNames[index],
@@ -676,10 +679,14 @@ async function createShopifyProduct(filstarProduct, category) {
           weight_unit: 'kg'
         })),
         options: [
-          { name: 'Вариант', values: variantNames }
+          {
+            name: 'Вариант',
+            values: variantNames
+          }
         ]
       }
     };
+
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
       {
@@ -691,21 +698,34 @@ async function createShopifyProduct(filstarProduct, category) {
         body: JSON.stringify(productData)
       }
     );
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
     }
+
     const result = await response.json();
     const productId = result.product.id;
-    console.log(` ✅ Product created with ID: ${productId}`);
-    console.log(` 📦 Created ${filstarProduct.variants.length} variants`);
+    
+    console.log(`  ✅ Product created with ID: ${productId}`);
+    console.log(`  📦 Created ${filstarProduct.variants.length} variants`);
+
+    // Добави снимки
     const uploadedImages = await addProductImages(productId, filstarProduct);
+    
+    // Добави към колекция
     await addProductToCollection(productId, category);
+
+    // Обнови статистиката
     stats[category].created++;
     stats[category].images += uploadedImages;
+
+    console.log(`  ✅ Product creation completed`);
+    
     return result.product;
+
   } catch (error) {
-    console.error(` ❌ Error creating product:`, error.message);
+    console.error(`  ❌ Error creating product:`, error.message);
     throw error;
   }
 }
