@@ -1049,7 +1049,6 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
       stats[categoryType].created++;
     }
     
-    // 📸 Обработка на снимки
     console.log('📸 Checking images...');
     const numericId = productId.toString().replace(/\D/g, '');
     
@@ -1068,7 +1067,8 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     }
     
     for (const url of allImageUrls) {
-      const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}${url}`;
+      let fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
+      fullUrl = fullUrl.replace(/([^:])\/\//g, '$1/'); // Поправи двойни //
       const uploaded = await uploadProductImage(numericId, fullUrl, existingImages);
       if (uploaded) uploadedCount++;
     }
@@ -1076,10 +1076,11 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     if (uploadedCount > 0) {
       stats[categoryType].images += uploadedCount;
       console.log(`  ✅ Uploaded ${uploadedCount} new images`);
-      
-      // Refresh продукта за актуални снимки
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+    }
+    
+    // Винаги прави reorder ако има снимки
+    if (existingImages.length > 0 || uploadedCount > 0) {
       const refreshResponse = await fetch(
         `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}.json?fields=id,images`,
         {
@@ -1093,8 +1094,7 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
       const refreshedData = await refreshResponse.json();
       const refreshedImages = refreshedData.product?.images || [];
       
-      console.log(`  🔄 Refreshed product, found ${refreshedImages.length} total images`);
-      
+      console.log(`  🔄 Found ${refreshedImages.length} total images`);
       await reorderProductImages(numericId, filstarProduct, refreshedImages);
     }
     
@@ -1106,7 +1106,6 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     return false;
   }
 }
-
 
 
 
