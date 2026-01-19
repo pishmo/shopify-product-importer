@@ -34,6 +34,41 @@ const stats = {
 };
 
 
+async function shopifyGraphQL(query, variables = {}) {
+  const SHOPIFY_STORE = 'your-store-name'; // ЗАМЕНИ с твоя store name
+  const SHOPIFY_ACCESS_TOKEN = 'your-access-token'; // ЗАМЕНИ с твоя access token
+  
+  const url = `https://${SHOPIFY_STORE}.myshopify.com/admin/api/2024-01/graphql.json`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN
+    },
+    body: JSON.stringify({
+      query: query,
+      variables: variables
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Shopify API error: ${response.status} ${response.statusText}`);
+  }
+  
+  const result = await response.json();
+  
+  if (result.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+  }
+  
+  return result.data;
+}
+
+
+
+
+
 function generateTags(filstarProduct) {
   const tags = [];
   
