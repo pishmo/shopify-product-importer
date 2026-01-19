@@ -876,11 +876,11 @@ async function createShopifyProduct(filstarProduct, category) {
     console.log(`  🏷️ Vendor: ${vendor}`);
 
     const variantNames = ensureUniqueVariantNames(filstarProduct.variants, category);
-
+    const cleanedDescription = cleanDescription(filstarProduct.description);
     const productData = {
       product: {
         title: filstarProduct.name,
-        body_html: filstarProduct.description || '',
+        body_html: cleanedDescription,
         vendor: vendor,
         product_type: getCategoryName(category),
         tags: ['Filstar', category, vendor].filter(Boolean).join(', '),
