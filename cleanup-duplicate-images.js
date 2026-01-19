@@ -7,6 +7,7 @@ const API_VERSION = '2024-10';
 
 // Функция за нормализиране на filename (премахва UUID и hash-ове)
 // Функция за нормализиране на filename (премахва timestamp, UUID и hash-ове)
+// Функция за нормализиране на filename (премахва timestamp, UUID и hash-ове)
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     return null;
@@ -15,11 +16,15 @@ function getImageFilename(src) {
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
-  // Премахни Shopify UUID (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\\.[a-z]+)?$/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
+  let cleanFilename = withoutQuery;
   
-  // Премахни hex hash-ове от края
+  // 1️⃣ ПЪРВО: Премахни Shopify UUID (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  cleanFilename = cleanFilename.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '');
+  
+  // 2️⃣ ВТОРО: Премахни timestamp и random number (формат: -20250423155733-938)
+  cleanFilename = cleanFilename.replace(/-\d{14}-\d+/g, '');
+  
+  // 3️⃣ ТРЕТО: Премахни hex hash-ове от края (ако има)
   const parts = cleanFilename.split('_');
   if (parts.length > 1) {
     const lastPart = parts[parts.length - 1].split('.')[0];
@@ -30,15 +35,15 @@ function getImageFilename(src) {
     }
   }
   
-  // Премахни водещи долни черти
+  // 4️⃣ ЧЕТВЪРТО: Премахни водещи долни черти
   cleanFilename = cleanFilename.replace(/^_+/, '');
   
-  // 🆕 ПРЕМАХНИ TIMESTAMP И RANDOM NUMBER (формат: -20250423155733-938)
-  // Това е ключовата промяна!
-  cleanFilename = cleanFilename.replace(/-\d{14}-\d+/g, '');
+  // 5️⃣ ПЕТО: Премахни trailing underscores преди extension
+  cleanFilename = cleanFilename.replace(/_+(\.[a-z]+)$/i, '$1');
   
   return cleanFilename;
 }
+
 
 
 // Функция за извличане на всички продукти с пълна пагинация
