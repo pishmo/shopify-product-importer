@@ -1009,25 +1009,21 @@ async function updateProduct(shopifyProduct, filstarProduct) {
 }
 
 
-
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
   console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`📦 Processing: ${filstarProduct.name}`);
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
-  // Валидирай categoryType
   if (!categoryType || typeof categoryType !== 'string') {
     console.log(`  ⚠️ Invalid categoryType: ${categoryType}, using "other"`);
     categoryType = 'other';
   }
 
-  // Провери дали categoryType съществува в stats
   if (!stats[categoryType]) {
     console.log(`  ⚠️ Unknown category: ${categoryType}, using "other"`);
     categoryType = 'other';
   }
 
-  // Намери продукта в кеша по SKU
   let shopifyProduct = null;
   
   if (filstarProduct.variants && filstarProduct.variants.length > 0) {
@@ -1047,12 +1043,50 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
   }
 
   try {
+    let productId;
+    
     if (shopifyProduct) {
-      // UPDATE EXISTING PRODUCT
       await updateProduct(shopifyProduct, filstarProduct, categoryType);
+      productId = shopifyProduct.id;
     } else {
-      // CREATE NEW PRODUCT
-      await createShopifyProduct(filstarProduct, categoryType);
+      const newProduct = await createShopifyProduct(filstarProduct, categoryType);
+      productId = newProduct.id;
+      stats[categoryType].created++;
+    }
+    
+    // 📸 ДОБАВИ ТОВА - Обработка на снимки
+    console.log('📸 Checking images...');
+    const numericId = productId.toString().replace(/\D/g, '');
+    
+    // Вземи текущите снимки
+    const currentProduct = cachedShopifyProducts.find(p => p.id.toString() === numericId);
+    const existingImages = currentProduct?.images || [];
+    
+    // Качи нови снимки
+    let uploadedCount = 0;
+    const allImageUrls = [];
+    
+    if (filstarProduct.image) allImageUrls.push(filstarProduct.image);
+    if (filstarProduct.images) allImageUrls.push(...filstarProduct.images);
+    if (filstarProduct.variants) {
+      filstarProduct.variants.forEach(v => {
+        if (v.image) allImageUrls.push(v.image);
+      });
+    }
+    
+    for (const url of allImageUrls) {
+      const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}${url}`;
+      const uploaded = await uploadProductImage(numericId, fullUrl, existingImages);
+      if (uploaded) uploadedCount++;
+    }
+    
+    if (uploadedCount > 0) {
+      stats[categoryType].images += uploadedCount;
+      console.log(`  ✅ Uploaded ${uploadedCount} new images`);
+      
+      // Пренареди снимките
+      const refreshed = cachedShopifyProducts.find(p => p.id.toString() === numericId);
+      await reorderProductImages(numericId, filstarProduct, refreshed?.images || []);
     }
     
     console.log(`  ✅ Processing completed successfully`);
@@ -1063,6 +1097,10 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     return false;
   }
 }
+
+
+
+
 
 function getCategoryName(category) {
   const categoryNames = {
