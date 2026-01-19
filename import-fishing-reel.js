@@ -884,15 +884,29 @@ async function createShopifyProduct(filstarProduct, category) {
     console.log(`  ✅ Product created with ID: ${productId}`);
     console.log(`  📦 Created ${filstarProduct.variants.length} variants`);
 
+    // Събери всички image URL-и
+    const allImageUrls = [];
+    if (filstarProduct.image) allImageUrls.push(filstarProduct.image);
+    if (filstarProduct.images) allImageUrls.push(...filstarProduct.images);
+    if (filstarProduct.variants) {
+      filstarProduct.variants.forEach(v => {
+        if (v.image) allImageUrls.push(v.image);
+      });
+    }
+
     // Добави снимки
-    const uploadedImages = await addProductImages(productId, filstarProduct);
+    if (allImageUrls.length > 0) {
+      const imageUrls = allImageUrls.map(url => {
+        let fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
+        return fullUrl.replace(/([^:])\/\//g, '$1/');
+      });
+      
+      await addProductImages(productId, imageUrls);
+      stats[category].images += imageUrls.length;
+    }
     
     // Добави към колекция
     await addProductToCollection(productId, category);
-
-    // Обнови статистиката
-    stats[category].created++;
-    stats[category].images += uploadedImages;
 
     console.log(`  ✅ Product creation completed`);
     
@@ -903,6 +917,7 @@ async function createShopifyProduct(filstarProduct, category) {
     throw error;
   }
 }
+
 
 async function addProductToCollection(productId, category) {
   const collectionId = COLLECTION_MAPPING[category];
