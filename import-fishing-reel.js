@@ -504,8 +504,6 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
 
 
 
-// 🆕 Функция за пренареждане на снимките в правилния ред (REST API)
-// Функция за пренареждане на снимките в правилния ред (REST API)
 async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(`  🔄 Reordering images...`);
   
@@ -514,11 +512,10 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     return false;
   }
 
-  // ✅ Опитай да вземеш главната снимка от HTML страницата
   let mainImageFromPage = null;
   if (filstarProduct.slug) {
     mainImageFromPage = await fetchMainImageFromFilstarPage(filstarProduct.slug);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
 
   const allImages = [];
@@ -535,43 +532,31 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   };
 
-  // ✅ 1. Главна снимка от HTML (най-висок приоритет)
   if (mainImageFromPage) {
     addImage(mainImageFromPage, 'main_page', 1000);
   }
 
-  // 2. Главна снимка от API
   if (filstarProduct.image) {
     addImage(filstarProduct.image, 'main_api', 900);
   }
 
-  // 3. Допълнителни снимки
   if (filstarProduct.images) {
     filstarProduct.images.forEach(img => addImage(img, 'additional', 500));
   }
 
-  // 4. Variant снимки
   if (filstarProduct.variants) {
     filstarProduct.variants.forEach(v => {
       if (v.image) addImage(v.image, 'variant', 100);
     });
   }
 
-  // ✅ СОРТИРАНЕ: priority → без SKU (азбучен) → със SKU (номер)
   allImages.sort((a, b) => {
-    // Първо по приоритет
     if (a.priority !== b.priority) return b.priority - a.priority;
-    
-    // После без SKU преди със SKU
     if (a.sku === '999999' && b.sku !== '999999') return -1;
     if (a.sku !== '999999' && b.sku === '999999') return 1;
-    
-    // Без SKU - азбучен ред
     if (a.sku === '999999' && b.sku === '999999') {
       return a.filename.localeCompare(b.filename);
     }
-    
-    // Със SKU - по номер
     return a.sku.localeCompare(b.sku);
   });
 
@@ -584,12 +569,23 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
 
   const reorderedImages = [];
   for (let i = 0; i < allImages.length; i++) {
-    const match = existingImages.find(img => 
-      getImageFilename(img.src) === allImages[i].filename
-    );
+    const match = existingImages.find(img => {
+      const imgSrc = img.src || img.url || (typeof img === 'string' ? img : null);
+      if (!imgSrc) return false;
+      return getImageFilename(imgSrc) === allImages[i].filename;
+    });
     if (match) {
-      reorderedImages.push({ id: match.id, position: i + 1 });
+      const imgId = match.id || (typeof match === 'object' && match.id);
+      if (imgId) {
+        reorderedImages.push({ id: imgId, position: i + 1 });
+      }
     }
+  }
+
+  if (reorderedImages.length === 0) {
+    console.log(`    ⚠️ No images matched for reordering`);
+    console.log(`    Debug: existingImages[0] =`, JSON.stringify(existingImages[0]));
+    return false;
   }
 
   const response = await fetch(
