@@ -150,12 +150,12 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   }
   
-  // ✅ НОВО: Дедуплицирай по filename
+  // Дедуплицирай по filename
   const seen = new Set();
   const uniqueDesiredOrder = desiredOrder.filter(url => {
     const filename = getImageFilename(url);
     if (seen.has(filename)) {
-      return false; // Пропусни дубликат
+      return false;
     }
     seen.add(filename);
     return true;
@@ -163,7 +163,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   
   console.log(`   📊 Total images: ${desiredOrder.length}, Unique: ${uniqueDesiredOrder.length}`);
   
-  // Намери съответните Shopify image IDs
+  // Намери съответните Shopify image IDs в желания ред
   const reorderedImages = [];
   for (let i = 0; i < uniqueDesiredOrder.length; i++) {
     const desiredUrl = uniqueDesiredOrder[i];
@@ -175,15 +175,15 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     });
     
     if (existingImage) {
+      // ✅ ПРОМЯНА: Добави само id, без position
       reorderedImages.push({
-        id: existingImage.id,
-        position: i + 1
+        id: existingImage.id
       });
       console.log(`   📍 Position ${i + 1}: ${desiredFilename}`);
     }
   }
   
-  // Update позициите
+  // ✅ ПРОМЯНА: Update с пълния масив от images
   if (reorderedImages.length > 0) {
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
@@ -195,8 +195,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
         },
         body: JSON.stringify({
           product: {
-            id: productId,
-            images: reorderedImages
+            images: reorderedImages  // Само масив от {id: ...}
           }
         })
       }
