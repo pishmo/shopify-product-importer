@@ -985,17 +985,18 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
   }
 }
 
-
 function getCategoryName(category) {
-  const names = {
-    front_drag: 'Макари с преден аванс',
-    rear_drag: 'Макари с заден аванс',
-    baitrunner: 'Байтрънър',
-    multipliers: 'Мултиплокатори',
-    other: 'Други'
+  const categoryNames = {
+    front_drag: 'Front Drag Reels',
+    rear_drag: 'Rear Drag Reels',
+    baitrunner: 'Baitrunner Reels',
+    multipliers: 'Multiplier Reels',
+    other: 'Other Reels'
   };
-  return names[category] || category;
+
+  return categoryNames[category] || 'Other Reels';
 }
+
 
 function printFinalStats() {
   console.log('\n' + '='.repeat(70));
