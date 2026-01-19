@@ -34,6 +34,46 @@ const stats = {
 };
 
 
+function generateTags(filstarProduct) {
+  const tags = [];
+  
+  // Добави марката като таг
+  if (filstarProduct.brand) {
+    tags.push(filstarProduct.brand);
+  }
+  
+  // Добави категория
+  tags.push('Fishing Reel', 'Макара');
+  
+  // Добави спецификации като тагове
+  const specs = filstarProduct.specifications || {};
+  
+  if (specs.gear_ratio) {
+    tags.push(`Gear Ratio ${specs.gear_ratio}`);
+  }
+  
+  if (specs.bearings) {
+    tags.push(`${specs.bearings} Bearings`);
+  }
+  
+  // Добави тип спирачка ако има
+  if (filstarProduct.drag_type) {
+    tags.push(filstarProduct.drag_type);
+  }
+  
+  // Добави серия/модел ако има
+  if (filstarProduct.series) {
+    tags.push(filstarProduct.series);
+  }
+  
+  return tags.join(', ');
+}
+
+
+
+
+
+
 function generateDescription(filstarProduct) {
   const specs = filstarProduct.specifications || {};
   
