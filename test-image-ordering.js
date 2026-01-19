@@ -68,6 +68,19 @@ function analyzeProduct(product) {
   console.log('📋 FULL JSON:');
   console.log(JSON.stringify(product, null, 2));
   console.log('\n');
+
+// В края добави:
+  console.log('🔍 CHECKING FOR URL FIELDS:');
+  const urlFields = ['url', 'slug', 'permalink', 'link', 'product_url', 'web_url'];
+  urlFields.forEach(field => {
+    if (product[field]) {
+      console.log(`   ✓ ${field}: ${product[field]}`);
+    }
+  });
+  console.log('');
+
+
+  
 }
 
 async function main() {
