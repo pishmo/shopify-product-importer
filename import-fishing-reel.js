@@ -761,7 +761,6 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
 
   console.log('\n🔍 RAW FILSTAR DATA:', JSON.stringify(filstarProduct, null, 2));
 
-debugProductImages(product);
 
 
   
