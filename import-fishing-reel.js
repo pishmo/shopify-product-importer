@@ -119,6 +119,13 @@ function imageExists(existingImages, newImageUrl) {
 // 🆕 Функция за пренареждане на снимките в правилния ред
 async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(` 🔄 Reordering images for product ${productId}...`);
+
+ // DEBUG: Покажи какво идва от Filstar
+  console.log(`   🐛 DEBUG filstarProduct.image:`, filstarProduct.image);
+  console.log(`   🐛 DEBUG filstarProduct.images:`, filstarProduct.images);
+  console.log(`   🐛 DEBUG filstarProduct.variants:`, filstarProduct.variants?.map(v => v.image));
+  
+
   
   const desiredOrder = [];
   
