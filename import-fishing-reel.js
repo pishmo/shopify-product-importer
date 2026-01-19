@@ -732,12 +732,17 @@ async function createShopifyProduct(filstarProduct, category) {
 
 async function addProductToCollection(productId, category) {
   const collectionId = COLLECTION_MAPPING[category];
+  
   if (!collectionId) {
-    console.log(` ⚠️ No collection mapping for category: ${category}`);
-    return;
+    console.log(`  ⚠️ No collection mapping for category: ${category}`);
+    return false;
   }
+
   try {
     const numericCollectionId = collectionId.split('/').pop();
+    
+    console.log(`  📂 Adding to collection: ${getCategoryName(category)}`);
+
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
       {
@@ -754,11 +759,22 @@ async function addProductToCollection(productId, category) {
         })
       }
     );
-    if (response.ok) {
-      console.log(` ✅ Added to collection: ${getCategoryName(category)}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`  ❌ Failed to add to collection: ${response.status} - ${errorText}`);
+      return false;
     }
+
+    const result = await response.json();
+    console.log(`  ✅ Added to collection: ${getCategoryName(category)} (Collect ID: ${result.collect.id})`);
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return true;
+
   } catch (error) {
-    console.error(` ⚠️ Error adding to collection:`, error.message);
+    console.error(`  ❌ Error adding to collection:`, error.message);
+    return false;
   }
 }
 
