@@ -34,6 +34,16 @@ const stats = {
 };
 
 
+// Константи за нежелани текстове в описанията
+const UNWANTED_STRINGS = [
+  'Технически характеристики:'
+  
+];
+
+
+
+
+
 // Добави тази функция след константите в началото
 function convertToGid(numericId) {
   if (typeof numericId === 'string' && numericId.startsWith('gid://')) {
@@ -42,7 +52,40 @@ function convertToGid(numericId) {
   return `gid://shopify/Product/${numericId}`;
 }
 
-
+// Функция за почистване на описание
+function cleanDescription(description) {
+  if (!description || typeof description !== 'string') {
+    return '';
+  }
+  
+  let cleaned = description;
+  
+  // Премахни всички нежелани стрингове
+  UNWANTED_STRINGS.forEach(unwanted => {
+    // Case-insensitive замяна
+    const regex = new RegExp(unwanted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    cleaned = cleaned.replace(regex, '');
+  });
+  
+  // Премахни празни HTML тагове
+  cleaned = cleaned.replace(/<p>\s*<\/p>/g, '');
+  cleaned = cleaned.replace(/<div>\s*<\/div>/g, '');
+  cleaned = cleaned.replace(/<br\s*\/?>\s*<br\s*\/?>/g, '<br>'); // Двойни <br>
+  
+  // Премахни множество празни редове
+  cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
+  
+  // Премахни whitespace в началото и края
+  cleaned = cleaned.trim();
+  
+  // Ако остава само whitespace или празни тагове, върни празен string
+  const withoutTags = cleaned.replace(/<[^>]*>/g, '').trim();
+  if (!withoutTags) {
+    return '';
+  }
+  
+  return cleaned;
+}
 
 
 async function shopifyGraphQL(query, variables = {}) {
