@@ -311,28 +311,33 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     });
   }
 
-  // ✅ СОРТИРАЙ ПО SKU
-  desiredOrder.sort((a, b) => {
-    // Ако и двете имат SKU, сортирай по SKU
-    if (a.sku !== '999999' && b.sku !== '999999') {
-      return a.sku.localeCompare(b.sku);
-    }
-    // Ако само едната няма SKU, тя отива в края
-    if (a.sku === '999999') return 1;
-    if (b.sku === '999999') return -1;
-    // Ако и двете нямат SKU, запази оригиналния ред
-    return 0;
-  });
+  // ✅ НОВА ЛОГИКА: Раздели на 2 групи
+  const withoutSku = desiredOrder.filter(img => img.sku === '999999');
+  const withSku = desiredOrder.filter(img => img.sku !== '999999');
 
-  console.log(`    📋 Desired order (by SKU):`);
-  desiredOrder.forEach((img, i) => {
-    console.log(`      ${i + 1}. [SKU: ${img.sku}] ${img.filename}`);
+  // Сортирай без SKU по азбучен ред
+  withoutSku.sort((a, b) => a.filename.localeCompare(b.filename));
+
+  // Сортирай със SKU по SKU
+  withSku.sort((a, b) => a.sku.localeCompare(b.sku));
+
+  // ✅ КОМБИНИРАЙ: първо без SKU, после със SKU
+  const sortedOrder = [...withoutSku, ...withSku];
+
+  console.log(`    📋 Desired order:`);
+  console.log(`    🔤 Without SKU (alphabetical): ${withoutSku.length}`);
+  withoutSku.forEach((img, i) => {
+    console.log(`      ${i + 1}. ${img.filename}`);
+  });
+  console.log(`    🔢 With SKU (by SKU): ${withSku.length}`);
+  withSku.forEach((img, i) => {
+    console.log(`      ${withoutSku.length + i + 1}. [SKU: ${img.sku}] ${img.filename}`);
   });
 
   // Намери Shopify image IDs
   const reorderedImages = [];
-  for (let i = 0; i < desiredOrder.length; i++) {
-    const desired = desiredOrder[i];
+  for (let i = 0; i < sortedOrder.length; i++) {
+    const desired = sortedOrder[i];
     const existingImage = existingImages.find(img => {
       const existingFilename = getImageFilename(img.src);
       return existingFilename === desired.filename;
@@ -353,7 +358,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     reorderedImages.push({ id: img.id, position: reorderedImages.length + 1 });
   }
 
-  console.log(`    📊 Reordering ${reorderedImages.length} images (${desiredOrder.length} matched, ${unmatchedImages.length} unmatched)`);
+  console.log(`    📊 Reordering ${reorderedImages.length} images (${sortedOrder.length} matched, ${unmatchedImages.length} unmatched)`);
 
   try {
     const response = await fetch(
