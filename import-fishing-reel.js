@@ -389,37 +389,43 @@ async function fetchAllProducts() {
   }
 }
 
-async function fetchAllFishingLines() {
+async function fetchAllFishingReels() {
   const allProducts = await fetchAllProducts();
-  const lines = {
+  
+  const reels = {
     front_drag: [],
     rear_drag: [],
     baitrunner: [],
     multipliers: [],
     other: []
   };
+
   allProducts.forEach(product => {
     const categoryIds = product.categories?.map(c => c.id.toString()) || [];
+    
     if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.front_drag.includes(id))) {
-      lines.front_drag.push(product);
+      reels.front_drag.push(product);
     } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.rear_drag.includes(id))) {
-      lines.rear_drag.push(product);
+      reels.rear_drag.push(product);
     } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.baitrunner.includes(id))) {
-      lines.baitrunner.push(product);
+      reels.baitrunner.push(product);
     } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.multipliers.includes(id))) {
-      lines.multipliers.push(product);
+      reels.multipliers.push(product);
     } else if (categoryIds.some(id => FILSTAR_REEL_CATEGORY_IDS.other.includes(id))) {
-      lines.other.push(product);
+      reels.other.push(product);
     }
   });
-  console.log(`\nCategorized fishing lines:`);
-  console.log(` - front_drag: ${lines.front_drag.length}`);
-  console.log(` - rear_drag: ${lines.rear_drag.length}`);
-  console.log(` - baitrunner: ${lines.baitrunner.length}`);
-  console.log(` - multipliers: ${lines.multipliers.length}`);
-  console.log(` - other: ${lines.other.length}\n`);
-  return lines;
+
+  console.log(`\n✅ Categorized fishing reels:`);
+  console.log(`  - Front Drag: ${reels.front_drag.length}`);
+  console.log(`  - Rear Drag: ${reels.rear_drag.length}`);
+  console.log(`  - Baitrunner: ${reels.baitrunner.length}`);
+  console.log(`  - Multipliers: ${reels.multipliers.length}`);
+  console.log(`  - Other: ${reels.other.length}\n`);
+
+  return reels;
 }
+
 
 async function findShopifyProductBySku(sku) {
   let allProducts = [];
