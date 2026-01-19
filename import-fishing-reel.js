@@ -33,6 +33,46 @@ const stats = {
   other: { created: 0, updated: 0, images: 0 }
 };
 
+
+function generateDescription(filstarProduct) {
+  const specs = filstarProduct.specifications || {};
+  
+  let html = `<div class="product-description">`;
+  html += `<h2>${filstarProduct.name}</h2>`;
+  
+  if (filstarProduct.description) {
+    html += `<p>${filstarProduct.description}</p>`;
+  }
+  
+  html += `<h3>Технически характеристики:</h3>`;
+  html += `<ul>`;
+  
+  if (specs.gear_ratio) html += `<li><strong>Предавателно число:</strong> ${specs.gear_ratio}</li>`;
+  if (specs.weight) html += `<li><strong>Тегло:</strong> ${specs.weight}</li>`;
+  if (specs.bearings) html += `<li><strong>Лагери:</strong> ${specs.bearings}</li>`;
+  if (specs.line_capacity) html += `<li><strong>Капацитет на линия:</strong> ${specs.line_capacity}</li>`;
+  if (specs.drag_power) html += `<li><strong>Мощност на спирачката:</strong> ${specs.drag_power}</li>`;
+  if (specs.retrieve_rate) html += `<li><strong>Скорост на намотаване:</strong> ${specs.retrieve_rate}</li>`;
+  
+  html += `</ul>`;
+  
+  if (filstarProduct.brand) {
+    html += `<p><strong>Марка:</strong> ${filstarProduct.brand}</p>`;
+  }
+  
+  html += `</div>`;
+  
+  return html;
+}
+
+
+
+
+
+
+
+
+
 // суров апи за тест
 // Debug функция - добави я в началото на файла
 function debugProductImages(filstarProduct) {
