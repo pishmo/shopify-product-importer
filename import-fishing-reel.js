@@ -1058,6 +1058,9 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
+await reorderProductImages(productId, filstarProduct, updatedProduct.images);
+
+  
   // Пренареди снимките в правилния ред
   await reorderProductImages(productId, filstarProduct, shopifyProduct.images);
 
