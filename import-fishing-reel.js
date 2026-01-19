@@ -1084,40 +1084,59 @@ async function main() {
   console.log('🎣 STARTING FISHING REEL IMPORT - FULL MODE');
   console.log('======================================================================\n');
   
-  // 🚀 КЕШИРАЙ всички Shopify продукти в началото
-  console.log('📦 Fetching all Shopify products...');
-  const allShopifyProducts = await getAllShopifyProducts();
-  console.log(`✅ Cached ${allShopifyProducts.length} Shopify products\n`);
-  
-  // Fetch всички макари от Filstar
-  const categorizedReels = await fetchAllFishingLines();
-  const allReels = [
-    ...(categorizedReels.front_drag || []),
-    ...(categorizedReels.rear_drag || []),
-    ...(categorizedReels.baitrunner || []),
-    ...(categorizedReels.multipliers || []),
-    ...(categorizedReels.other || [])
-  ];
-  
-  console.log(`📊 Found ${allReels.length} fishing reels total\n`);
-  console.log('======================================================================\n');
-  
-  // Обработи ВСИЧКИ макари
-  for (const reel of allReels) {
-
-const categoryType = getCategoryName(reel) || 'other';
-await processProduct(reel, categoryType, allShopifyProducts);
-
-
+  try {
+    // 🚀 КЕШИРАЙ всички Shopify продукти в началото
+    const allShopifyProducts = await getAllShopifyProducts();
+    console.log(`✅ Cached ${allShopifyProducts.length} Shopify products\n`);
+    
+    // Fetch всички макари от Filstar
+    console.log('🌐 Fetching fishing reels from Filstar API...');
+    const categorizedReels = await fetchAllFishingLines();
+    
+    const allReels = [
+      ...(categorizedReels.front_drag || []),
+      ...(categorizedReels.rear_drag || []),
+      ...(categorizedReels.baitrunner || []),
+      ...(categorizedReels.multipliers || []),
+      ...(categorizedReels.other || [])
+    ];
+    
+    console.log(`📊 Found ${allReels.length} fishing reels total`);
+    console.log(`   - Front Drag: ${categorizedReels.front_drag?.length || 0}`);
+    console.log(`   - Rear Drag: ${categorizedReels.rear_drag?.length || 0}`);
+    console.log(`   - Baitrunner: ${categorizedReels.baitrunner?.length || 0}`);
+    console.log(`   - Multipliers: ${categorizedReels.multipliers?.length || 0}`);
+    console.log(`   - Other: ${categorizedReels.other?.length || 0}`);
+    console.log('======================================================================\n');
+    
+    // Обработи ВСИЧКИ макари
+    for (let i = 0; i < allReels.length; i++) {
+      const reel = allReels[i];
+      const categoryType = getCategoryName(reel) || 'other';
+      
+      console.log(`\n[${i + 1}/${allReels.length}] Processing: ${reel.name || 'Unknown'}`);
+      await processProduct(reel, categoryType, allShopifyProducts);
+    }
+    
+    // Покажи финална статистика
+    printFinalStats();
+    
+    console.log('\n======================================================================');
+    console.log('✅ IMPORT COMPLETED SUCCESSFULLY');
+    console.log('======================================================================');
+    
+  } catch (error) {
+    console.error('\n======================================================================');
+    console.error('❌ IMPORT FAILED');
+    console.error('======================================================================');
+    console.error('Error:', error.message);
+    console.error('Stack:', error.stack);
+    process.exit(1);
   }
-  
-  // Покажи финална статистика
-  printFinalStats();
-  
-  console.log('\n======================================================================');
-  console.log('✅ IMPORT COMPLETED SUCCESSFULLY');
-  console.log('======================================================================');
 }
+
+main();
+
 
 main();
 
