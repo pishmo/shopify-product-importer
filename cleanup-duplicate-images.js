@@ -6,6 +6,7 @@ const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2024-10';
 
 // Функция за нормализиране на filename (премахва UUID и hash-ове)
+// Функция за нормализиране на filename (премахва timestamp, UUID и hash-ове)
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     return null;
@@ -32,8 +33,13 @@ function getImageFilename(src) {
   // Премахни водещи долни черти
   cleanFilename = cleanFilename.replace(/^_+/, '');
   
+  // 🆕 ПРЕМАХНИ TIMESTAMP И RANDOM NUMBER (формат: -20250423155733-938)
+  // Това е ключовата промяна!
+  cleanFilename = cleanFilename.replace(/-\d{14}-\d+/g, '');
+  
   return cleanFilename;
 }
+
 
 // Функция за извличане на всички продукти с пълна пагинация
 async function getAllProducts() {
