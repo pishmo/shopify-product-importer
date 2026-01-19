@@ -326,53 +326,78 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     return false;
   }
 
+  // ✅ Опитай да вземеш главната снимка от HTML страницата
+  let mainImageFromPage = null;
+  if (filstarProduct.slug) {
+    mainImageFromPage = await fetchMainImageFromFilstarPage(filstarProduct.slug);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit
+  }
+
   const allImages = [];
   const seenFilenames = new Set();
 
-  const addImage = (url, type, sku = null) => {
+  const addImage = (url, type, priority = 0) => {
     if (!url) return;
     const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
     const filename = getImageFilename(fullUrl);
     if (filename && !seenFilenames.has(filename)) {
       seenFilenames.add(filename);
-      const extractedSku = extractSkuFromImageFilename(filename);
-      allImages.push({ url: fullUrl, filename, type, sku: sku || extractedSku });
+      const sku = extractSkuFromImageFilename(filename);
+      allImages.push({ url: fullUrl, filename, type, sku, priority });
     }
   };
 
-  // Събери ВСИЧКИ снимки
-  if (filstarProduct.image) addImage(filstarProduct.image, 'main');
-  if (filstarProduct.images) {
-    filstarProduct.images.forEach(img => addImage(img, 'additional'));
+  // ✅ 1. Главна снимка от HTML (най-висок приоритет)
+  if (mainImageFromPage) {
+    addImage(mainImageFromPage, 'main_page', 1000);
   }
+
+  // 2. Главна снимка от API
+  if (filstarProduct.image) {
+    addImage(filstarProduct.image, 'main_api', 900);
+  }
+
+  // 3. Допълнителни снимки
+  if (filstarProduct.images) {
+    filstarProduct.images.forEach(img => addImage(img, 'additional', 500));
+  }
+
+  // 4. Variant снимки
   if (filstarProduct.variants) {
     filstarProduct.variants.forEach(v => {
-      if (v.image) addImage(v.image, 'variant', v.sku);
+      if (v.image) addImage(v.image, 'variant', 100);
     });
   }
 
-  // ✅ НОВА ЛОГИКА: Раздели на групи
-  const withoutSku = allImages.filter(img => img.sku === '999999');
-  const withSku = allImages.filter(img => img.sku !== '999999');
+  // ✅ СОРТИРАНЕ: priority → без SKU (азбучен) → със SKU (номер)
+  allImages.sort((a, b) => {
+    // Първо по приоритет
+    if (a.priority !== b.priority) return b.priority - a.priority;
+    
+    // После без SKU преди със SKU
+    if (a.sku === '999999' && b.sku !== '999999') return -1;
+    if (a.sku !== '999999' && b.sku === '999999') return 1;
+    
+    // Без SKU - азбучен ред
+    if (a.sku === '999999' && b.sku === '999999') {
+      return a.filename.localeCompare(b.filename);
+    }
+    
+    // Със SKU - по номер
+    return a.sku.localeCompare(b.sku);
+  });
 
-  // Сортирай без SKU по азбучен ред
-  withoutSku.sort((a, b) => a.filename.localeCompare(b.filename));
-  
-  // Сортирай със SKU по SKU номер
-  withSku.sort((a, b) => a.sku.localeCompare(b.sku));
-
-  const finalOrder = [...withoutSku, ...withSku];
-
-  console.log(`    📋 Final order:`);
-  console.log(`    🔤 Without SKU: ${withoutSku.length}`);
-  withoutSku.forEach((img, i) => console.log(`      ${i+1}. ${img.filename}`));
-  console.log(`    🔢 With SKU: ${withSku.length}`);
-  withSku.forEach((img, i) => console.log(`      ${withoutSku.length+i+1}. [${img.sku}] ${img.filename}`));
+  console.log(`    📋 Final order (${allImages.length} images):`);
+  allImages.forEach((img, i) => {
+    const label = img.sku === '999999' ? '🔤' : `🔢 ${img.sku}`;
+    const priority = img.priority > 0 ? ` [P:${img.priority}]` : '';
+    console.log(`      ${i+1}. ${label}${priority} ${img.filename}`);
+  });
 
   const reorderedImages = [];
-  for (let i = 0; i < finalOrder.length; i++) {
+  for (let i = 0; i < allImages.length; i++) {
     const match = existingImages.find(img => 
-      getImageFilename(img.src) === finalOrder[i].filename
+      getImageFilename(img.src) === allImages[i].filename
     );
     if (match) {
       reorderedImages.push({ id: match.id, position: i + 1 });
@@ -392,7 +417,8 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
   );
 
   if (!response.ok) {
-    console.error(`    ❌ Failed: ${response.status}`);
+    const errorText = await response.text();
+    console.error(`    ❌ Failed to reorder: ${response.status} - ${errorText}`);
     return false;
   }
 
