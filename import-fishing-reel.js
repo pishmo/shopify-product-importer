@@ -431,46 +431,65 @@ async function findShopifyProductBySku(sku) {
   let allProducts = [];
   let pageInfo = null;
   let hasNextPage = true;
+  let pageCount = 0;
+
   while (hasNextPage) {
-    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250`;
+    pageCount++;
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?fields=id,title,variants,images&limit=250`;
+    
     if (pageInfo) {
-      url += `&amp;page_info=${pageInfo}`;
+      url += `&page_info=${pageInfo}`;
     }
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`❌ Failed to fetch products (page ${pageCount}): ${response.status}`);
+        return null;
       }
-    });
-    if (!response.ok) {
-      console.error('Failed to fetch Shopify products');
-      return null;
-    }
-    const data = await response.json();
-    allProducts = allProducts.concat(data.products);
-    const linkHeader = response.headers.get('Link');
-    if (linkHeader && linkHeader.includes('rel=\"next\"')) {
-      const nextMatch = linkHeader.match(/<[^>]*[?&amp;]page_info=([^>&amp;]+)[^>]*>;\s*rel=\"next\"/);
-      if (nextMatch) {
-        pageInfo = nextMatch[1];
+
+      const data = await response.json();
+      allProducts = allProducts.concat(data.products);
+
+      // Провери за следваща страница
+      const linkHeader = response.headers.get('Link');
+      if (linkHeader && linkHeader.includes('rel="next"')) {
+        const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+        pageInfo = nextMatch ? nextMatch[1] : null;
+        hasNextPage = !!pageInfo;
       } else {
         hasNextPage = false;
       }
-    } else {
-      hasNextPage = false;
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error) {
+      console.error(`❌ Error fetching products (page ${pageCount}):`, error.message);
+      return null;
     }
-    await new Promise(resolve => setTimeout(resolve, 300));
   }
-  console.log(` Searched ${allProducts.length} products for SKU: ${sku}`);
+
+  console.log(`  🔍 Searched ${allProducts.length} products for SKU: ${sku}`);
+
+  // Търси продукт с този SKU
   for (const product of allProducts) {
     const hasVariant = product.variants.some(v => v.sku === sku);
     if (hasVariant) {
+      console.log(`  ✅ Found product: ${product.title} (ID: ${product.id})`);
       return product;
     }
   }
+
+  console.log(`  ⚠️ No product found with SKU: ${sku}`);
   return null;
 }
+
 
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
