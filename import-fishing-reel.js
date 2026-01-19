@@ -149,10 +149,7 @@ function imageExists(existingImages, newImageUrl) {
 // 🆕 Функция за пренареждане на снимките в правилния ред
 async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(` 🔄 Reordering images for product ${productId}...`);
-  
-  
-  }
-  
+
   // 🆕 Сортирай снимките по SKU
   const sortedImages = sortImagesBySku(filstarProduct.images || []);
  
