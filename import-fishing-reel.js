@@ -290,54 +290,42 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     const filename = getImageFilename(fullUrl);
     if (filename && !seenFilenames.has(filename)) {
       seenFilenames.add(filename);
-      desiredOrder.push({ url: fullUrl, filename, sku: extractSkuFromImageFilename(filename) });
+      desiredOrder.push({ url: fullUrl, filename });
     }
   };
 
-  // 1️⃣ Главна снимка
+  // ✅ 1️⃣ Главна снимка от Filstar (ВИНАГИ ПЪРВА)
   if (filstarProduct.image) {
     addUniqueImage(filstarProduct.image);
   }
 
-  // 2️⃣ Допълнителни снимки
+  // ✅ 2️⃣ Допълнителни снимки В ОРИГИНАЛНИЯ РЕД от Filstar
   if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
     filstarProduct.images.forEach(img => addUniqueImage(img));
   }
 
-  // 3️⃣ Снимки на варианти
+  // ✅ 3️⃣ Снимки на варианти (сортирани по SKU на варианта)
   if (filstarProduct.variants) {
-    filstarProduct.variants.forEach(variant => {
+    const sortedVariants = [...filstarProduct.variants].sort((a, b) => {
+      const skuA = a.sku || '';
+      const skuB = b.sku || '';
+      return skuA.localeCompare(skuB);
+    });
+    
+    sortedVariants.forEach(variant => {
       if (variant.image) addUniqueImage(variant.image);
     });
   }
 
-  // ✅ НОВА ЛОГИКА: Раздели на 2 групи
-  const withoutSku = desiredOrder.filter(img => img.sku === '999999');
-  const withSku = desiredOrder.filter(img => img.sku !== '999999');
-
-  // Сортирай без SKU по азбучен ред
-  withoutSku.sort((a, b) => a.filename.localeCompare(b.filename));
-
-  // Сортирай със SKU по SKU
-  withSku.sort((a, b) => a.sku.localeCompare(b.sku));
-
-  // ✅ КОМБИНИРАЙ: първо без SKU, после със SKU
-  const sortedOrder = [...withoutSku, ...withSku];
-
-  console.log(`    📋 Desired order:`);
-  console.log(`    🔤 Without SKU (alphabetical): ${withoutSku.length}`);
-  withoutSku.forEach((img, i) => {
+  console.log(`    📋 Desired order (Filstar order):`);
+  desiredOrder.forEach((img, i) => {
     console.log(`      ${i + 1}. ${img.filename}`);
-  });
-  console.log(`    🔢 With SKU (by SKU): ${withSku.length}`);
-  withSku.forEach((img, i) => {
-    console.log(`      ${withoutSku.length + i + 1}. [SKU: ${img.sku}] ${img.filename}`);
   });
 
   // Намери Shopify image IDs
   const reorderedImages = [];
-  for (let i = 0; i < sortedOrder.length; i++) {
-    const desired = sortedOrder[i];
+  for (let i = 0; i < desiredOrder.length; i++) {
+    const desired = desiredOrder[i];
     const existingImage = existingImages.find(img => {
       const existingFilename = getImageFilename(img.src);
       return existingFilename === desired.filename;
@@ -358,7 +346,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     reorderedImages.push({ id: img.id, position: reorderedImages.length + 1 });
   }
 
-  console.log(`    📊 Reordering ${reorderedImages.length} images (${sortedOrder.length} matched, ${unmatchedImages.length} unmatched)`);
+  console.log(`    📊 Reordering ${reorderedImages.length} images (${desiredOrder.length} matched, ${unmatchedImages.length} unmatched)`);
 
   try {
     const response = await fetch(
@@ -384,7 +372,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       return false;
     }
 
-    console.log(`    ✅ Reordered ${reorderedImages.length} images successfully`);
+    console.log(`    ✅ Reordered successfully`);
     await new Promise(resolve => setTimeout(resolve, 1000));
     return true;
   } catch (error) {
