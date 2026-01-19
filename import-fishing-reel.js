@@ -119,43 +119,35 @@ function imageExists(existingImages, newImageUrl) {
 // 🆕 Функция за пренареждане на снимките в правилния ред
 async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(` 🔄 Reordering images for product ${productId}...`);
-
- // DEBUG: Покажи какво идва от Filstar
-  console.log(`   🐛 DEBUG filstarProduct.image:`, filstarProduct.image);
-  console.log(`   🐛 DEBUG filstarProduct.images:`, filstarProduct.images);
-  console.log(`   🐛 DEBUG filstarProduct.variants:`, filstarProduct.variants?.map(v => v.image));
-  
-
   
   const desiredOrder = [];
   
-  // 1️⃣ Главна снимка на продукта (макарата)
+  // 1️⃣ Главна снимка - вземи първата от images масива ако image е undefined
   if (filstarProduct.image) {
     const imageUrl = filstarProduct.image.startsWith('http') 
       ? filstarProduct.image 
       : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
     desiredOrder.push(imageUrl);
+  } else if (filstarProduct.images && filstarProduct.images.length > 0) {
+    // ✅ НОВО: Ако няма главна снимка, вземи първата от масива
+    const imageUrl = filstarProduct.images[0].startsWith('http') 
+      ? filstarProduct.images[0] 
+      : `${FILSTAR_BASE_URL}/${filstarProduct.images[0]}`;
+    desiredOrder.push(imageUrl);
   }
   
-  // 2️⃣ Допълнителни снимки
+  // 2️⃣ Допълнителни снимки (пропусни първата ако вече е добавена)
   if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
-    for (const img of filstarProduct.images) {
+    const startIndex = (!filstarProduct.image) ? 1 : 0; // Пропусни първата ако вече е добавена
+    for (let i = startIndex; i < filstarProduct.images.length; i++) {
+      const img = filstarProduct.images[i];
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
       desiredOrder.push(imageUrl);
     }
   }
   
-  // 3️⃣ Снимки на варианти (шпули)
-  if (filstarProduct.variants) {
-    for (const variant of filstarProduct.variants) {
-      if (variant.image) {
-        const imageUrl = variant.image.startsWith('http') 
-          ? variant.image 
-          : `${FILSTAR_BASE_URL}/${variant.image}`;
-        desiredOrder.push(imageUrl);
-      }
-    }
-  }
+  // 3️⃣ Снимки на варианти (шпули) - ПРЕМАХНАТО защото се дублират
+  // Variant снимките вече са в filstarProduct.images
   
   // Дедуплицирай по filename
   const seen = new Set();
