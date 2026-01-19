@@ -117,6 +117,7 @@ function imageExists(existingImages, newImageUrl) {
 }
 
 // 🆕 Функция за пренареждане на снимките в правилния ред
+// 🆕 Функция за пренареждане на снимките в правилния ред
 async function reorderProductImages(productId, filstarProduct, existingImages) {
   console.log(` 🔄 Reordering images for product ${productId}...`);
   
@@ -146,9 +147,6 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   }
   
-  // 3️⃣ Снимки на варианти (шпули) - ПРЕМАХНАТО защото се дублират
-  // Variant снимките вече са в filstarProduct.images
-  
   // Дедуплицирай по filename
   const seen = new Set();
   const uniqueDesiredOrder = desiredOrder.filter(url => {
@@ -160,7 +158,20 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     return true;
   });
   
-  console.log(`   📊 Total images: ${desiredOrder.length}, Unique: ${uniqueDesiredOrder.length}`);
+  // 🆕 DEBUG LOG 1: Подредба от Filstar
+  console.log(`\n   📥 FILSTAR IMAGE ORDER (${uniqueDesiredOrder.length} images):`);
+  uniqueDesiredOrder.forEach((url, idx) => {
+    console.log(`      ${idx + 1}. ${getImageFilename(url)}`);
+  });
+  
+  // 🆕 DEBUG LOG 2: Текуща подредба в Shopify ПРЕДИ реордера
+  console.log(`\n   📦 SHOPIFY IMAGE ORDER BEFORE (${existingImages.length} images):`);
+  existingImages.forEach((img, idx) => {
+    const numericId = img.id.toString().split('/').pop();
+    console.log(`      ${idx + 1}. ${getImageFilename(img.src)} (ID: ${numericId}, position: ${img.position})`);
+  });
+  
+  console.log(`\n   📊 Total images: ${desiredOrder.length}, Unique: ${uniqueDesiredOrder.length}`);
   
   // Намери съответните Shopify image IDs в желания ред
   const reorderedImageIds = [];
@@ -177,7 +188,9 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       // Извлечи numeric ID от image.id
       const numericId = existingImage.id.toString().split('/').pop();
       reorderedImageIds.push(numericId);
-      console.log(`   📍 Position ${i + 1}: ${desiredFilename} (ID: ${numericId})`);
+      console.log(`   📍 Mapping position ${i + 1}: ${desiredFilename} → ID: ${numericId}`);
+    } else {
+      console.log(`   ⚠️  Missing in Shopify: ${desiredFilename}`);
     }
   }
   
@@ -203,6 +216,11 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       newPosition: `${index}`
     }));
     
+    console.log(`\n   🔧 MUTATION MOVES:`);
+    moves.forEach((move, idx) => {
+      console.log(`      ${idx + 1}. ${move.id} → position ${move.newPosition}`);
+    });
+    
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
       {
@@ -227,7 +245,56 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
         console.error(`   ❌ Reorder errors:`, result.data.productReorderImages.userErrors);
         return false;
       }
+      
       console.log(`   ✅ Images reordered successfully`);
+      
+      // 🆕 DEBUG LOG 3: Провери подредбата СЛЕД реордера
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Изчакай 2 сек
+      
+      const checkQuery = `
+        query getProduct($id: ID!) {
+          product(id: $id) {
+            images(first: 50) {
+              edges {
+                node {
+                  id
+                  url
+                  altText
+                }
+              }
+            }
+          }
+        }
+      `;
+      
+      const checkResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            query: checkQuery,
+            variables: {
+              id: `gid://shopify/Product/${productId}`
+            }
+          })
+        }
+      );
+      
+      if (checkResponse.ok) {
+        const checkResult = await checkResponse.json();
+        const imagesAfter = checkResult.data?.product?.images?.edges?.map(e => e.node) || [];
+        
+        console.log(`\n   ✅ SHOPIFY IMAGE ORDER AFTER (${imagesAfter.length} images):`);
+        imagesAfter.forEach((img, idx) => {
+          const numericId = img.id.toString().split('/').pop();
+          console.log(`      ${idx + 1}. ${getImageFilename(img.url)} (ID: ${numericId})`);
+        });
+      }
+      
       return true;
     } else {
       const error = await response.text();
