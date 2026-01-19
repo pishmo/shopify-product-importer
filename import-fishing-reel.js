@@ -927,6 +927,7 @@ async function main() {
 const categoryType = getCategoryName(reel) || 'other';
 await processProduct(reel, categoryType, allShopifyProducts);
 
+
   }
   
   // Покажи финална статистика
