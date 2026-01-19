@@ -79,8 +79,8 @@ function generateTags(filstarProduct) {
   const tags = [];
   
   // Добави марката като таг
-  if (filstarProduct.brand) {
-    tags.push(filstarProduct.brand);
+  if (filstarProduct.manufacturer) { // ПРОМЯНА: manufacturer вместо brand
+    tags.push(filstarProduct.manufacturer);
   }
   
   // Добави категория
@@ -109,8 +109,6 @@ function generateTags(filstarProduct) {
   
   return tags.join(', ');
 }
-
-
 
 
 
