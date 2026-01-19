@@ -426,11 +426,9 @@ async function addProductImages(productId, filstarProduct, existingImages = []) 
   console.log(`Adding images to product ${productId}...`);
   let uploadedCount = 0;
   
-  const sortedImages = sortImagesBySku(filstarProduct.images || []);
-  console.log(` 🔄 Images sorted by SKU for upload`);
-  
   const imagesToUpload = [];
   
+  // 1️⃣ Главна снимка
   if (filstarProduct.image) {
     const imageUrl = filstarProduct.image.startsWith('http') 
       ? filstarProduct.image 
@@ -439,7 +437,11 @@ async function addProductImages(productId, filstarProduct, existingImages = []) 
     console.log(` 🎯 Main image: ${getImageFilename(imageUrl)}`);
   }
   
-  if (sortedImages && Array.isArray(sortedImages)) {
+  // 2️⃣ Допълнителни снимки (сортирани по SKU)
+  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+    const sortedImages = sortImagesBySku(filstarProduct.images);
+    console.log(` 🔄 Images sorted by SKU for upload`);
+    
     for (const img of sortedImages) {
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
       imagesToUpload.push({ src: imageUrl, type: 'additional' });
@@ -447,6 +449,7 @@ async function addProductImages(productId, filstarProduct, existingImages = []) 
     }
   }
   
+  // 3️⃣ Снимки на варианти
   if (filstarProduct.variants) {
     for (const variant of filstarProduct.variants) {
       if (variant.image) {
@@ -460,11 +463,11 @@ async function addProductImages(productId, filstarProduct, existingImages = []) 
   }
   
   if (imagesToUpload.length === 0) {
-    console.log(` ℹ️ No images found`);
+    console.log(` ℹ️ No images found in Filstar data`);
     return 0;
   }
   
-  // 🆕 ФИЛТРИРАЙ ДУБЛИКАТИТЕ ПРЕДИ КАЧВАНЕ!
+  // ✅ ПОПРАВЕНО: Филтрирай дубликатите ПРЕДИ качване
   const newImages = imagesToUpload.filter(img => {
     const exists = imageExists(existingImages, img.src);
     if (exists) {
@@ -480,6 +483,7 @@ async function addProductImages(productId, filstarProduct, existingImages = []) 
     return 0;
   }
   
+  // ✅ ПОПРАВЕНО: Не задавай position при upload - Shopify автоматично ги добавя в края
   for (let i = 0; i < newImages.length; i++) {
     const imageData = newImages[i];
     
@@ -493,27 +497,28 @@ async function addProductImages(productId, filstarProduct, existingImages = []) 
         },
         body: JSON.stringify({ 
           image: { 
-            src: imageData.src,
-            position: i + 1
+            src: imageData.src
+            // ✅ Премахнато: position - ще се зададе от reorderProductImages
           } 
         })
       }
     );
     
     if (response.ok) {
-      console.log(` ✓ Position ${i + 1}: ${getImageFilename(imageData.src)}`);
+      const result = await response.json();
+      console.log(` ✓ Uploaded: ${getImageFilename(imageData.src)} (ID: ${result.image.id})`);
       uploadedCount++;
     } else {
       const error = await response.text();
-      console.error(` ✗ Failed:`, error);
+      console.error(` ✗ Failed to upload ${getImageFilename(imageData.src)}:`, error);
     }
     
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   
+  console.log(` ✅ Uploaded ${uploadedCount} new images`);
   return uploadedCount;
 }
-
 
 function ensureUniqueVariantNames(variants, categoryType) {
   const formattedVariants = variants.map(v => ({
