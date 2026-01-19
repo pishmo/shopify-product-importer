@@ -882,22 +882,17 @@ function printFinalStats() {
   console.log(`TOTAL: ${totalCreated} created | ${totalUpdated} updated | ${totalImages} images`);
   console.log('='.repeat(70) + '\n');
 }
-
 async function main() {
-  console.log('Starting import...\n');
-
-  const TEST_MODE = true;
-  const TEST_PRODUCT_NAME = 'Макара FilStar Target RD';
-
-  if (TEST_MODE) {
-    console.log(`⚠️  TEST MODE: Will process only "${TEST_PRODUCT_NAME}"\n`);
-  }
+  console.log('======================================================================');
+  console.log('🎣 STARTING FISHING REEL IMPORT - FULL MODE');
+  console.log('======================================================================\n');
   
   // 🚀 КЕШИРАЙ всички Shopify продукти в началото
   console.log('📦 Fetching all Shopify products...');
   const allShopifyProducts = await getAllShopifyProducts();
   console.log(`✅ Cached ${allShopifyProducts.length} Shopify products\n`);
   
+  // Fetch всички макари от Filstar
   const categorizedReels = await fetchAllFishingLines();
   const allReels = [
     ...(categorizedReels.front_drag || []),
@@ -907,23 +902,22 @@ async function main() {
     ...(categorizedReels.other || [])
   ];
   
-  console.log(`\n📊 Found ${allReels.length} fishing reels total\n`);
+  console.log(`📊 Found ${allReels.length} fishing reels total\n`);
+  console.log('======================================================================\n');
   
+  // Обработи ВСИЧКИ макари
   for (const reel of allReels) {
-    if (TEST_MODE && reel.name !== TEST_PRODUCT_NAME) {
-      continue;
-    }
-    
     const categoryType = getCategoryName(reel) || 'other';
-    await processProduct(reel, categoryType, allShopifyProducts); // Подай кеша
-    
-    if (TEST_MODE) {
-      console.log(`\n✅ Test completed, stopping...`);
-      break;
-    }
+    await processProduct(reel, categoryType, allShopifyProducts);
   }
   
+  // Покажи финална статистика
   printFinalStats();
+  
+  console.log('\n======================================================================');
+  console.log('✅ IMPORT COMPLETED SUCCESSFULLY');
+  console.log('======================================================================');
 }
 
 main();
+
