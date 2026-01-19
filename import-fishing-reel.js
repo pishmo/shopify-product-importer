@@ -216,6 +216,61 @@ function imageExists(existingImages, newImageUrl) {
 }
 
 
+async function uploadProductImage(productId, imageUrl, existingImages) {
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    console.error(`  ✗ Invalid image URL`);
+    return false;
+  }
+
+  // Провери дали снимката вече съществува
+  if (imageExists(existingImages, imageUrl)) {
+    const filename = getImageFilename(imageUrl);
+    console.log(`  ⏭️ Image already exists, skipping: ${filename}`);
+    return false;
+  }
+
+  const filename = getImageFilename(imageUrl);
+  console.log(`  📸 Uploading new image: ${filename}`);
+
+  try {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image: {
+            src: imageUrl
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`  ✗ Failed to upload image: ${response.status} - ${errorText}`);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log(`  ✓ Image uploaded successfully (ID: ${result.image.id})`);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
+
+  } catch (error) {
+    console.error(`  ✗ Upload error:`, error.message);
+    return false;
+  }
+}
+
+
+
+
+
 // 🆕 Функция за пренареждане на снимките в правилния ред (REST API)
 // Функция за пренареждане на снимките в правилния ред (REST API)
 async function reorderProductImages(productId, filstarProduct, existingImages) {
