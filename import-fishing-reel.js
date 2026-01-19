@@ -489,6 +489,10 @@ async function addProductImages(productId, filstarProduct) {
   console.log(`Adding images to product ${productId}...`);
   let uploadedCount = 0;
   
+  // 🆕 Сортирай снимките по SKU
+  const sortedImages = sortImagesBySku(filstarProduct.images || []);
+  console.log(` 🔄 Images sorted by SKU for upload`);
+  
   const imagesToUpload = [];
   
   // 1️⃣ Главна снимка (макарата)
@@ -500,9 +504,9 @@ async function addProductImages(productId, filstarProduct) {
     console.log(` 🎯 Main image: ${getImageFilename(imageUrl)}`);
   }
   
-  // 2️⃣ Допълнителни снимки
-  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
-    for (const img of filstarProduct.images) {
+  // 2️⃣ Допълнителни снимки - ИЗПОЛЗВАЙ sortedImages
+  if (sortedImages && Array.isArray(sortedImages)) {
+    for (const img of sortedImages) {
       const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
       imagesToUpload.push({ src: imageUrl, type: 'additional' });
       console.log(` 📸 Additional: ${getImageFilename(imageUrl)}`);
@@ -561,6 +565,7 @@ async function addProductImages(productId, filstarProduct) {
   
   return uploadedCount;
 }
+
 
 function ensureUniqueVariantNames(variants, categoryType) {
   const formattedVariants = variants.map(v => ({
