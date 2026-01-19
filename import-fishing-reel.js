@@ -117,7 +117,215 @@ function imageExists(existingImages, newImageUrl) {
 }
 
 // 🆕 Функция за пренареждане на снимките в правилния ред
+
 // 🆕 Функция за пренареждане на снимките в правилния ред
+async function reorderProductImages(productId, filstarProduct, existingImages) {
+  console.log(` 🔄 Reordering images for product ${productId}...`);
+  
+  // 🆕 DEBUG: Покажи какво идва от Filstar
+  console.log(`\n   🔍 RAW FILSTAR DATA:`);
+  console.log(`      filstarProduct.image: ${filstarProduct.image || 'undefined'}`);
+  console.log(`      filstarProduct.images array (${filstarProduct.images?.length || 0} items):`);
+  if (filstarProduct.images) {
+    filstarProduct.images.forEach((img, idx) => {
+      console.log(`         [${idx}] ${getImageFilename(img)}`);
+    });
+  }
+  
+  const desiredOrder = [];
+  
+  // 1️⃣ Главна снимка
+  if (filstarProduct.image) {
+    const imageUrl = filstarProduct.image.startsWith('http') 
+      ? filstarProduct.image 
+      : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
+    desiredOrder.push(imageUrl);
+    console.log(`   ✅ Added main image: ${getImageFilename(imageUrl)}`);
+  } else if (filstarProduct.images && filstarProduct.images.length > 0) {
+    const imageUrl = filstarProduct.images[0].startsWith('http') 
+      ? filstarProduct.images[0] 
+      : `${FILSTAR_BASE_URL}/${filstarProduct.images[0]}`;
+    desiredOrder.push(imageUrl);
+    console.log(`   ✅ Added first image as main: ${getImageFilename(imageUrl)}`);
+  }
+  
+  // 2️⃣ Допълнителни снимки
+  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+    const startIndex = (!filstarProduct.image) ? 1 : 0;
+    console.log(`   📝 Processing additional images, startIndex: ${startIndex}`);
+    
+    for (let i = startIndex; i < filstarProduct.images.length; i++) {
+      const img = filstarProduct.images[i];
+      const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
+      desiredOrder.push(imageUrl);
+      console.log(`      [${i}] Added: ${getImageFilename(imageUrl)}`);
+    }
+  }
+  
+  console.log(`\n   📋 DESIRED ORDER BEFORE DEDUP (${desiredOrder.length} images):`);
+  desiredOrder.forEach((url, idx) => {
+    console.log(`      ${idx + 1}. ${getImageFilename(url)}`);
+  });
+  
+  // Дедуплицирай по filename
+  const seen = new Set();
+  const uniqueDesiredOrder = desiredOrder.filter(url => {
+    const filename = getImageFilename(url);
+    if (seen.has(filename)) {
+      console.log(`   🗑️  Removing duplicate: ${filename}`);
+      return false;
+    }
+    seen.add(filename);
+    return true;
+  });
+  
+  // 🆕 DEBUG LOG 1: Подредба от Filstar
+  console.log(`\n   📥 FILSTAR IMAGE ORDER (${uniqueDesiredOrder.length} images):`);
+  uniqueDesiredOrder.forEach((url, idx) => {
+    console.log(`      ${idx + 1}. ${getImageFilename(url)}`);
+  });
+  
+  // 🆕 DEBUG LOG 2: Текуща подредба в Shopify ПРЕДИ реордера
+  console.log(`\n   📦 SHOPIFY IMAGE ORDER BEFORE (${existingImages.length} images):`);
+  existingImages.forEach((img, idx) => {
+    const numericId = img.id.toString().split('/').pop();
+    console.log(`      ${idx + 1}. ${getImageFilename(img.src)} (ID: ${numericId}, position: ${img.position})`);
+  });
+  
+  console.log(`\n   📊 Total images: ${desiredOrder.length}, Unique: ${uniqueDesiredOrder.length}`);
+  
+  // Намери съответните Shopify image IDs в желания ред
+  const reorderedImageIds = [];
+  for (let i = 0; i < uniqueDesiredOrder.length; i++) {
+    const desiredUrl = uniqueDesiredOrder[i];
+    const desiredFilename = getImageFilename(desiredUrl);
+    
+    const existingImage = existingImages.find(img => {
+      const existingFilename = getImageFilename(img.src);
+      return existingFilename === desiredFilename;
+    });
+    
+    if (existingImage) {
+      // Извлечи numeric ID от image.id
+      const numericId = existingImage.id.toString().split('/').pop();
+      reorderedImageIds.push(numericId);
+      console.log(`   📍 Mapping position ${i + 1}: ${desiredFilename} → ID: ${numericId}`);
+    } else {
+      console.log(`   ⚠️  Missing in Shopify: ${desiredFilename}`);
+    }
+  }
+  
+  // GraphQL mutation за reorder
+  if (reorderedImageIds.length > 0) {
+    const mutation = `
+      mutation productReorderImages($id: ID!, $moves: [MoveInput!]!) {
+        productReorderImages(id: $id, moves: $moves) {
+          job {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    
+    // Създай moves масив
+    const moves = reorderedImageIds.map((imageId, index) => ({
+      id: `gid://shopify/ProductImage/${imageId}`,
+      newPosition: `${index}`
+    }));
+    
+    console.log(`\n   🔧 MUTATION MOVES:`);
+    moves.forEach((move, idx) => {
+      console.log(`      ${idx + 1}. ${move.id} → position ${move.newPosition}`);
+    });
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            id: `gid://shopify/Product/${productId}`,
+            moves: moves
+          }
+        })
+      }
+    );
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.data?.productReorderImages?.userErrors?.length > 0) {
+        console.error(`   ❌ Reorder errors:`, result.data.productReorderImages.userErrors);
+        return false;
+      }
+      
+      console.log(`   ✅ Images reordered successfully`);
+      
+      // 🆕 DEBUG LOG 3: Провери подредбата СЛЕД реордера
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Изчакай 2 сек
+      
+      const checkQuery = `
+        query getProduct($id: ID!) {
+          product(id: $id) {
+            images(first: 50) {
+              edges {
+                node {
+                  id
+                  url
+                  altText
+                }
+              }
+            }
+          }
+        }
+      `;
+      
+      const checkResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            query: checkQuery,
+            variables: {
+              id: `gid://shopify/Product/${productId}`
+            }
+          })
+        }
+      );
+      
+      if (checkResponse.ok) {
+        const checkResult = await checkResponse.json();
+        const imagesAfter = checkResult.data?.product?.images?.edges?.map(e => e.node) || [];
+        
+        console.log(`\n   ✅ SHOPIFY IMAGE ORDER AFTER (${imagesAfter.length} images):`);
+        imagesAfter.forEach((img, idx) => {
+          const numericId = img.id.toString().split('/').pop();
+          console.log(`      ${idx + 1}. ${getImageFilename(img.url)} (ID: ${numericId})`);
+        });
+      }
+      
+      return true;
+    } else {
+      const error = await response.text();
+      console.error(`   ❌ Failed to reorder:`, error);
+      return false;
+    }
+  }
+  
+  return false;
+}
 
 
 async function fetchAllProducts() {
