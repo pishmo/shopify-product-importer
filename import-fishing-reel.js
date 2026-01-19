@@ -490,18 +490,49 @@ async function findShopifyProductBySku(sku) {
   return null;
 }
 
-
 function formatVariantName(variant, categoryType) {
   if (!variant.attributes || variant.attributes.length === 0) {
     return variant.model || `SKU: ${variant.sku}`;
   }
+
   const attributes = variant.attributes;
-  const size = attributes.find(a => a.attribute_name.includes('РАЗМЕР'))?.value;
+  
+  // Търси размер в атрибутите
+  const size = attributes.find(a => 
+    a.attribute_name && a.attribute_name.includes('РАЗМЕР')
+  )?.value;
+  
   if (size) {
     return `Размер ${size}`;
   }
+
+  // Търси други релевантни атрибути за макари
+  const capacity = attributes.find(a => 
+    a.attribute_name && (
+      a.attribute_name.includes('КАПАЦИТЕТ') || 
+      a.attribute_name.includes('CAPACITY')
+    )
+  )?.value;
+  
+  if (capacity) {
+    return `Капацитет ${capacity}`;
+  }
+
+  const gearRatio = attributes.find(a => 
+    a.attribute_name && (
+      a.attribute_name.includes('ПРЕДАВКА') || 
+      a.attribute_name.includes('GEAR RATIO')
+    )
+  )?.value;
+  
+  if (gearRatio) {
+    return `Предавка ${gearRatio}`;
+  }
+
+  // Ако няма специфични атрибути, използвай модел или SKU
   return variant.model || `SKU: ${variant.sku}`;
 }
+
 
 // 🆕 Подобрена функция за добавяне на снимки с правилна подредба
 async function addProductImages(productId, filstarProduct, existingImages = []) {
