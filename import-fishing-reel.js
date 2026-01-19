@@ -960,13 +960,12 @@ async function addProductToCollection(productId, category) {
 
 
 
-// 🆕 Подобрена функция за update с пренареждане
 async function updateProduct(shopifyProduct, filstarProduct) {
   try {
     console.log(`\n📝 Updating product: ${shopifyProduct.title}`);
     
     const productData = {
-      id: shopifyProduct.id, // ПРОМЯНА: използваме shopifyProduct.id директно (вече е в GID формат)
+      id: convertToGid(shopifyProduct.id), // Конвертирай ID в GID формат
       title: filstarProduct.name,
       descriptionHtml: generateDescription(filstarProduct),
       vendor: filstarProduct.brand || 'Filstar',
@@ -1014,7 +1013,6 @@ async function updateProduct(shopifyProduct, filstarProduct) {
     throw error;
   }
 }
-
 
 
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
