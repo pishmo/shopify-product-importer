@@ -955,7 +955,7 @@ async function updateProduct(shopifyProduct, filstarProduct) {
     console.log(`\n📝 Updating product: ${shopifyProduct.title}`);
     
     const productData = {
-      id: shopifyProduct.id,
+      id: shopifyProduct.id, // ПРОМЯНА: използваме shopifyProduct.id директно (вече е в GID формат)
       title: filstarProduct.name,
       descriptionHtml: generateDescription(filstarProduct),
       vendor: filstarProduct.brand || 'Filstar',
@@ -993,7 +993,6 @@ async function updateProduct(shopifyProduct, filstarProduct) {
       return null;
     }
 
-    // ПРОМЯНА ТУК: използваме shopifyProduct вместо updatedProduct
     const existingImageIds = shopifyProduct.images?.edges.map(edge => edge.node.id) || [];
     
     console.log('✓ Product updated successfully');
@@ -1004,6 +1003,7 @@ async function updateProduct(shopifyProduct, filstarProduct) {
     throw error;
   }
 }
+
 
 
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
