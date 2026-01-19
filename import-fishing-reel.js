@@ -150,6 +150,51 @@ function getImageFilename(src) {
 }
 
 
+async function fetchMainImageFromFilstarPage(slug) {
+  if (!slug) return null;
+  
+  const productUrl = `${FILSTAR_BASE_URL}/${slug}`;
+  
+  try {
+    console.log(`    🌐 Fetching main image from: ${productUrl}`);
+    
+    const response = await fetch(productUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; ShopifyImporter/1.0)',
+        'Accept': 'text/html'
+      }
+    });
+    
+    if (!response.ok) {
+      console.log(`    ⚠️ Failed to fetch page: ${response.status}`);
+      return null;
+    }
+    
+    const html = await response.text();
+    
+    // Търси Open Graph image (og:image)
+    const ogImageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+    if (ogImageMatch) {
+      const imageUrl = ogImageMatch[1];
+      console.log(`    ✓ Found OG image: ${getImageFilename(imageUrl)}`);
+      return imageUrl;
+    }
+    
+    console.log(`    ⚠️ No main image found in HTML`);
+    return null;
+  } catch (error) {
+    console.log(`    ⚠️ Error fetching page: ${error.message}`);
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
 // Функция за извличане на SKU от име на снимка
 function extractSkuFromImageFilename(filename) {
   if (!filename || typeof filename !== 'string') {
