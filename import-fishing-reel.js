@@ -148,8 +148,9 @@ function imageExists(existingImages, newImageUrl) {
 
 
 // 🆕 Функция за пренареждане на снимките в правилния ред (REST API)
+// Функция за пренареждане на снимките в правилния ред (REST API)
 async function reorderProductImages(productId, filstarProduct, existingImages) {
-  console.log(`  🔄 Reordering images for product ${productId}...`);
+  console.log(`  🔄 Reordering images...`);
   
   const desiredOrder = [];
   const seenFilenames = new Set();
@@ -163,7 +164,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   };
   
-  // 1️⃣ Главна снимка на продукта (макарата)
+  // 1️⃣ Главна снимка на продукта
   if (filstarProduct.image) {
     const imageUrl = filstarProduct.image.startsWith('http') 
       ? filstarProduct.image 
@@ -180,7 +181,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   }
   
-  // 3️⃣ Снимки на варианти (шпули) - сортирани по SKU на варианта
+  // 3️⃣ Снимки на варианти (сортирани по SKU)
   if (filstarProduct.variants) {
     const sortedVariants = [...filstarProduct.variants].sort((a, b) => {
       const skuA = a.sku || '';
@@ -198,9 +199,7 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
     }
   }
   
-  console.log(`    📊 Total unique images to reorder: ${desiredOrder.length}`);
-  
-  // Намери съответните Shopify image IDs и създай масив за reordering
+  // Намери съответните Shopify image IDs
   const reorderedImages = [];
   
   for (let i = 0; i < desiredOrder.length; i++) {
@@ -217,13 +216,10 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
         id: existingImage.id,
         position: i + 1
       });
-      console.log(`    📍 Position ${i + 1}: ${desiredFilename} → ID: ${existingImage.id}`);
-    } else {
-      console.log(`    ⚠️  Image not found in Shopify: ${desiredFilename}`);
     }
   }
   
-  // 🆕 REST API Update - синхронно reordering
+  // REST API Update
   if (reorderedImages.length > 0) {
     try {
       const response = await fetch(
@@ -245,26 +241,22 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`    ❌ Failed to reorder images: ${response.status}`, errorText);
+        console.error(`    ❌ Failed to reorder: ${response.status}`);
         return false;
       }
       
-      const result = await response.json();
-      console.log(`    ✅ Images reordered successfully (${reorderedImages.length} images)`);
-      
-      // Кратко изчакване за сигурност
+      console.log(`    ✅ Reordered ${reorderedImages.length} images`);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       return true;
       
     } catch (error) {
-      console.error(`    ❌ Error reordering images:`, error.message);
+      console.error(`    ❌ Reorder error:`, error.message);
       return false;
     }
-  } else {
-    console.log(`    ℹ️  No images to reorder`);
-    return false;
   }
+  
+  return false;
 }
 
 
