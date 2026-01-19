@@ -146,15 +146,24 @@ function extractSkuFromImageFilename(filename) {
 
 // Функция за сортиране на снимките по SKU
 function sortImagesBySku(imageUrls) {
+  if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+    return [];
+  }
+  
   return [...imageUrls].sort((a, b) => {
     const filenameA = getImageFilename(a);
     const filenameB = getImageFilename(b);
+    
+    if (!filenameA || !filenameB) {
+      return 0;
+    }
+    
     const skuA = extractSkuFromImageFilename(filenameA);
     const skuB = extractSkuFromImageFilename(filenameB);
+    
     return skuA.localeCompare(skuB);
   });
 }
-
 
 
 
