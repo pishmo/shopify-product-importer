@@ -118,54 +118,6 @@ function imageExists(existingImages, newImageUrl) {
 
 // 🆕 Функция за пренареждане на снимките в правилния ред
 // 🆕 Функция за пренареждане на снимките в правилния ред
-async function reorderProductImages(productId, filstarProduct, existingImages) {
-  console.log(` 🔄 Reordering images for product ${productId}...`);
-  
-  // 🆕 DEBUG: Покажи какво идва от Filstar
-  console.log(`\n   🔍 RAW FILSTAR DATA:`);
-  console.log(`      filstarProduct.image: ${filstarProduct.image || 'undefined'}`);
-  console.log(`      filstarProduct.images array (${filstarProduct.images?.length || 0} items):`);
-  if (filstarProduct.images) {
-    filstarProduct.images.forEach((img, idx) => {
-      console.log(`         [${idx}] ${getImageFilename(img)}`);
-    });
-  }
-  
-  const desiredOrder = [];
-  
-  // 1️⃣ Главна снимка
-  if (filstarProduct.image) {
-    const imageUrl = filstarProduct.image.startsWith('http') 
-      ? filstarProduct.image 
-      : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
-    desiredOrder.push(imageUrl);
-    console.log(`   ✅ Added main image: ${getImageFilename(imageUrl)}`);
-  } else if (filstarProduct.images && filstarProduct.images.length > 0) {
-    const imageUrl = filstarProduct.images[0].startsWith('http') 
-      ? filstarProduct.images[0] 
-      : `${FILSTAR_BASE_URL}/${filstarProduct.images[0]}`;
-    desiredOrder.push(imageUrl);
-    console.log(`   ✅ Added first image as main: ${getImageFilename(imageUrl)}`);
-  }
-  
-  // 2️⃣ Допълнителни снимки
-  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
-    const startIndex = (!filstarProduct.image) ? 1 : 0;
-    console.log(`   📝 Processing additional images, startIndex: ${startIndex}`);
-    
-    for (let i = startIndex; i < filstarProduct.images.length; i++) {
-      const img = filstarProduct.images[i];
-      const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
-      desiredOrder.push(imageUrl);
-      console.log(`      [${i}] Added: ${getImageFilename(imageUrl)}`);
-    }
-  }
-  
-  console.log(`\n   📋 DESIRED ORDER BEFORE DEDUP (${desiredOrder.length} images):`);
-  desiredOrder.forEach((url, idx) => {
-    console.log(`      ${idx + 1}. ${getImageFilename(url)}`);
-  });
-
 
 
 async function fetchAllProducts() {
