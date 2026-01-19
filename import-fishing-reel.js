@@ -971,106 +971,59 @@ async function addProductImages(productId, filstarProduct, existingImages = []) 
 
 
 // 🆕 Подобрена функция за update с пренареждане
-async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
-  let imagesUploaded = 0;
-  let imagesSkipped = 0;
-
-  console.log(`\n🔄 Updating product: ${shopifyProduct.title}`);
-  
-  const productId = shopifyProduct.id;
-
-  // Събери всички снимки от Filstar
-  const allImages = [];
-  
-  // 1. Главна снимка
-  if (filstarProduct.image) {
-    const imageUrl = filstarProduct.image.startsWith('http') 
-      ? filstarProduct.image 
-      : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
-    allImages.push(imageUrl);
-  }
-
-  // 2. Допълнителни снимки
-  if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
-    for (const img of filstarProduct.images) {
-      const imageUrl = img.startsWith('http') 
-        ? img 
-        : `${FILSTAR_BASE_URL}/${img}`;
-      allImages.push(imageUrl);
-    }
-  }
-
-  // 3. Снимки на варианти
-  if (filstarProduct.variants) {
-    for (const variant of filstarProduct.variants) {
-      if (variant.image) {
-        const imageUrl = variant.image.startsWith('http') 
-          ? variant.image 
-          : `${FILSTAR_BASE_URL}/${variant.image}`;
-        allImages.push(imageUrl);
-      }
-    }
-  }
-
-  // Качи нови снимки
-  if (allImages.length > 0) {
-    console.log(`  📊 Processing ${allImages.length} images from Filstar...`);
+async function updateProduct(shopifyProduct, filstarProduct) {
+  try {
+    console.log(`\n📝 Updating product: ${shopifyProduct.title}`);
     
-    for (const imageUrl of allImages) {
-      const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
-      
-      if (uploaded) {
-        imagesUploaded++;
-        // Добави снимката към локалния кеш
-        shopifyProduct.images.push({ src: imageUrl, id: null });
-      } else {
-        imagesSkipped++;
-      }
-    }
-  }
+    const productData = {
+      id: shopifyProduct.id,
+      title: filstarProduct.name,
+      descriptionHtml: generateDescription(filstarProduct),
+      vendor: filstarProduct.brand || 'Filstar',
+      productType: 'Fishing Reel',
+      tags: generateTags(filstarProduct)
+    };
 
-  // Refresh images след upload преди reorder
-  if (imagesUploaded > 0) {
-    console.log(`  🔄 Refreshing product images after upload...`);
-    
-    try {
-      const refreshResponse = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json?fields=images`,
-        {
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
+    const mutation = `
+      mutation updateProduct($input: ProductInput!) {
+        productUpdate(input: $input) {
+          product {
+            id
+            title
+            images(first: 10) {
+              edges {
+                node {
+                  id
+                  url
+                }
+              }
+            }
+          }
+          userErrors {
+            field
+            message
           }
         }
-      );
-
-      if (refreshResponse.ok) {
-        const refreshData = await refreshResponse.json();
-        shopifyProduct.images = refreshData.product.images;
-        console.log(`  ✓ Refreshed ${shopifyProduct.images.length} images`);
-      } else {
-        console.error(`  ⚠️ Failed to refresh images: ${refreshResponse.status}`);
       }
-    } catch (error) {
-      console.error(`  ⚠️ Error refreshing images:`, error.message);
+    `;
+
+    const response = await shopifyGraphQL(mutation, { input: productData });
+    
+    if (response.productUpdate.userErrors.length > 0) {
+      console.error('❌ Errors updating product:', response.productUpdate.userErrors);
+      return null;
     }
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // ПРОМЯНА ТУК: използваме shopifyProduct вместо updatedProduct
+    const existingImageIds = shopifyProduct.images?.edges.map(edge => edge.node.id) || [];
+    
+    console.log('✓ Product updated successfully');
+    return response.productUpdate.product;
+    
+  } catch (error) {
+    console.error('❌ Error in updateProduct:', error.message);
+    throw error;
   }
-
-await reorderProductImages(productId, filstarProduct, updatedProduct.images);
-
-  
-  // Пренареди снимките в правилния ред
-  await reorderProductImages(productId, filstarProduct, shopifyProduct.images);
-
-  // Обнови статистиката
-  stats[categoryType].updated++;
-  stats[categoryType].images += imagesUploaded;
-
-  console.log(`  ✅ Updated | Images: ${imagesUploaded} new, ${imagesSkipped} skipped`);
-  
-  return true;
 }
 
 
