@@ -834,27 +834,33 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
 async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
   let imagesUploaded = 0;
   let imagesSkipped = 0;
-  
+
   console.log(`\n🔄 Updating product: ${shopifyProduct.title}`);
-  const productId = shopifyProduct.id;
   
+  const productId = shopifyProduct.id;
+
   // Събери всички снимки от Filstar
   const allImages = [];
   
+  // 1. Главна снимка
   if (filstarProduct.image) {
     const imageUrl = filstarProduct.image.startsWith('http') 
       ? filstarProduct.image 
       : `${FILSTAR_BASE_URL}/${filstarProduct.image}`;
     allImages.push(imageUrl);
   }
-  
+
+  // 2. Допълнителни снимки
   if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
     for (const img of filstarProduct.images) {
-      const imageUrl = img.startsWith('http') ? img : `${FILSTAR_BASE_URL}/${img}`;
+      const imageUrl = img.startsWith('http') 
+        ? img 
+        : `${FILSTAR_BASE_URL}/${img}`;
       allImages.push(imageUrl);
     }
   }
-  
+
+  // 3. Снимки на варианти
   if (filstarProduct.variants) {
     for (const variant of filstarProduct.variants) {
       if (variant.image) {
@@ -865,51 +871,63 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
       }
     }
   }
-  
+
   // Качи нови снимки
   if (allImages.length > 0) {
-    console.log(`Processing ${allImages.length} images from Filstar...`);
+    console.log(`  📊 Processing ${allImages.length} images from Filstar...`);
     
     for (const imageUrl of allImages) {
       const uploaded = await uploadProductImage(productId, imageUrl, shopifyProduct.images);
+      
       if (uploaded) {
         imagesUploaded++;
-        // ✅ ПОПРАВЕНО: Добави снимката към локалния кеш
+        // Добави снимката към локалния кеш
         shopifyProduct.images.push({ src: imageUrl, id: null });
       } else {
         imagesSkipped++;
       }
     }
   }
-  
-  // ✅ ПОПРАВЕНО: Refresh images след upload преди reorder
+
+  // Refresh images след upload преди reorder
   if (imagesUploaded > 0) {
     console.log(`  🔄 Refreshing product images after upload...`);
     
-    const refreshResponse = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json?fields=images`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
+    try {
+      const refreshResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json?fields=images`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
         }
+      );
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        shopifyProduct.images = refreshData.product.images;
+        console.log(`  ✓ Refreshed ${shopifyProduct.images.length} images`);
+      } else {
+        console.error(`  ⚠️ Failed to refresh images: ${refreshResponse.status}`);
       }
-    );
-    
-    if (refreshResponse.ok) {
-      const refreshData = await refreshResponse.json();
-      shopifyProduct.images = refreshData.product.images;
-      console.log(`  ✓ Refreshed ${shopifyProduct.images.length} images`);
+    } catch (error) {
+      console.error(`  ⚠️ Error refreshing images:`, error.message);
     }
+
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
-  
+
   // Пренареди снимките в правилния ред
   await reorderProductImages(productId, filstarProduct, shopifyProduct.images);
-  
+
+  // Обнови статистиката
   stats[categoryType].updated++;
   stats[categoryType].images += imagesUploaded;
+
+  console.log(`  ✅ Updated | Images: ${imagesUploaded} new, ${imagesSkipped} skipped`);
   
-  console.log(` ✅ Updated | Images: ${imagesUploaded} new, ${imagesSkipped} skipped`);
+  return true;
 }
 
 
