@@ -530,6 +530,15 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
   console.log(`  📸 Uploading new image: ${filename}`);
 
   try {
+    // Първо провери дали снимката съществува на Filstar сървъра
+    const checkResponse = await fetch(imageUrl, { method: 'HEAD', timeout: 5000 });
+    
+    if (!checkResponse.ok) {
+      console.log(`  ⚠️  Image not found (${checkResponse.status}), skipping: ${filename}`);
+      return false;
+    }
+
+    // Качи снимката в Shopify
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
       {
@@ -548,7 +557,13 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`  ✗ Failed to upload image: ${response.status} - ${errorText}`);
+      
+      // Провери дали грешката е заради липсваща снимка
+      if (errorText.includes('failed to download') || errorText.includes('file not found')) {
+        console.log(`  ⚠️  Image not accessible, skipping: ${filename}`);
+      } else {
+        console.error(`  ✗ Failed to upload image: ${response.status} - ${errorText}`);
+      }
       return false;
     }
 
@@ -559,8 +574,8 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
     return true;
 
   } catch (error) {
-    console.error(`  ✗ Upload error:`, error.message);
-    return false;
+    console.log(`  ⚠️  Upload error, skipping image: ${error.message}`);
+    return false; // Продължи с останалите снимки
   }
 }
 
