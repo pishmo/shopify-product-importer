@@ -49,6 +49,64 @@ function getCategoryName(category) {
   return names[category] || category;
 }
 
+
+
+async function fetchAllProducts() {
+  console.log('📦 Fetching all products from Filstar API with pagination...');
+  
+  let allProducts = [];
+  let page = 1;
+  let hasMorePages = true;
+
+  try {
+    while (hasMorePages) {
+      console.log(`Fetching page ${page}...`);
+      
+      const response = await fetch(
+        `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`,
+        {
+          headers: {
+            'Authorization': `Bearer ${FILSTAR_TOKEN}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Filstar API error: ${response.status}`);
+      }
+
+      const pageProducts = await response.json();
+      console.log(`  ✓ Page ${page}: ${pageProducts.length} products`);
+
+      if (pageProducts.length === 0) {
+        console.log('  ℹ️ No more products, stopping pagination');
+        hasMorePages = false;
+      } else {
+        allProducts = allProducts.concat(pageProducts);
+        page++;
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
+    console.log(`\n✅ Total products fetched: ${allProducts.length}\n`);
+    return allProducts;
+
+  } catch (error) {
+    console.error('❌ Error fetching products:', error.message);
+    throw error;
+  }
+}
+
+
+
+
+
+
+
+
+
 // Определяне на категория по Filstar данни
 function getCategoryType(filstarProduct) {
   if (!filstarProduct.categories || filstarProduct.categories.length === 0) {
