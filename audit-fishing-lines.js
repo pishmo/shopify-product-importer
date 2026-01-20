@@ -156,27 +156,18 @@ function categorizeShopifyLines(allProducts) {
       ? product.tags.map(t => t.toLowerCase()) 
       : (product.tags || '').toLowerCase().split(',').map(t => t.trim());
     
-    const isLine = type.includes('влакн') || 
-                   type.includes('line') ||
-                   tags.some(t => t.includes('line') || t.includes('влакн'));
-    
-    if (!isLine) {
-      continue;
-    }
-    
     if (type.includes('монофилн') || tags.includes('monofilament')) {
       lines.monofilament.push(product);
-    } else if (type.includes('плетен') || tags.includes('braided')) {
+    } else if (type.includes('плетен') || type.includes('braided') || tags.includes('braided')) {
       lines.braided.push(product);
     } else if (type.includes('fluorocarbon') || type.includes('флуорокарбон')) {
       lines.fluorocarbon.push(product);
-    } else {
-      lines.other.push(product);
     }
   }
   
   return lines;
 }
+
 
 function compareProducts(filstarLines, shopifyLines) {
   console.log('\n' + '='.repeat(80));
