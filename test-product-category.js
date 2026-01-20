@@ -2,7 +2,7 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // Въведи SKU-то тук
-const TEST_SKU = 'ТВОЕТО_SKU_ТУК'; // ← Смени с реално SKU
+const TEST_SKU = '963296'; // ← Смени с реално SKU
 
 async function testProductCategory() {
   console.log(`🔍 Searching for product with SKU: ${TEST_SKU}\n`);
