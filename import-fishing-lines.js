@@ -156,9 +156,7 @@ function getCategoryType(filstarProduct) {
     return null;
   }
   
-  // 🐛 DEBUG - покажи категориите на този продукт
-  console.log(`\n🔍 Product with parent_id=4: ${filstarProduct.name}`);
-  console.log(`   Categories:`, filstarProduct.categories.map(c => `ID:${c.id} (parent:${c.parent_id})`).join(', '));
+  
   
   for (const cat of filstarProduct.categories) {
     const catId = cat.id?.toString();
