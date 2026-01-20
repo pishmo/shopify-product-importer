@@ -187,6 +187,26 @@ function generateDescription(filstarProduct) {
   return html;
 }
 
+async function getProductById(productId) {
+  const gid = `gid://shopify/Product/${productId}`;
+  const query = `
+    query($id: ID!) {
+      product(id: $id) {
+        id
+        images(first: 50) {
+          edges {
+            node {
+              id
+              url
+            }
+          }
+        }
+      }
+    }
+  `;
+  const response = await shopifyGraphQL(query, { id: gid });
+  return response.product;
+}
 
 
 
