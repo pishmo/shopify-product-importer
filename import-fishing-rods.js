@@ -61,6 +61,69 @@ function getCategoryName(category) {
   return names[category] || category;
 }
 
+
+
+// Функция за търсене на продукт в Shopify по SKU
+async function findShopifyProductBySku(sku) {
+  console.log(`  🔍 Searching in Shopify for SKU: ${sku}...`);
+  
+  try {
+    let allProducts = [];
+    let hasNextPage = true;
+    let cursor = null;
+    
+    while (hasNextPage) {
+      const response = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250${cursor ? `&page_info=${cursor}` : ''}`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Shopify API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      allProducts = allProducts.concat(data.products);
+      
+      // Провери за следваща страница
+      const linkHeader = response.headers.get('Link');
+      if (linkHeader && linkHeader.includes('rel="next"')) {
+        const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+        cursor = nextMatch ? nextMatch[1] : null;
+        hasNextPage = !!cursor;
+      } else {
+        hasNextPage = false;
+      }
+    }
+    
+    // Търси продукт с този SKU във вариантите
+    for (const product of allProducts) {
+      const variant = product.variants?.find(v => v.sku === sku);
+      if (variant) {
+        console.log(`  ✓ Found existing product (ID: ${product.id})`);
+        return product;
+      }
+    }
+    
+    console.log(`  ℹ️  Product not found in Shopify`);
+    return null;
+    
+  } catch (error) {
+    console.error(`  ⚠️  Error searching Shopify:`, error.message);
+    return null;
+  }
+}
+
+
+
+
+
+
 /**
  * Нормализира изображение към 1200x1000 с бели полета
  */
