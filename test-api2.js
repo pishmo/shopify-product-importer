@@ -1,33 +1,31 @@
-// debug-categories.js
-const fetch = require('node-fetch');
-
-const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
-const FILSTAR_API_BASE = 'https://filstar.com/api';
-
 async function debugCategories() {
-  const response = await fetch(`${FILSTAR_API_BASE}/products?limit=100`, { // ← 100 вместо 10
+  const response = await fetch(`${FILSTAR_API_BASE}/products?limit=1000`, {
     headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
   });
   
   const products = await response.json();
   
-  // Намери влакна
-  const lines = products.filter(p => 
-    p.categories?.some(c => 
-      c.name?.includes('влакно') || 
-      c.name?.includes('Влакно') ||
-      c.name?.includes('line')
-    )
-  );
+  const categoryMap = {};
   
-  console.log(`Found ${lines.length} line products\n`);
+  products.forEach(p => {
+    p.categories?.forEach(cat => {
+      const key = `${cat.id}`;
+      if (!categoryMap[key]) {
+        categoryMap[key] = {
+          id: cat.id,
+          name: cat.name,
+          parent_id: cat.parent_id,
+          count: 0
+        };
+      }
+      categoryMap[key].count++;
+    });
+  });
   
-  lines.slice(0, 3).forEach((product, i) => {
-    console.log(`Product ${i + 1}: ${product.name}`);
-    console.log('Categories:', JSON.stringify(product.categories, null, 2));
-    console.log('---\n');
+  const sorted = Object.values(categoryMap).sort((a, b) => b.count - a.count);
+  
+  console.log('All categories:\n');
+  sorted.forEach(cat => {
+    console.log(`${cat.name} (ID: ${cat.id}, Parent: ${cat.parent_id}) - ${cat.count} products`);
   });
 }
-
-
-debugCategories();
