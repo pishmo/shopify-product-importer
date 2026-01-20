@@ -987,6 +987,9 @@ async function createShopifyProduct(filstarProduct, category) {
 }
 
 
+// Добавяне лъм колекция
+
+
 async function addProductToCollection(productId, category) {
   const collectionId = COLLECTION_MAPPING[category];
   
