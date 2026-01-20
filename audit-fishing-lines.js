@@ -343,7 +343,7 @@ function printFinalSummary(filstarProducts, shopifyProducts, matched, missingInS
   console.log('📊 AUDIT SUMMARY');
   console.log('='.repeat(70));
   
-  // filstarProducts е обект с категории, не масив
+  // И двата параметъра са обекти с категории
   const allFilstarProducts = [
     ...(filstarProducts.monofilament || []),
     ...(filstarProducts.braided || []),
@@ -351,8 +351,15 @@ function printFinalSummary(filstarProducts, shopifyProducts, matched, missingInS
     ...(filstarProducts.other || [])
   ];
   
+  const allShopifyProducts = [
+    ...(shopifyProducts.monofilament || []),
+    ...(shopifyProducts.braided || []),
+    ...(shopifyProducts.fluorocarbon || []),
+    ...(shopifyProducts.other || [])
+  ];
+  
   const uniqueFilstar = allFilstarProducts.length;
-  const uniqueShopify = shopifyProducts.length;
+  const uniqueShopify = allShopifyProducts.length;
   const uniqueMatched = new Set(matched.map(sku => sku.split('-')[0])).size;
   const uniqueMissing = new Set(missingInShopify.map(sku => sku.split('-')[0])).size;
   const uniqueExtra = new Set(extraInShopify.map(sku => sku.split('-')[0])).size;
@@ -364,7 +371,6 @@ function printFinalSummary(filstarProducts, shopifyProducts, matched, missingInS
   console.log(`❌ Extra in Shopify:   ${uniqueExtra} products`);
   console.log('='.repeat(70) + '\n');
 }
-
 
 
 
