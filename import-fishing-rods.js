@@ -62,6 +62,26 @@ function getCategoryName(category) {
 }
 
 
+// Helper функция за показване на категориите
+function getCategoryDisplayName(category) {
+  const names = {
+    telescopes_with_guides: 'Телескопи с водачи',
+    telescopes_without_guides: 'Телескопи без водачи',
+    carp_rods: 'Шарански пръчки',
+    match_feeder: 'Мачови и фидер пръчки',
+    specialty_rods: 'Специални пръчки',
+    kits: 'Комплекти',
+    spinning: 'Спининг пръчки',
+    other: 'Други'
+  };
+  return names[category] || category;
+}
+
+
+
+
+
+
 
 async function uploadProductImage(productId, imageUrl, existingImages) {
   if (!imageUrl || typeof imageUrl !== 'string') {
