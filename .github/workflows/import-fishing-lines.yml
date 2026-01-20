@@ -2,21 +2,23 @@ name: Import Fishing Lines
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # Всеки ден в 3:00 сутринта
+    - cron: '0 8 * * *'  # Всеки ден в 8:00 сутринта (2 часа след въдиците)
   workflow_dispatch:
 
 jobs:
   import:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
       
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install node-fetch@2
+          npm install sharp
       
       - name: Run fishing lines import
         env:
