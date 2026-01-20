@@ -9,7 +9,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // SKU-та за тестване
 const TEST_SKUS = [
-  '963102',
+  '963492',
   // Добави още SKU-та тук ако искаш да тестваш повече
 ];
 
