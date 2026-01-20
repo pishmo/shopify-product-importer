@@ -964,13 +964,17 @@ async function createShopifyProduct(filstarProduct, category) {
 
     // Добави снимки
     if (allImageUrls.length > 0) {
-      const imageUrls = allImageUrls.map(url => {
-        let fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
-        return fullUrl.replace(/([^:])\/\//g, '$1/');
-      });
-      
-      await addProductImages(productId, imageUrls);
-      stats[category].images += imageUrls.length;
+      try {
+        const imageUrls = allImageUrls.map(url => {
+          let fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
+          return fullUrl.replace(/([^:])\/\//g, '$1/');
+        });
+        
+        await addProductImages(productId, imageUrls);
+        stats[category].images += imageUrls.length;
+      } catch (error) {
+        console.error(`  ⚠️ Image upload failed:`, error.message);
+      }
     }
     
     // Добави към колекция
