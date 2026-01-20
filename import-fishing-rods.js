@@ -62,6 +62,53 @@ function getCategoryName(category) {
 }
 
 
+function getImageFilename(src) {
+  if (!src || typeof src !== 'string') {
+    return null;
+  }
+  
+  // Вземи последната част от URL-а
+  const urlParts = src.split('/').pop();
+  const withoutQuery = urlParts.split('?')[0];
+  
+  let cleanFilename = withoutQuery;
+  
+  // 1. Премахни Shopify UUID (формат: _xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  cleanFilename = cleanFilename.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '');
+  
+  // 2. Премахни timestamp и random number (формат: -20220308121804-514)
+  cleanFilename = cleanFilename.replace(/-\d{14}-\d+/g, '');
+  
+  // 3. Премахни Filstar hex hash-ове (формат: _52977f7fed325e2ac5328748cd59f743)
+  const parts = cleanFilename.split('_');
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1].split('.')[0];
+    // Ако последната част е 32+ символен hex hash, премахни го
+    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
+      parts.pop();
+      const extension = cleanFilename.split('.').pop();
+      cleanFilename = parts.join('_') + '.' + extension;
+    }
+  }
+  
+  // 4. Премахни водещи долни черти
+  cleanFilename = cleanFilename.replace(/^_+/, '');
+  
+  // 5. Премахни trailing underscores преди extension
+  cleanFilename = cleanFilename.replace(/_+(\.[a-z]+)$/i, '$1');
+  
+  // ✅ НОВО: 6. Премахни множество последователни долни черти
+  cleanFilename = cleanFilename.replace(/_+/g, '_');
+  
+  // ✅ НОВО: 7. Нормализирай extension към lowercase
+  const filenameParts = cleanFilename.split('.');
+  if (filenameParts.length > 1) {
+    const extension = filenameParts.pop().toLowerCase();
+    cleanFilename = filenameParts.join('.') + '.' + extension;
+  }
+  
+  return cleanFilename;
+}
 
 
 async function reorderProductImages(productId, filstarProduct, existingImages) {
