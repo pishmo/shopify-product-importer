@@ -1,26 +1,39 @@
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
-
-// Въведи SKU-то тук
-const TEST_SKU = '963296'; // ← Смени с реално SKU
+const TEST_SKU = '963296';
 
 async function testProductCategory() {
   console.log(`🔍 Searching for product with SKU: ${TEST_SKU}\n`);
   
   try {
-    // Fetch всички продукти
-    const response = await fetch(`${FILSTAR_API_BASE}/products`, {
-      headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Filstar API error: ${response.status}`);
-    }
-
-    const allProducts = await response.json();
-    console.log(`Total products fetched: ${allProducts.length}\n`);
+    let allProducts = [];
+    let page = 1;
+    let hasMore = true;
     
-    // Намери продукта по SKU
+    while (hasMore) {
+      console.log(`📥 Fetching page ${page}...`);
+      
+      const response = await fetch(`${FILSTAR_API_BASE}/products?page=${page}&limit=1000`, {
+        headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Filstar API error: ${response.status}`);
+      }
+
+      const products = await response.json();
+      console.log(`  ✓ Page ${page}: ${products.length} products`);
+      
+      if (products.length === 0) {
+        hasMore = false;
+      } else {
+        allProducts = allProducts.concat(products);
+        page++;
+      }
+    }
+    
+    console.log(`\n✅ Total products fetched: ${allProducts.length}\n`);
+    
     let foundProduct = null;
     
     for (const product of allProducts) {
@@ -38,13 +51,11 @@ async function testProductCategory() {
       return;
     }
     
-    // Покажи информация за продукта
     console.log(`✅ Found product: ${foundProduct.name}\n`);
     console.log(`📦 Product ID: ${foundProduct.id}`);
     console.log(`📝 Product name: ${foundProduct.name}`);
     console.log(`🔗 SKU: ${TEST_SKU}\n`);
     
-    // Покажи категориите
     if (foundProduct.categories && foundProduct.categories.length > 0) {
       console.log(`📂 Categories (${foundProduct.categories.length}):\n`);
       
@@ -60,7 +71,6 @@ async function testProductCategory() {
       console.log('⚠️  No categories found for this product\n');
     }
     
-    // Покажи варианти
     if (foundProduct.variants && foundProduct.variants.length > 0) {
       console.log(`🎯 Variants (${foundProduct.variants.length}):\n`);
       
@@ -79,7 +89,6 @@ async function testProductCategory() {
       });
     }
     
-    // Покажи пълния JSON (за debug)
     console.log('\n' + '='.repeat(60));
     console.log('📄 Full product JSON:');
     console.log('='.repeat(60));
