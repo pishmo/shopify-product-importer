@@ -834,18 +834,17 @@ async function findShopifyProductBySku(sku) {
 }
 
 async function fetchAllFishingLines() {
-  const allProducts = await fetchAllProducts(); // ← Използвай функцията с pagination
+  const allProducts = await fetchAllProducts();
   
   const categorizedLines = {
     monofilament: [],
     braided: [],
-    fluorocarbon: [],
-    other: []
+    fluorocarbon: []
   };
   
   for (const product of allProducts) {
     const category = getCategoryType(product);
-    if (categorizedLines[category]) {
+    if (category && categorizedLines[category]) {
       categorizedLines[category].push(product);
     }
   }
@@ -854,7 +853,7 @@ async function fetchAllFishingLines() {
   console.log(`  - Monofilament: ${categorizedLines.monofilament.length}`);
   console.log(`  - Braided: ${categorizedLines.braided.length}`);
   console.log(`  - Fluorocarbon: ${categorizedLines.fluorocarbon.length}`);
-  console.log(`  - Other: ${categorizedLines.other.length}\n`);
+  console.log(`  - Total: ${categorizedLines.monofilament.length + categorizedLines.braided.length + categorizedLines.fluorocarbon.length}\n`);
   
   return categorizedLines;
 }
