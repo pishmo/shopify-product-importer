@@ -594,15 +594,18 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
   console.log(`  📸 Uploading new image: ${filename}`);
 
   try {
-    // Първо провери дали снимката съществува на Filstar сървъра
-    const checkResponse = await fetch(imageUrl, { method: 'HEAD', timeout: 5000 });
+    // 1. Нормализирай изображението
+    const normalizedBuffer = await normalizeImage(imageUrl);
     
-    if (!checkResponse.ok) {
-      console.log(`  ⚠️  Image not found (${checkResponse.status}), skipping: ${filename}`);
+    if (!normalizedBuffer) {
+      console.log(`  ⚠️  Skipping image due to normalization error`);
       return false;
     }
 
-    // Качи снимката в Shopify
+    // 2. Конвертирай в base64
+    const base64Image = normalizedBuffer.toString('base64');
+
+    // 3. Качи нормализираното изображение в Shopify
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
       {
@@ -613,7 +616,8 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
         },
         body: JSON.stringify({
           image: {
-            src: imageUrl
+            attachment: base64Image, // Използваме attachment вместо src за base64
+            filename: filename // Запазваме оригиналното име
           }
         })
       }
@@ -622,7 +626,6 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
     if (!response.ok) {
       const errorText = await response.text();
       
-      // Провери дали грешката е заради липсваща снимка
       if (errorText.includes('failed to download') || errorText.includes('file not found')) {
         console.log(`  ⚠️  Image not accessible, skipping: ${filename}`);
       } else {
@@ -632,17 +635,16 @@ async function uploadProductImage(productId, imageUrl, existingImages) {
     }
 
     const result = await response.json();
-    console.log(`  ✓ Image uploaded successfully (ID: ${result.image.id})`);
+    console.log(`  ✅ Normalized image uploaded (ID: ${result.image.id})`);
     
     await new Promise(resolve => setTimeout(resolve, 500));
     return true;
 
   } catch (error) {
     console.log(`  ⚠️  Upload error, skipping image: ${error.message}`);
-    return false; // Продължи с останалите снимки
+    return false;
   }
 }
-
 
 
 
