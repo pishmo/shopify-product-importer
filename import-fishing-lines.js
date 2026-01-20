@@ -839,7 +839,9 @@ async function fetchAllFishingLines() {
   const categorizedLines = {
     monofilament: [],
     braided: [],
-    fluorocarbon: []
+    fluorocarbon: [],
+    other: []
+    
   };
   
   for (const product of allProducts) {
