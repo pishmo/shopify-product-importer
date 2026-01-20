@@ -771,50 +771,31 @@ async function findShopifyProductBySku(sku) {
 }
 
 async function fetchAllFishingLines() {
-  console.log('Fetching all products from Filstar API...\n');
+  const allProducts = await fetchAllProducts(); // ← Използвай функцията с pagination
   
-  try {
-    const response = await fetch(`${FILSTAR_API_BASE}/products`, {
-      headers: {
-        'Authorization': `Bearer ${FILSTAR_TOKEN}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Filstar API error: ${response.status}`);
+  const categorizedLines = {
+    monofilament: [],
+    braided: [],
+    fluorocarbon: [],
+    other: []
+  };
+  
+  for (const product of allProducts) {
+    const category = getCategoryType(product);
+    if (categorizedLines[category]) {
+      categorizedLines[category].push(product);
     }
-
-    const allProducts = await response.json();
-    console.log(`Total products fetched: ${allProducts.length}\n`);
-    
-    const categorizedLines = {
-      monofilament: [],
-      braided: [],
-      fluorocarbon: [],
-      other: []
-    };
-    
-    for (const product of allProducts) {
-      const category = getCategoryType(product);
-      if (categorizedLines[category]) {
-        categorizedLines[category].push(product);
-      }
-    }
-    
-    console.log('📊 Found fishing lines:');
-    console.log(`  - Monofilament: ${categorizedLines.monofilament.length}`);
-    console.log(`  - Braided: ${categorizedLines.braided.length}`);
-    console.log(`  - Fluorocarbon: ${categorizedLines.fluorocarbon.length}`);
-    console.log(`  - Other: ${categorizedLines.other.length}`);
-    console.log(`  - Total: ${categorizedLines.monofilament.length + categorizedLines.braided.length + categorizedLines.fluorocarbon.length + categorizedLines.other.length}\n`);
-    
-    return categorizedLines;
-    
-  } catch (error) {
-    console.error('Error fetching products:', error.message);
-    throw error;
   }
+  
+  console.log('📊 Found fishing lines:');
+  console.log(`  - Monofilament: ${categorizedLines.monofilament.length}`);
+  console.log(`  - Braided: ${categorizedLines.braided.length}`);
+  console.log(`  - Fluorocarbon: ${categorizedLines.fluorocarbon.length}`);
+  console.log(`  - Other: ${categorizedLines.other.length}\n`);
+  
+  return categorizedLines;
 }
+
 
 async function processProduct(filstarProduct, category) {
   console.log(`\n${'='.repeat(80)}`);
