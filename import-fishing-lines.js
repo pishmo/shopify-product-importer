@@ -1048,7 +1048,7 @@ async function main() {
   console.log(`\n📊 Processing ${allFilstarProducts.length} fishing lines total\n`);
   
   // Fetch Shopify products
-  const allShopifyProducts = await GetAllShopifyProducts();
+  const allShopifyProducts = await getAllShopifyProducts();
   
   for (const line of allFilstarProducts) {
     const categoryType = getCategoryType(line);
