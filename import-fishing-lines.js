@@ -837,20 +837,28 @@ async function findShopifyProductBySku(sku) {
 }
 
 async function fetchAllFishingLines() {
+  console.log('Fetching all products from Filstar API...\n');
+  
   const allProducts = await fetchAllProducts();
+  
+  console.log(`Total products fetched: ${allProducts.length}\n`);
   
   const categorizedLines = {
     monofilament: [],
     braided: [],
     fluorocarbon: [],
     other: []
-    
   };
+  
+  let productsWithParent4 = 0;
   
   for (const product of allProducts) {
     const category = getCategoryType(product);
-    if (category && categorizedLines[category]) {
+    
+    if (category) {
       categorizedLines[category].push(product);
+    } else if (product.categories?.some(c => c.parent_id?.toString() === '4')) {
+      productsWithParent4++;
     }
   }
   
@@ -858,10 +866,13 @@ async function fetchAllFishingLines() {
   console.log(`  - Monofilament: ${categorizedLines.monofilament.length}`);
   console.log(`  - Braided: ${categorizedLines.braided.length}`);
   console.log(`  - Fluorocarbon: ${categorizedLines.fluorocarbon.length}`);
-  console.log(`  - Total: ${categorizedLines.monofilament.length + categorizedLines.braided.length + categorizedLines.fluorocarbon.length}\n`);
+  console.log(`  - Other: ${categorizedLines.other.length}`);
+  console.log(`  - Total: ${categorizedLines.monofilament.length + categorizedLines.braided.length + categorizedLines.fluorocarbon.length + categorizedLines.other.length}`);
+  console.log(`  - ⚠️  Products with parent_id=4 but no matching category: ${productsWithParent4}\n`);
   
   return categorizedLines;
 }
+
 
 
 async function processProduct(filstarProduct, category) {
