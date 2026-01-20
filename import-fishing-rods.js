@@ -1212,27 +1212,31 @@ async function processProduct(filstarProduct, category) {
  * Принтира финална статистика
  */
 function printFinalStats() {
-  console.log('\n======================================================================');
-  console.log('📊 IMPORT SUMMARY');
-  console.log('======================================================================');
+  console.log('\n📊 IMPORT SUMMARY');
+  console.log('='.repeat(70));
   
-  Object.entries(stats).forEach(([category, data]) => {
+  let totalCreated = 0;
+  let totalUpdated = 0;
+  let totalImages = 0;
+  
+  for (const [category, data] of Object.entries(stats)) {
     if (data.created > 0 || data.updated > 0) {
-      console.log(`\n${getCategoryName(category)}:`);
+      console.log(`\n${getCategoryDisplayName(category)}:`);
       console.log(` ✨ Created: ${data.created} products`);
       console.log(` 🔄 Updated: ${data.updated} products`);
       console.log(` 🖼️  Images: ${data.images} uploaded`);
+      console.log('-'.repeat(70));
+      
+      totalCreated += data.created;
+      totalUpdated += data.updated;
+      totalImages += data.images;
     }
-  });
+  }
   
-  const totalCreated = Object.values(stats).reduce((sum, s) => sum + s.created, 0);
-  const totalUpdated = Object.values(stats).reduce((sum, s) => sum + s.updated, 0);
-  const totalImages = Object.values(stats).reduce((sum, s) => sum + s.images, 0);
-  
-  console.log('\n----------------------------------------------------------------------');
-  console.log(`TOTAL: ${totalCreated} created | ${totalUpdated} updated | ${totalImages} images`);
-  console.log('======================================================================');
+  console.log(`\nTOTAL: ${totalCreated} created | ${totalUpdated} updated | ${totalImages} images`);
+  console.log('='.repeat(70));
 }
+
 
 /**
  * Main функция
