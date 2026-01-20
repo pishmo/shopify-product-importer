@@ -240,10 +240,11 @@ async function addProductImages(productId, imageUrls) {
       }
     `;
 
-    const response = await shopifyGraphQL(mutation, {
-      productId: productId,
-      media: media
-    });
+  const response = await shopifyGraphQL(mutation, {
+  productId: `gid://shopify/Product/${productId}`,  // ← Добави gid://
+  media: media
+});
+
 
     if (response.productCreateMedia.mediaUserErrors.length > 0) {
       console.error('  ❌ Errors adding images:', response.productCreateMedia.mediaUserErrors);
