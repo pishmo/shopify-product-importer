@@ -775,4 +775,4 @@ function printFinalStats() {
 /**
  * Main функция
  */
-async function main() 
+async function main() ;
