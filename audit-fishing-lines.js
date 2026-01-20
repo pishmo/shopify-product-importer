@@ -162,6 +162,8 @@ function categorizeShopifyLines(allProducts) {
       lines.braided.push(product);
     } else if (type.includes('fluorocarbon') || type.includes('флуорокарбон')) {
       lines.fluorocarbon.push(product);
+    } else if (type.includes('влакно други')) {
+      lines.other.push(product);
     }
   }
   
