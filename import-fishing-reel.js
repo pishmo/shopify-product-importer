@@ -889,6 +889,10 @@ function ensureUniqueVariantNames(variants, categoryType) {
   return formattedVariants.map(v => v.name);
 }
 
+
+
+// Добавяне на продукт към колекция
+
 async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
   
