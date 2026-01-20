@@ -979,25 +979,28 @@ async function main() {
   
   const categorizedLines = await fetchAllFishingLines();
   
-  const allLines = [
+  const allFilstarProducts = [
     ...categorizedLines.monofilament,
     ...categorizedLines.braided,
     ...categorizedLines.fluorocarbon,
     ...categorizedLines.other
   ];
   
-  console.log(`\n📊 Processing ${allLines.length} fishing lines total\n`);
+  console.log(`\n📊 Processing ${allFilstarProducts.length} fishing lines total\n`);
   
-  for (const line of allLines) {
+  // Fetch Shopify products
+  const allShopifyProducts = await fetchAllShopifyProducts();
+  
+  for (const line of allFilstarProducts) {
     const categoryType = getCategoryType(line);
     await processProduct(line, categoryType);
   }
   
   printFinalStats();
 
-  await deleteExtraProducts(allFilstarProducts, allShopifyProducts);   // функцията за триене на продукти/влакна , ако ги няма в филстар
-  
+  await deleteExtraProducts(allFilstarProducts, allShopifyProducts);
 }
+
 
 main().catch(error => {
   console.error('Fatal error:', error);
