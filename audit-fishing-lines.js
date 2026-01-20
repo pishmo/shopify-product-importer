@@ -100,98 +100,61 @@ function categorizeFilstarLines(allProducts) {
 // ============================================
 
 async function fetchAllShopifyProducts() {
-  console.log('📡 Fetching ALL products from Shopify...\n');
+  console.log('📡 Fetching ALL products from Shopify...');
   
   let allProducts = [];
+  let pageInfo = null;
   let hasNextPage = true;
-  let cursor = null;
-  let pageNum = 1;
+  let pageCount = 0;
   
   while (hasNextPage) {
-    const query = `
-      query ($cursor: String) {
-        products(first: 250, after: $cursor) {
-          edges {
-            cursor
-            node {
-              id
-              legacyResourceId
-              title
-              productType
-              tags
-              variants(first: 100) {
-                edges {
-                  node {
-                    id
-                    legacyResourceId
-                    sku
-                    title
-                  }
-                }
-              }
-            }
-          }
-          pageInfo {
-            hasNextPage
-            endCursor
-          }
-        }
-      }
-    `;
-
-    try {
-      const response = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            query,
-            variables: { cursor }
-          })
-        }
-      );
-
-      const result = await response.json();
-      
-      if (result.errors) {
-        console.error('GraphQL errors:', result.errors);
-        break;
-      }
-
-      const products = result.data.products.edges.map(edge => ({
-        id: edge.node.legacyResourceId,
-        title: edge.node.title,
-        productType: edge.node.productType,
-        tags: edge.node.tags,
-        variants: edge.node.variants.edges.map(v => ({
-          id: v.node.legacyResourceId,
-          sku: v.node.sku,
-          title: v.node.title
-        }))
-      }));
-
-      allProducts = allProducts.concat(products);
-      console.log(`  Page ${pageNum}: ${products.length} products (total: ${allProducts.length})`);
-
-      hasNextPage = result.data.products.pageInfo.hasNextPage;
-      cursor = result.data.products.pageInfo.endCursor;
-      pageNum++;
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-    } catch (error) {
-      console.error('Error fetching Shopify products:', error.message);
-      break;
+    pageCount++;
+    
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250&fields=id,title,variants`;
+    
+    if (pageInfo) {
+      url += `&page_info=${pageInfo}`;
     }
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch Shopify products: ${response.status}`);
+      throw new Error(`Shopify API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    allProducts = allProducts.concat(data.products);
+    
+    console.log(`  Page ${pageCount}: ${data.products.length} products (total: ${allProducts.length})`);
+    
+    // Провери за следваща страница
+    const linkHeader = response.headers.get('Link');
+    if (linkHeader && linkHeader.includes('rel="next"')) {
+      const nextMatch = linkHeader.match(/<[^>]*[?&]page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+      if (nextMatch) {
+        pageInfo = nextMatch[1];
+      } else {
+        hasNextPage = false;
+      }
+    } else {
+      hasNextPage = false;
+    }
+    
+    // Пауза между заявките - увеличена на 1 секунда
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
-  console.log(`\n✅ Total Shopify products fetched: ${allProducts.length}\n`);
+  console.log(`✅ Total Shopify products fetched: ${allProducts.length}\n`);
   return allProducts;
 }
+
 
 function categorizeShopifyLines(allProducts) {
   const lines = {
