@@ -165,19 +165,21 @@ function categorizeShopifyLines(allProducts) {
   };
   
   for (const product of allProducts) {
-    const type = product.productType?.toLowerCase() || '';
-    const tags = product.tags || [];
+    const type = product.product_type?.toLowerCase() || '';
+    const tags = Array.isArray(product.tags) 
+      ? product.tags.map(t => t.toLowerCase()) 
+      : (product.tags || '').toLowerCase().split(',').map(t => t.trim());
     
-    // Филтрирай само влакна (по productType или tags)
+    // Филтрирай само влакна
     const isLine = type.includes('влакн') || 
                    type.includes('line') ||
-                   tags.some(t => t.toLowerCase().includes('line') || t.toLowerCase().includes('влакн'));
+                   tags.some(t => t.includes('line') || t.includes('влакн'));
     
     if (!isLine) {
-      continue; // Не е влакно
+      continue;
     }
     
-    // Категоризирай по productType или tags
+    // Категоризирай
     if (type.includes('монофилн') || tags.includes('monofilament')) {
       lines.monofilament.push(product);
     } else if (type.includes('плетен') || tags.includes('braided')) {
@@ -191,6 +193,10 @@ function categorizeShopifyLines(allProducts) {
   
   return lines;
 }
+
+
+
+
 
 // ============================================
 // СРАВНЕНИЕ И АНАЛИЗ
