@@ -1057,7 +1057,7 @@ async function main() {
   
   printFinalStats();
 
-  await deleteExtraProducts(allFilstarProducts, allShopifyProducts);
+//  await deleteExtraProducts(allFilstarProducts, allShopifyProducts);
 }
 
 
