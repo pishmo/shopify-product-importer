@@ -1096,9 +1096,8 @@ async function updateProduct(shopifyProduct, filstarProduct) {
 }
 
 async function processProduct(filstarProduct, categoryType, cachedShopifyProducts) {
-  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`📦 Processing: ${filstarProduct.name}`);
-  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  
+
 
   if (!categoryType || typeof categoryType !== 'string') {
     console.log(`  ⚠️ Invalid categoryType: ${categoryType}, using "other"`);
@@ -1190,6 +1189,8 @@ async function processProduct(filstarProduct, categoryType, cachedShopifyProduct
     }
     
     console.log(`  ✅ Processing completed successfully`);
+    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+   
     return true;
 
   } catch (error) {
