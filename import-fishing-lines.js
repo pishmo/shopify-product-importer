@@ -132,6 +132,10 @@ function getCategoryType(filstarProduct) {
     if (FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(catId)) {
       return 'fluorocarbon';
     }
+   if (FILSTAR_LINE_CATEGORY_IDS.other.includes(catId)) {
+      return 'other'; 
+    }
+  
   }
   
   return null;
