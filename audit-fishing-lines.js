@@ -4,7 +4,6 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const API_VERSION = '2024-01';
 
-// Filstar категории за влакна
 const FILSTAR_LINE_CATEGORY_IDS = {
   monofilament: ['41'],
   braided: ['105'],
@@ -13,10 +12,6 @@ const FILSTAR_LINE_CATEGORY_IDS = {
 };
 
 const LINES_PARENT_ID = '4';
-
-// ============================================
-// FILSTAR API - Извличане на всички влакна
-// ============================================
 
 async function fetchAllFilstarProducts() {
   console.log('📡 Fetching ALL products from Filstar API...\n');
@@ -70,17 +65,15 @@ function categorizeFilstarLines(allProducts) {
   for (const product of allProducts) {
     const categoryIds = product.categories?.map(c => c.id.toString()) || [];
     
-    // Провери дали е влакно (има parent категория 4)
     const hasLinesParent = product.categories?.some(c => 
       c.parent_id?.toString() === LINES_PARENT_ID || 
       c.id.toString() === LINES_PARENT_ID
     );
     
     if (!hasLinesParent) {
-      continue; // Не е влакно, пропусни
+      continue;
     }
     
-    // Категоризирай по конкретна категория
     if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.monofilament.includes(id))) {
       lines.monofilament.push(product);
     } else if (categoryIds.some(id => FILSTAR_LINE_CATEGORY_IDS.braided.includes(id))) {
@@ -95,10 +88,6 @@ function categorizeFilstarLines(allProducts) {
   return lines;
 }
 
-// ============================================
-// SHOPIFY API - Извличане на всички влакна
-// ============================================
-
 async function fetchAllShopifyProducts() {
   console.log('📡 Fetching ALL products from Shopify...');
   
@@ -110,7 +99,7 @@ async function fetchAllShopifyProducts() {
   while (hasNextPage) {
     pageCount++;
     
-    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250&fields=id,title,variants`;
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250&fields=id,title,variants,product_type,tags`;
     
     if (pageInfo) {
       url += `&page_info=${pageInfo}`;
@@ -134,7 +123,6 @@ async function fetchAllShopifyProducts() {
     
     console.log(`  Page ${pageCount}: ${data.products.length} products (total: ${allProducts.length})`);
     
-    // Провери за следваща страница
     const linkHeader = response.headers.get('Link');
     if (linkHeader && linkHeader.includes('rel="next"')) {
       const nextMatch = linkHeader.match(/<[^>]*[?&]page_info=([^>&]+)[^>]*>;\s*rel="next"/);
@@ -147,7 +135,6 @@ async function fetchAllShopifyProducts() {
       hasNextPage = false;
     }
     
-    // Пауза между заявките - увеличена на 1 секунда
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
@@ -169,7 +156,6 @@ function categorizeShopifyLines(allProducts) {
       ? product.tags.map(t => t.toLowerCase()) 
       : (product.tags || '').toLowerCase().split(',').map(t => t.trim());
     
-    // Филтрирай само влакна
     const isLine = type.includes('влакн') || 
                    type.includes('line') ||
                    tags.some(t => t.includes('line') || t.includes('влакн'));
@@ -178,7 +164,6 @@ function categorizeShopifyLines(allProducts) {
       continue;
     }
     
-    // Категоризирай
     if (type.includes('монофилн') || tags.includes('monofilament')) {
       lines.monofilament.push(product);
     } else if (type.includes('плетен') || tags.includes('braided')) {
@@ -192,13 +177,6 @@ function categorizeShopifyLines(allProducts) {
   
   return lines;
 }
-
-
-
-
-// ============================================
-// СРАВНЕНИЕ И АНАЛИЗ
-// ============================================
 
 function compareProducts(filstarLines, shopifyLines) {
   console.log('\n' + '='.repeat(80));
@@ -230,7 +208,6 @@ function compareProducts(filstarLines, shopifyLines) {
     console.log(`\n  Filstar:  ${filstarProducts.length} products`);
     console.log(`  Shopify:  ${shopifyProducts.length} products`);
     
-    // Създай map на Shopify продукти по SKU
     const shopifySKUs = new Map();
     for (const product of shopifyProducts) {
       for (const variant of product.variants) {
@@ -244,7 +221,6 @@ function compareProducts(filstarLines, shopifyLines) {
       }
     }
     
-    // Създай map на Filstar продукти по SKU
     const filstarSKUs = new Map();
     for (const product of filstarProducts) {
       if (product.variants) {
@@ -259,7 +235,6 @@ function compareProducts(filstarLines, shopifyLines) {
       }
     }
     
-    // Намери съвпадения
     const matched = [];
     const missingInShopify = [];
     
@@ -271,7 +246,6 @@ function compareProducts(filstarLines, shopifyLines) {
       }
     }
     
-    // Намери излишни в Shopify
     const extraInShopify = [];
     for (const [sku, shopifyData] of shopifySKUs) {
       if (!filstarSKUs.has(sku)) {
@@ -279,12 +253,10 @@ function compareProducts(filstarLines, shopifyLines) {
       }
     }
     
-    // Покажи резултати
     console.log(`\n  ✅ Matched:           ${matched.length} SKUs`);
     console.log(`  ⚠️  Missing in Shopify: ${missingInShopify.length} SKUs`);
     console.log(`  ❌ Extra in Shopify:   ${extraInShopify.length} SKUs`);
     
-    // Детайли за липсващи
     if (missingInShopify.length > 0) {
       console.log(`\n  📋 Missing in Shopify (${category}):`);
       for (const item of missingInShopify.slice(0, 10)) {
@@ -295,7 +267,6 @@ function compareProducts(filstarLines, shopifyLines) {
       }
     }
     
-    // Детайли за излишни
     if (extraInShopify.length > 0) {
       console.log(`\n  📋 Extra in Shopify (${category}):`);
       for (const item of extraInShopify.slice(0, 10)) {
@@ -306,7 +277,6 @@ function compareProducts(filstarLines, shopifyLines) {
       }
     }
     
-    // Запази в report
     report.matched.push(...matched.map(m => ({ ...m, category })));
     report.missingInShopify.push(...missingInShopify.map(m => ({ ...m, category })));
     report.extraInShopify.push(...extraInShopify.map(e => ({ ...e, category })));
@@ -315,76 +285,10 @@ function compareProducts(filstarLines, shopifyLines) {
   return report;
 }
 
-// В края на скрипта, промени printComparison функцията:
-
-function printComparison(matched, missingInShopify, extraInShopify) {
-  console.log('\n' + '='.repeat(70));
-  console.log('📊 COMPARISON RESULTS');
-  console.log('='.repeat(70));
-  
-  // Брой уникални продукти (не варианти)
-  const uniqueFilstarProducts = new Set(missingInShopify.map(sku => sku.split('-')[0])).size;
-  const uniqueShopifyProducts = new Set(extraInShopify.map(sku => sku.split('-')[0])).size;
-  const uniqueMatchedProducts = new Set(matched.map(sku => sku.split('-')[0])).size;
-  
-  console.log(`✅ Matched products:        ${uniqueMatchedProducts}`);
-  console.log(`⚠️  Missing in Shopify:     ${uniqueFilstarProducts} products`);
-  console.log(`❌ Extra in Shopify:        ${uniqueShopifyProducts} products`);
-  console.log('='.repeat(70) + '\n');
-}
-
-
-// ============================================
-// MAIN
-// ============================================
-
-function printFinalSummary(filstarProducts, shopifyProducts, matched, missingInShopify, extraInShopify) {
-  console.log('\n' + '='.repeat(70));
-  console.log('📊 AUDIT SUMMARY');
-  console.log('='.repeat(70));
-  
-  // И двата параметъра са обекти с категории
-  const allFilstarProducts = [
-    ...(filstarProducts.monofilament || []),
-    ...(filstarProducts.braided || []),
-    ...(filstarProducts.fluorocarbon || []),
-    ...(filstarProducts.other || [])
-  ];
-  
-  const allShopifyProducts = [
-    ...(shopifyProducts.monofilament || []),
-    ...(shopifyProducts.braided || []),
-    ...(shopifyProducts.fluorocarbon || []),
-    ...(shopifyProducts.other || [])
-  ];
-  
-  const uniqueFilstar = allFilstarProducts.length;
-  const uniqueShopify = allShopifyProducts.length;
-  const uniqueMatched = new Set(matched.map(sku => sku.split('-')[0])).size;
-  const uniqueMissing = new Set(missingInShopify.map(sku => sku.split('-')[0])).size;
-  const uniqueExtra = new Set(extraInShopify.map(sku => sku.split('-')[0])).size;
-  
-  console.log(`Filstar:  ${uniqueFilstar} products`);
-  console.log(`Shopify:  ${uniqueShopify} products`);
-  console.log(`✅ Matched:           ${uniqueMatched} products`);
-  console.log(`⚠️  Missing in Shopify: ${uniqueMissing} products`);
-  console.log(`❌ Extra in Shopify:   ${uniqueExtra} products`);
-  console.log('='.repeat(70) + '\n');
-}
-
-
-
-
-
-
 async function main() {
-
-
-  
   try {
     console.log('🔍 Starting Fishing Lines Audit...\n');
     
-    // Fetch от Filstar
     const allFilstarProducts = await fetchAllFilstarProducts();
     const filstarLines = categorizeFilstarLines(allFilstarProducts);
     
@@ -395,7 +299,6 @@ async function main() {
     console.log(`  - Other:         ${filstarLines.other.length}`);
     console.log(`  - Total:         ${filstarLines.monofilament.length + filstarLines.braided.length + filstarLines.fluorocarbon.length + filstarLines.other.length}\n`);
     
-    // Fetch от Shopify
     const allShopifyProducts = await fetchAllShopifyProducts();
     const shopifyLines = categorizeShopifyLines(allShopifyProducts);
     
@@ -406,11 +309,7 @@ async function main() {
     console.log(`  - Other:         ${shopifyLines.other.length}`);
     console.log(`  - Total:         ${shopifyLines.monofilament.length + shopifyLines.braided.length + shopifyLines.fluorocarbon.length + shopifyLines.other.length}\n`);
     
-    // Сравни
-    const report = compareProducts(filstarLines, shopifyLines);
-    
-    // Финален summary
-    printFinalSummary(report);
+    compareProducts(filstarLines, shopifyLines);
     
     console.log('\n✅ Audit completed!\n');
     
