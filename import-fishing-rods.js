@@ -513,12 +513,21 @@ function getImageFilename(src) {
 /**
  * Проверява дали снимка съществува
  */
+
 function imageExists(existingImages, newImageUrl) {
+  if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
+    return false;
+  }
+  
   const newFilename = getImageFilename(newImageUrl);
-  if (!newFilename) return false;
+  if (!newFilename) {
+    return false;
+  }
   
   return existingImages.some(img => {
-    const existingFilename = getImageFilename(img.src);
+    // ✅ ПОПРАВЕНО: Провери дали img има src или url
+    const imgSrc = img.src || img.url || img;
+    const existingFilename = getImageFilename(imgSrc);
     return existingFilename && existingFilename === newFilename;
   });
 }
