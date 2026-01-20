@@ -364,6 +364,28 @@ function printFinalSummary(filstarProducts, shopifyProducts, matched, missingInS
 
 
 async function main() {
+
+
+
+
+  const timeout = setTimeout(() => {
+    console.log('⏱️ Timeout - скриптът работи твърде дълго');
+    process.exit(1);
+  }, 300000); // 5 минути timeout
+  
+  try {
+    // ... останалия код
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+
+
+
+
+
+  
   try {
     console.log('🔍 Starting Fishing Lines Audit...\n');
     
