@@ -30,6 +30,10 @@ const FILSTAR_LINE_CATEGORY_IDS = {
   other: ['109']
 };
 
+const LINES_PARENT_ID = '4'; // ← Добави това
+
+
+
 // Статистика
 const stats = {
   monofilament: { created: 0, updated: 0, images: 0 },
