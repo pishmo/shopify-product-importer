@@ -1228,22 +1228,36 @@ async function main() {
     for (const [category, products] of Object.entries(rods)) {
       if (products.length === 0) continue;
 
-      console.log(`\n${'='.repeat(60)}`);
-      console.log(`Processing ${getCategoryName(category)}: ${products.length} products`);
-      console.log('='.repeat(60));
+      console.log(`\n${'='.repeat(70)}`);
+      console.log(`📂 ${getCategoryDisplayName(category)}: ${products.length} products`);
+      console.log('='.repeat(70));
 
-      for (const product of products) {
-        await processProduct(product, category);
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        
+        console.log(`\n[${ i + 1 }/${products.length}] Processing: ${product.name}`);
+        console.log('-'.repeat(70));
+        
+        try {
+          await processProduct(product, category);
+        } catch (error) {
+          console.error(`❌ Error processing product: ${product.name}`);
+          console.error(`   Error: ${error.message}`);
+        }
+        
         await new Promise(resolve => setTimeout(resolve, 500)); // Rate limiting
       }
     }
 
-    console.log('\n✅ Import completed!');
+    console.log('\n' + '='.repeat(70));
+    printFinalStats();
+    console.log('='.repeat(70));
 
   } catch (error) {
     console.error('❌ Import failed:', error.message);
     process.exit(1);
   }
 }
+
 
 main();
