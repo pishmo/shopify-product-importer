@@ -1045,11 +1045,12 @@ async function addProductToCollection(productId, category) {
 async function updateProduct(shopifyProduct, filstarProduct) {
   try {
     console.log(`\n📝 Updating product: ${shopifyProduct.title}`);
-    
+     const cleanedDescription = cleanDescription(filstarProduct.description); // ← Добави
     const productData = {
       id: convertToGid(shopifyProduct.id),
       title: filstarProduct.name,
-      descriptionHtml: generateDescription(filstarProduct),
+      descriptionHtml: cleanedDescription,
+    //  descriptionHtml: generateDescription(filstarProduct),
       vendor: filstarProduct.manufacturer || 'Unknown', // ПРОМЯНА: manufacturer вместо brand
       productType: 'Fishing Reel',
       tags: generateTags(filstarProduct)
