@@ -2,8 +2,6 @@ name: Audit Fishing Lines
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'  # Всеки ден в 2:00 сутринта
 
 jobs:
   audit:
