@@ -371,6 +371,35 @@ function printComparison(matched, missingInShopify, extraInShopify) {
 // MAIN
 // ============================================
 
+
+function printFinalSummary(filstarProducts, shopifyProducts, matched, missingInShopify, extraInShopify) {
+  console.log('\n' + '='.repeat(70));
+  console.log('📊 AUDIT SUMMARY');
+  console.log('='.repeat(70));
+  
+  // Брой продукти (не варианти)
+  const uniqueFilstar = new Set(filstarProducts.map(p => p.variants[0].sku.split('-')[0])).size;
+  const uniqueShopify = shopifyProducts.length;
+  const uniqueMatched = new Set(matched.map(sku => sku.split('-')[0])).size;
+  const uniqueMissing = new Set(missingInShopify.map(sku => sku.split('-')[0])).size;
+  const uniqueExtra = new Set(extraInShopify.map(sku => sku.split('-')[0])).size;
+  
+  console.log(`Filstar:  ${uniqueFilstar} products`);
+  console.log(`Shopify:  ${uniqueShopify} products`);
+  console.log(`✅ Matched:           ${uniqueMatched} products`);
+  console.log(`⚠️  Missing in Shopify: ${uniqueMissing} products`);
+  console.log(`❌ Extra in Shopify:   ${uniqueExtra} products`);
+  console.log('='.repeat(70) + '\n');
+}
+
+
+
+
+
+
+
+
+
 async function main() {
   try {
     console.log('🔍 Starting Fishing Lines Audit...\n');
