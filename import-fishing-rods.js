@@ -775,4 +775,33 @@ function printFinalStats() {
 /**
  * Main функция
  */
-async function main() ;
+async function main() {
+  console.log('Starting fishing rods import...\n');
+
+  try {
+    // Fetch всички въдици от Filstar
+    const rods = await fetchAllFishingRods();
+
+    // Обработи всяка категория
+    for (const [category, products] of Object.entries(rods)) {
+      if (products.length === 0) continue;
+
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`Processing ${getCategoryName(category)}: ${products.length} products`);
+      console.log('='.repeat(60));
+
+      for (const product of products) {
+        await processProduct(product, category);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Rate limiting
+      }
+    }
+
+    console.log('\n✅ Import completed!');
+
+  } catch (error) {
+    console.error('❌ Import failed:', error.message);
+    process.exit(1);
+  }
+}
+
+main();
