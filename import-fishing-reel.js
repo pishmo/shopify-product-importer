@@ -64,6 +64,58 @@ function convertToGid(numericId) {
   return `gid://shopify/Product/${numericId}`;
 }
 
+
+/**
+ * Нормализира изображение към 1200x1000 с бял padding
+ * @param {string} imageUrl - URL на изображението от Filstar
+ * @returns {Buffer|null} - Нормализиран image buffer или null при грешка
+ */
+async function normalizeImage(imageUrl) {
+  try {
+    // 1. Свали изображението
+    const response = await fetch(imageUrl, { timeout: 10000 });
+    if (!response.ok) {
+      console.log(`    ⚠️  Cannot fetch image (${response.status})`);
+      return null;
+    }
+    
+    const imageBuffer = await response.buffer();
+    
+    // 2. Вземи оригиналните размери
+    const metadata = await sharp(imageBuffer).metadata();
+    const originalWidth = metadata.width;
+    const originalHeight = metadata.height;
+    
+    // 3. Нормализирай към 1200x1000 с padding
+    const normalizedBuffer = await sharp(imageBuffer)
+      .resize(TARGET_WIDTH, TARGET_HEIGHT, {
+        fit: 'contain', // Запазва aspect ratio и добавя padding
+        background: BACKGROUND_COLOR,
+        position: 'center'
+      })
+      .jpeg({ quality: 92, mozjpeg: true }) // Високо качество JPEG
+      .toBuffer();
+    
+    const sizeBefore = (imageBuffer.length / 1024).toFixed(1);
+    const sizeAfter = (normalizedBuffer.length / 1024).toFixed(1);
+    
+    console.log(`    🔧 Normalized: ${originalWidth}x${originalHeight} → ${TARGET_WIDTH}x${TARGET_HEIGHT} (${sizeBefore}KB → ${sizeAfter}KB)`);
+    
+    return normalizedBuffer;
+    
+  } catch (error) {
+    console.log(`    ⚠️  Normalization error: ${error.message}`);
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
 // Функция за почистване на описание
 function cleanDescription(description) {
   if (!description || typeof description !== 'string') {
