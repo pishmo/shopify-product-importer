@@ -62,6 +62,82 @@ function getCategoryName(category) {
 }
 
 
+
+async function uploadProductImage(productId, imageUrl, existingImages) {
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    console.error(`  ✗ Invalid image URL`);
+    return false;
+  }
+
+  // Провери дали снимката вече съществува
+  if (imageExists(existingImages, imageUrl)) {
+    const filename = getImageFilename(imageUrl);
+    console.log(`  ⏭️ Image already exists, skipping: ${filename}`);
+    return false;
+  }
+
+  const filename = getImageFilename(imageUrl);
+  console.log(`  📸 Uploading new image: ${filename}`);
+
+  try {
+    // 1. Нормализирай изображението
+    const normalizedBuffer = await normalizeImage(imageUrl);
+    
+    if (!normalizedBuffer) {
+      console.log(`  ⚠️  Skipping image due to normalization error`);
+      return false;
+    }
+
+    // 2. Конвертирай в base64
+    const base64Image = normalizedBuffer.toString('base64');
+
+    // 3. Качи нормализираното изображение в Shopify
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image: {
+            attachment: base64Image, // Използваме attachment вместо src за base64
+            filename: filename // Запазваме оригиналното име
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      
+      if (errorText.includes('failed to download') || errorText.includes('file not found')) {
+        console.log(`  ⚠️  Image not accessible, skipping: ${filename}`);
+      } else {
+        console.error(`  ✗ Failed to upload image: ${response.status} - ${errorText}`);
+      }
+      return false;
+    }
+
+    const result = await response.json();
+    console.log(`  ✅ Normalized image uploaded (ID: ${result.image.id})`);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
+
+  } catch (error) {
+    console.log(`  ⚠️  Upload error, skipping image: ${error.message}`);
+    return false;
+  }
+}
+
+
+
+
+
+
+
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') {
     return null;
