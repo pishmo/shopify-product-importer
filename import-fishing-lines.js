@@ -55,6 +55,46 @@ function getCategoryName(category) {
 
 
 
+
+// Изтрий продукти които липсват във Filstar
+async function deleteExtraProducts(filstarProducts, shopifyProducts) {
+  const filstarSKUs = new Set();
+  
+  filstarProducts.forEach(p => {
+    if (p.sku) filstarSKUs.add(p.sku.toString());
+    if (p.variants) {
+      p.variants.forEach(v => {
+        if (v.sku) filstarSKUs.add(v.sku.toString());
+      });
+    }
+  });
+  
+  for (const shopifyProduct of shopifyProducts) {
+    const hasMatchingSKU = shopifyProduct.variants.some(v => 
+      filstarSKUs.has(v.sku?.toString())
+    );
+    
+    if (!hasMatchingSKU) {
+      console.log(`🗑️  Deleting extra product: ${shopifyProduct.title} (ID: ${shopifyProduct.id})`);
+      
+      await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${shopifyProduct.id}.json`,
+        {
+          method: 'DELETE',
+          headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
+        }
+      );
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+}
+
+
+
+
+
+
 async function fetchAllProducts() {
   console.log('📦 Fetching all products from Filstar API with pagination...');
   
@@ -956,6 +996,9 @@ async function main() {
   }
   
   printFinalStats();
+
+  await deleteExtraProducts(allFilstarProducts, allShopifyProducts);   // функцията за триене на продукти/влакна , ако ги няма в филстар
+  
 }
 
 main().catch(error => {
