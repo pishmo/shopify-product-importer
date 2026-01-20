@@ -348,29 +348,24 @@ function compareProducts(filstarLines, shopifyLines) {
   return report;
 }
 
-function printFinalSummary(report) {
-  console.log('\n' + '='.repeat(80));
-  console.log('📊 FINAL SUMMARY');
-  console.log('='.repeat(80) + '\n');
+// В края на скрипта, промени printComparison функцията:
+
+function printComparison(matched, missingInShopify, extraInShopify) {
+  console.log('\n' + '='.repeat(70));
+  console.log('📊 COMPARISON RESULTS');
+  console.log('='.repeat(70));
   
-  console.log(`  ✅ Total matched SKUs:           ${report.matched.length}`);
-  console.log(`  ⚠️  Total missing in Shopify:     ${report.missingInShopify.length}`);
-  console.log(`  ❌ Total extra in Shopify:       ${report.extraInShopify.length}`);
+  // Брой уникални продукти (не варианти)
+  const uniqueFilstarProducts = new Set(missingInShopify.map(sku => sku.split('-')[0])).size;
+  const uniqueShopifyProducts = new Set(extraInShopify.map(sku => sku.split('-')[0])).size;
+  const uniqueMatchedProducts = new Set(matched.map(sku => sku.split('-')[0])).size;
   
-  if (report.extraInShopify.length > 0) {
-    console.log('\n' + '─'.repeat(80));
-    console.log('❌ FULL LIST OF EXTRA PRODUCTS IN SHOPIFY (to be removed):');
-    console.log('─'.repeat(80) + '\n');
-    
-    for (const item of report.extraInShopify) {
-      console.log(`  [${item.category.toUpperCase()}] SKU: ${item.sku}`);
-      console.log(`    Product: ${item.productTitle} (ID: ${item.productId})`);
-      console.log(`    Variant: ${item.variantTitle}\n`);
-    }
-  }
-  
-  console.log('\n' + '='.repeat(80));
+  console.log(`✅ Matched products:        ${uniqueMatchedProducts}`);
+  console.log(`⚠️  Missing in Shopify:     ${uniqueFilstarProducts} products`);
+  console.log(`❌ Extra in Shopify:        ${uniqueShopifyProducts} products`);
+  console.log('='.repeat(70) + '\n');
 }
+
 
 // ============================================
 // MAIN
