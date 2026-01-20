@@ -297,45 +297,64 @@ async function addProductImages(productId, imageUrls) {
   try {
     console.log(`  📸 Adding ${imageUrls.length} images to product...`);
     
-    const media = imageUrls.map(url => ({
-      originalSource: url,
-      mediaContentType: 'IMAGE'
-    }));
-
-    const mutation = `
-      mutation productCreateMedia($media: [CreateMediaInput!]!, $productId: ID!) {
-        productCreateMedia(media: $media, productId: $productId) {
-          media {
-            ... on MediaImage {
-              id
-              image {
-                url
-              }
-            }
-          }
-          mediaUserErrors {
-            field
-            message
-          }
-          product {
-            id
-          }
+    let uploadedCount = 0;
+    
+    // Качи всяка снимка поотделно с нормализация
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imageUrl = imageUrls[i];
+      const filename = getImageFilename(imageUrl);
+      
+      console.log(`    [${i + 1}/${imageUrls.length}] Processing: ${filename}`);
+      
+      try {
+        // 1. Нормализирай изображението
+        const normalizedBuffer = await normalizeImage(imageUrl);
+        
+        if (!normalizedBuffer) {
+          console.log(`    ⚠️  Skipping due to normalization error`);
+          continue;
         }
+
+        // 2. Конвертирай в base64
+        const base64Image = normalizedBuffer.toString('base64');
+
+        // 3. Качи в Shopify
+        const response = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              image: {
+                attachment: base64Image,
+                filename: filename
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log(`    ⚠️  Upload failed: ${response.status}`);
+          continue;
+        }
+
+        uploadedCount++;
+        console.log(`    ✅ Normalized and uploaded`);
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+      } catch (error) {
+        console.log(`    ⚠️  Error: ${error.message}`);
+        continue;
       }
-    `;
-
-  const response = await shopifyGraphQL(mutation, {
-  productId: `gid://shopify/Product/${productId}`,  // ← Добави gid://
-  media: media
-});
-
-
-    if (response.productCreateMedia.mediaUserErrors.length > 0) {
-      console.error('  ❌ Errors adding images:', response.productCreateMedia.mediaUserErrors);
-      return;
     }
 
-    console.log(`  ✓ Added ${response.productCreateMedia.media.length} images`);
+    console.log(`  ✓ Added ${uploadedCount} normalized images`);
     
     // Изчакай малко преди refresh
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -351,7 +370,6 @@ async function addProductImages(productId, imageUrls) {
     throw error;
   }
 }
-
 
 
 
