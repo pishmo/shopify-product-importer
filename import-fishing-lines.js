@@ -850,15 +850,11 @@ async function fetchAllFishingLines() {
     other: []
   };
   
-  let productsWithParent4 = 0;
-  
   for (const product of allProducts) {
     const category = getCategoryType(product);
     
     if (category) {
       categorizedLines[category].push(product);
-    } else if (product.categories?.some(c => c.parent_id?.toString() === '4')) {
-      productsWithParent4++;
     }
   }
   
@@ -867,8 +863,7 @@ async function fetchAllFishingLines() {
   console.log(`  - Braided: ${categorizedLines.braided.length}`);
   console.log(`  - Fluorocarbon: ${categorizedLines.fluorocarbon.length}`);
   console.log(`  - Other: ${categorizedLines.other.length}`);
-  console.log(`  - Total: ${categorizedLines.monofilament.length + categorizedLines.braided.length + categorizedLines.fluorocarbon.length + categorizedLines.other.length}`);
-  console.log(`  - ⚠️  Products with parent_id=4 but no matching category: ${productsWithParent4}\n`);
+  console.log(`  - Total: ${categorizedLines.monofilament.length + categorizedLines.braided.length + categorizedLines.fluorocarbon.length + categorizedLines.other.length}\n`);
   
   return categorizedLines;
 }
