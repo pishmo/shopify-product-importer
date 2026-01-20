@@ -891,7 +891,7 @@ function ensureUniqueVariantNames(variants, categoryType) {
 
 
 
-// Добавяне на продукт към колекция
+// създаване на продукт
 
 async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
