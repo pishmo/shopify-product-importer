@@ -792,19 +792,15 @@ async function findShopifyProductBySku(sku) {
   
   try {
     let allProducts = [];
-    let hasNextPage = true;
-    let cursor = null;
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250`;
     
-    while (hasNextPage) {
-      const response = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250${cursor ? `&page_info=${cursor}` : ''}`,
-        {
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          }
+    while (url) {
+      const response = await fetch(url, {
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
         }
-      );
+      });
       
       if (!response.ok) {
         throw new Error(`Shopify API error: ${response.status}`);
@@ -813,15 +809,21 @@ async function findShopifyProductBySku(sku) {
       const data = await response.json();
       allProducts = allProducts.concat(data.products);
       
+      // Правилно извличане на next URL от Link header
       const linkHeader = response.headers.get('Link');
-      if (linkHeader && linkHeader.includes('rel="next"')) {
-        const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-        cursor = nextMatch ? nextMatch[1] : null;
-        hasNextPage = !!cursor;
-      } else {
-        hasNextPage = false;
+      url = null;
+      
+      if (linkHeader) {
+        const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+        if (nextMatch) {
+          url = nextMatch[1];
+        }
       }
+      
+      await new Promise(resolve => setTimeout(resolve, 300)); // Rate limiting
     }
+    
+    console.log(`  📊 Searched ${allProducts.length} products in Shopify`);
     
     for (const product of allProducts) {
       const variant = product.variants?.find(v => v.sku === sku);
@@ -839,6 +841,7 @@ async function findShopifyProductBySku(sku) {
     return null;
   }
 }
+
 
 async function fetchAllFishingLines() {
   console.log('Fetching all products from Filstar API...\n');
