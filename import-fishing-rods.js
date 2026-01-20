@@ -61,6 +61,95 @@ function getCategoryName(category) {
   return names[category] || category;
 }
 
+// Функция за обновяване на съществуващ продукт
+async function updateShopifyProduct(existingProduct, filstarProduct, category) {
+  console.log(`Updating product: ${filstarProduct.name}`);
+  
+  const productId = existingProduct.id;
+  
+  try {
+    // 1. Fetch текущите снимки
+    const imagesResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    const imagesData = await imagesResponse.json();
+    const existingImages = imagesData.images || [];
+    
+    console.log(`  📸 Existing images: ${existingImages.length}`);
+    
+    // 2. Обработи снимките от Filstar
+    const filstarImages = [];
+    
+    if (filstarProduct.image) {
+      const imageUrl = filstarProduct.image.startsWith('http') 
+        ? filstarProduct.image 
+        : `https://filstar.com/${filstarProduct.image}`;
+      filstarImages.push(imageUrl);
+    }
+    
+    if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+      for (const img of filstarProduct.images) {
+        const imageUrl = img.startsWith('http') ? img : `https://filstar.com/${img}`;
+        filstarImages.push(imageUrl);
+      }
+    }
+    
+    if (filstarProduct.variants) {
+      for (const variant of filstarProduct.variants) {
+        if (variant.image) {
+          const imageUrl = variant.image.startsWith('http') 
+            ? variant.image 
+            : `https://filstar.com/${variant.image}`;
+          filstarImages.push(imageUrl);
+        }
+      }
+    }
+    
+    console.log(`Processing ${filstarImages.length} images from Filstar...`);
+    
+    // 3. Качи нови снимки
+    let uploadedCount = 0;
+    for (const imageUrl of filstarImages) {
+      const uploaded = await uploadProductImage(productId, imageUrl, existingImages);
+      if (uploaded) uploadedCount++;
+    }
+    
+    if (uploadedCount > 0) {
+      console.log(`  ✅ Uploaded ${uploadedCount} new images`);
+      
+      // 4. Reorder снимките
+      const updatedImagesResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const updatedImagesData = await updatedImagesResponse.json();
+      await reorderProductImages(productId, filstarProduct, updatedImagesData.images || []);
+    } else {
+      console.log(`  ℹ️  No new images to upload`);
+      
+      // Reorder съществуващите снимки
+      await reorderProductImages(productId, filstarProduct, existingImages);
+    }
+    
+    stats[category].updated++;
+    
+  } catch (error) {
+    console.error(`  ❌ Error updating product:`, error.message);
+  }
+}
 
 
 // Функция за търсене на продукт в Shopify по SKU
