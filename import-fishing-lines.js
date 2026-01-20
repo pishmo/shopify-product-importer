@@ -106,15 +106,19 @@ async function fetchAllProducts() {
 
 function getCategoryType(filstarProduct) {
   if (!filstarProduct.categories || filstarProduct.categories.length === 0) {
-    return null; // ← Върни null вместо 'other'
+    return null;
   }
   
   // Провери дали има parent_id = 4 (влакна)
   const hasLinesParent = filstarProduct.categories.some(c => c.parent_id?.toString() === '4');
   
   if (!hasLinesParent) {
-    return null; // ← Не е влакно, пропусни го
+    return null;
   }
+  
+  // 🐛 DEBUG - покажи категориите на този продукт
+  console.log(`\n🔍 Product with parent_id=4: ${filstarProduct.name}`);
+  console.log(`   Categories:`, filstarProduct.categories.map(c => `ID:${c.id} (parent:${c.parent_id})`).join(', '));
   
   for (const cat of filstarProduct.categories) {
     const catId = cat.id?.toString();
@@ -130,9 +134,8 @@ function getCategoryType(filstarProduct) {
     }
   }
   
-  return null; // ← Има parent 4, но не е в нашите категории
+  return null;
 }
-
 
 
 
