@@ -792,22 +792,26 @@ async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
 /**
  * Обработва един продукт
  */
-async function processProduct(filstarProduct, categoryType, allShopifyProducts) {
-  if (!filstarProduct.variants || filstarProduct.variants.length === 0) {
-    console.log(`  ⏭️  No variants, skipping`);
+async function processProduct(filstarProduct, category) {
+  const firstVariantSku = filstarProduct.variants?.[0]?.sku;
+  
+  if (!firstVariantSku) {
+    console.log(`  ⚠️  No SKU found, skipping: ${filstarProduct.name}`);
     return;
   }
-  
-  const firstSku = filstarProduct.variants[0].sku;
-  const existingProduct = findProductBySku(allShopifyProducts, firstSku);
-  
+
+  console.log(`\nProcessing: ${filstarProduct.name}`);
+
+  // Търси съществуващ продукт в Shopify
+  const existingProduct = await findShopifyProductBySku(firstVariantSku);
+
   if (existingProduct) {
-    console.log(`  ✓ Found existing product (ID: ${existingProduct.id})`);
-    await updateProduct(existingProduct, filstarProduct, categoryType);
+    await updateShopifyProduct(existingProduct, filstarProduct, category);
   } else {
-    await createShopifyProduct(filstarProduct, categoryType);
+    await createShopifyProduct(filstarProduct, category);
   }
 }
+
 
 /**
  * Принтира финална статистика
