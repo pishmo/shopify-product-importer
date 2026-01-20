@@ -61,6 +61,119 @@ function getCategoryName(category) {
   return names[category] || category;
 }
 
+
+
+
+async function reorderProductImages(productId, filstarProduct, existingImages) {
+  console.log(`  🔄 Reordering images...`);
+  
+  if (!existingImages || existingImages.length === 0) {
+    console.log(`    ⚠️ No existing images`);
+    return false;
+  }
+
+  let mainImageFromPage = null;
+  if (filstarProduct.slug) {
+    mainImageFromPage = await fetchMainImageFromFilstarPage(filstarProduct.slug);
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  const allImages = [];
+  const seenFilenames = new Set();
+
+  const addImage = (url, type, priority = 0) => {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
+    const filename = getImageFilename(fullUrl);
+    if (filename && !seenFilenames.has(filename)) {
+      seenFilenames.add(filename);
+      const sku = extractSkuFromImageFilename(filename);
+      allImages.push({ url: fullUrl, filename, type, sku, priority });
+    }
+  };
+
+  if (mainImageFromPage) {
+    addImage(mainImageFromPage, 'main_page', 1000);
+  }
+
+  if (filstarProduct.image) {
+    addImage(filstarProduct.image, 'main_api', 900);
+  }
+
+  if (filstarProduct.images) {
+    filstarProduct.images.forEach(img => addImage(img, 'additional', 500));
+  }
+
+  if (filstarProduct.variants) {
+    filstarProduct.variants.forEach(v => {
+      if (v.image) addImage(v.image, 'variant', 100);
+    });
+  }
+
+  allImages.sort((a, b) => {
+    if (a.priority !== b.priority) return b.priority - a.priority;
+    if (a.sku === '999999' && b.sku !== '999999') return -1;
+    if (a.sku !== '999999' && b.sku === '999999') return 1;
+    if (a.sku === '999999' && b.sku === '999999') {
+      return a.filename.localeCompare(b.filename);
+    }
+    return a.sku.localeCompare(b.sku);
+  });
+
+  console.log(`    📋 Final order (${allImages.length} images):`);
+  allImages.forEach((img, i) => {
+    const label = img.sku === '999999' ? '🔤' : `🔢 ${img.sku}`;
+    const priority = img.priority > 0 ? ` [P:${img.priority}]` : '';
+    console.log(`      ${i+1}. ${label}${priority} ${img.filename}`);
+  });
+
+  const reorderedImages = [];
+  for (let i = 0; i < allImages.length; i++) {
+    const match = existingImages.find(img => {
+      const imgSrc = img.src || img.url || (typeof img === 'string' ? img : null);
+      if (!imgSrc) return false;
+      return getImageFilename(imgSrc) === allImages[i].filename;
+    });
+    if (match) {
+      const imgId = match.id || (typeof match === 'object' && match.id);
+      if (imgId) {
+        reorderedImages.push({ id: imgId, position: i + 1 });
+      }
+    }
+  }
+
+  if (reorderedImages.length === 0) {
+    console.log(`    ⚠️ No images matched for reordering`);
+    console.log(`    Debug: existingImages[0] =`, JSON.stringify(existingImages[0]));
+    return false;
+  }
+
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+    {
+      method: 'PUT',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ product: { id: productId, images: reorderedImages } })
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`    ❌ Failed to reorder: ${response.status} - ${errorText}`);
+    return false;
+  }
+
+  console.log(`    ✅ Reordered ${reorderedImages.length} images`);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return true;
+}
+
+
+
+
 // Функция за обновяване на съществуващ продукт
 async function updateShopifyProduct(existingProduct, filstarProduct, category) {
   console.log(`Updating product: ${filstarProduct.name}`);
