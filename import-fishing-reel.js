@@ -1,5 +1,8 @@
 // import-fishing-reel.js - Универсален импорт на всички категории макари CARPLANDIA
 const fetch = require('node-fetch');
+const sharp = require('sharp');
+
+
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
@@ -39,6 +42,15 @@ const UNWANTED_STRINGS = [
   'Технически характеристики:'
   
 ];
+
+
+
+// КОНСТАНТИ ЗА НОРМАЛИЗАЦИЯ
+const TARGET_WIDTH = 1200;
+const TARGET_HEIGHT = 1000;
+const BACKGROUND_COLOR = { r: 255, g: 255, b: 255, alpha: 1 }; // Бял фон
+
+
 
 
 
