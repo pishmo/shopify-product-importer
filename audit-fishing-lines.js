@@ -155,7 +155,6 @@ async function fetchAllShopifyProducts() {
   return allProducts;
 }
 
-
 function categorizeShopifyLines(allProducts) {
   const lines = {
     monofilament: [],
@@ -193,7 +192,6 @@ function categorizeShopifyLines(allProducts) {
   
   return lines;
 }
-
 
 
 
