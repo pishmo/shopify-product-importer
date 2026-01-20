@@ -104,17 +104,16 @@ async function fetchAllProducts() {
 }
 
 
-
-
-
-
-
-
-
-// Определяне на категория по Filstar данни
 function getCategoryType(filstarProduct) {
   if (!filstarProduct.categories || filstarProduct.categories.length === 0) {
-    return 'other';
+    return null; // ← Върни null вместо 'other'
+  }
+  
+  // Провери дали има parent_id = 4 (влакна)
+  const hasLinesParent = filstarProduct.categories.some(c => c.parent_id?.toString() === '4');
+  
+  if (!hasLinesParent) {
+    return null; // ← Не е влакно, пропусни го
   }
   
   for (const cat of filstarProduct.categories) {
@@ -129,13 +128,15 @@ function getCategoryType(filstarProduct) {
     if (FILSTAR_LINE_CATEGORY_IDS.fluorocarbon.includes(catId)) {
       return 'fluorocarbon';
     }
-    if (FILSTAR_LINE_CATEGORY_IDS.other.includes(catId)) {
-      return 'other';
-    }
   }
   
-  return 'other';
+  return null; // ← Има parent 4, но не е в нашите категории
 }
+
+
+
+
+
 
 // Форматиране на variant name за влакна
 function formatLineVariantName(variant, filstarProduct) {
