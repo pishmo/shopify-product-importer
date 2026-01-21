@@ -71,6 +71,45 @@ function getCategoryName(category) {
   return names[category] || category;
 }
 
+
+
+// Форматиране на variant name за облекло
+function formatClothingVariantName(variant, filstarProduct) {
+  const parts = [];
+  
+  // 1. Model
+  const model = variant.model || variant.attributes?.find(a => 
+    a.attribute_name.includes('МОДЕЛ') || a.attribute_name.includes('MODEL')
+  )?.value;
+  if (model && model.trim()) {
+    parts.push(model.trim());
+  }
+  
+  // 2. Цвят
+  const color = variant.attributes?.find(a => 
+    a.attribute_name.includes('ЦВЯТ') || a.attribute_name.includes('COLOR')
+  )?.value;
+  if (color) {
+    parts.push(color);
+  }
+  
+  // 3. Размер
+  const size = variant.attributes?.find(a => 
+    a.attribute_name.includes('РАЗМЕР') || a.attribute_name.includes('SIZE')
+  )?.value;
+  if (size) {
+    parts.push(size);
+  }
+  
+  // Ако няма нищо, връщаме SKU
+  return parts.length > 0 ? parts.join(' / ') : variant.sku;
+}
+
+
+
+
+
+
 async function getAllShopifyProducts() {
   console.log('📦 Fetching all Shopify products...');
   
