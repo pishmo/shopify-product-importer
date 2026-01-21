@@ -698,6 +698,72 @@ async function main() {
   try {
 
 
-  
+  // 3 част
+
+    const shopifyProducts = await fetchAllShopifyProducts();
+    
+    const allBaits = await fetchAllFishingBaits();
+    
+    console.log('='.repeat(60));
+    console.log('🔄 Processing baits by category...\n');
+    
+    for (const [category, products] of Object.entries(allBaits)) {
+      if (products.length === 0) {
+        console.log(`⏭️  Skipping ${getCategoryName(category)} - no products\n`);
+        continue;
+      }
+      
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`📂 Processing ${getCategoryName(category)} (${products.length} products)`);
+      console.log('='.repeat(60));
+      
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        console.log(`\n[${i + 1}/${products.length}] Processing: ${product.name}`);
+        await processProduct(product, category, shopifyProducts);
+      }
+    }
+    
+    console.log('\n' + '='.repeat(60));
+    console.log('📊 FINAL STATISTICS');
+    console.log('='.repeat(60));
+    console.log('');
+    
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalImages = 0;
+    
+    for (const [category, stat] of Object.entries(stats)) {
+      if (stat.created > 0 || stat.updated > 0 || stat.images > 0) {
+        console.log(`${getCategoryName(category)}:`);
+        console.log(`  ✅ Created: ${stat.created} products`);
+        console.log(`  🔄 Updated: ${stat.updated} products`);
+        console.log(`  📸 Images uploaded: ${stat.images}`);
+        console.log('');
+        
+        totalCreated += stat.created;
+        totalUpdated += stat.updated;
+        totalImages += stat.images;
+      }
+    }
+    
+    console.log('='.repeat(60));
+    console.log('TOTAL:');
+    console.log(`  ✅ Created: ${totalCreated} products`);
+    console.log(`  🔄 Updated: ${totalUpdated} products`);
+    console.log(`  📸 Images uploaded: ${totalImages}`);
+    console.log('='.repeat(60));
+    console.log('');
+    console.log('✅ Import completed successfully!');
+    
+  } catch (error) {
+    console.error('\n❌ Fatal error during import:', error);
+    process.exit(1);
+  }
+}
+
+main();
+
+    
 
 
