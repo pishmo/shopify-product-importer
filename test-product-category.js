@@ -1,71 +1,91 @@
+// fetch-filstar-products.js - DEBUG версия с различни URL варианти
+const fetch = require('node-fetch');
+
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
+const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
+const FILSTAR_BASE_URL = 'https://filstar.com';
 
-const TEST_SKUS = [
-  '52475', '962013', '962013', '956532', '957231', '946238', '957900'
-];
+const TARGET_SKUS = ['52475', '962013', '956532', '957231', '946238', '957900'];
 
-async function fetchAllProductsOnce() {
+async function testAPICall(url, authMethod) {
+  console.log(`\n🧪 Тестване: ${url}`);
+  console.log(`   Auth: ${authMethod}`);
+
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  if (authMethod === 'Bearer') {
+    headers['Authorization'] = `Bearer ${FILSTAR_TOKEN}`;
+  } else if (authMethod === 'Token') {
+    headers['Authorization'] = `Token ${FILSTAR_TOKEN}`;
+  } else if (authMethod === 'ApiKey') {
+    headers['X-API-Key'] = FILSTAR_TOKEN;
+  }
+
   try {
-    console.log('Fetching all products (single request)...');
+    const response = await fetch(url, { headers });
     
-    const response = await fetch(`${FILSTAR_API_BASE}/products?per_page=10000`, {
-      headers: {
-        'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    console.log(`   📡 Status: ${response.status}`);
+    
+    const text = await response.text();
+    console.log(`   📦 Response (first 300 chars): ${text.substring(0, 300)}`);
+    
+    try {
+      const json = JSON.parse(text);
+      console.log(`   ✅ Valid JSON - Keys:`, Object.keys(json));
+      return json;
+    } catch (e) {
+      console.log(`   ⚠️  Not JSON`);
     }
-
-    const data = await response.json();
-    console.log(`Loaded ${data.products?.length || 0} products`);
-    return data.products || [];
   } catch (error) {
-    console.error('Error fetching products:', error.message);
-    return [];
+    console.log(`   ❌ Error: ${error.message}`);
   }
+  
+  return null;
 }
 
-async function runTest() {
-  const allProducts = await fetchAllProductsOnce();
-  
-  if (allProducts.length === 0) {
-    console.log('No products loaded');
-    return;
-  }
+async function main() {
+  console.log('🚀 DEBUG - Тестване на различни API варианти\n');
+  console.log(`🔑 Token налице: ${FILSTAR_TOKEN ? 'ДА' : 'НЕ'}\n`);
 
-  const results = [];
-  
-  for (const sku of TEST_SKUS) {
-    console.log(`\n=== Processing SKU: ${sku} ===`);
-    
-    const product = allProducts.find(p => p.sku === sku || p.id === sku);
-    
-    if (!product) {
-      console.log(`SKU ${sku} not found`);
-      continue;
-    }
+  const sku = TARGET_SKUS[0]; // Тестваме с първия SKU
 
-    const result = {
-      sku: sku,
-      name: product.name || 'N/A',
-      categories: product.categories || [],
-      attributes: product.attributes || {}
-    };
+  // Вариант 1: /api/products
+  await testAPICall(
+    `${FILSTAR_API_BASE}/products?page=1&limit=10&search=${sku}`,
+    'Bearer'
+  );
 
-    console.log('Categories:', JSON.stringify(result.categories, null, 2));
-    console.log('Attributes:', JSON.stringify(result.attributes, null, 2));
-    
-    results.push(result);
-  }
-  
-  const fs = require('fs');
-  fs.writeFileSync('filstar-test-results.json', JSON.stringify(results, null, 2));
-  
-  console.log(`\nResults saved. Found: ${results.length}/${TEST_SKUS.length}`);
+  // Вариант 2: без /api
+  await testAPICall(
+    `${FILSTAR_BASE_URL}/products?page=1&limit=10&search=${sku}`,
+    'Bearer'
+  );
+
+  // Вариант 3: с Token вместо Bearer
+  await testAPICall(
+    `${FILSTAR_API_BASE}/products?page=1&limit=10&search=${sku}`,
+    'Token'
+  );
+
+  // Вариант 4: с API version
+  await testAPICall(
+    `${FILSTAR_API_BASE}/${API_VERSION}/products?page=1&limit=10&search=${sku}`,
+    'Bearer'
+  );
+
+  // Вариант 5: без search параметър - всички продукти
+  await testAPICall(
+    `${FILSTAR_API_BASE}/products?page=1&limit=10`,
+    'Bearer'
+  );
+
+  console.log('\n✅ Тестване завършено');
 }
 
-runTest().catch(console.error);
+main().catch(error => {
+  console.error('❌ Фатална грешка:', error);
+  process.exit(1);
+});
