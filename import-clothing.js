@@ -740,7 +740,6 @@ async function createShopifyProduct(filstarProduct, category) {
   }
 }
 
-
 async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
   console.log(`\n🔄 Updating product: ${filstarProduct.name}`);
   try {
@@ -755,7 +754,10 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
         body_html: filstarProduct.description || filstarProduct.short_description || '',
         vendor: vendor,
         product_type: getCategoryName(category),
-        tags: ['Filstar', category, vendor].filter(Boolean).join(', ')
+        tags: ['Filstar', category, vendor].filter(Boolean).join(', '),
+        options: [
+          { name: getOptionName(category), values: variantNames }
+        ]
       }
     };
 
@@ -915,6 +917,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
     console.error(` ❌ Error updating product:`, error.message);
   }
 }
+
 
 
 async function main() {
