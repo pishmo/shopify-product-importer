@@ -5,9 +5,11 @@ const TEST_SKUS = [
   '52475', '962013', '962013', '956532', '957231', '946238', '957900'
 ];
 
-async function fetchAllProducts(page = 1, perPage = 100) {
+async function fetchAllProductsOnce() {
   try {
-    const response = await fetch(`${FILSTAR_API_BASE}/products?page=${page}&per_page=${perPage}`, {
+    console.log('Fetching all products (single request)...');
+    
+    const response = await fetch(`${FILSTAR_API_BASE}/products?per_page=10000`, {
       headers: {
         'Authorization': `Bearer ${FILSTAR_TOKEN}`,
         'Content-Type': 'application/json'
@@ -18,79 +20,46 @@ async function fetchAllProducts(page = 1, perPage = 100) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log(`Loaded ${data.products?.length || 0} products`);
+    return data.products || [];
   } catch (error) {
-    console.error(`Error fetching page ${page}:`, error.message);
-    return null;
+    console.error('Error fetching products:', error.message);
+    return [];
   }
-}
-
-async function findProductBySKU(targetSKU) {
-  let page = 1;
-  const perPage = 100;
-
-  console.log(`Searching for SKU: ${targetSKU}`);
-
-  while (true) {
-    console.log(`Fetching page ${page}...`);
-    
-    const response = await fetchAllProducts(page, perPage);
-    
-    if (!response || !response.products || response.products.length === 0) {
-      console.log(`SKU ${targetSKU} not found`);
-      return null;
-    }
-
-    const product = response.products.find(p => p.sku === targetSKU || p.id === targetSKU);
-    
-    if (product) {
-      console.log(`Found SKU ${targetSKU} on page ${page}`);
-      return product;
-    }
-
-    if (response.products.length < perPage) {
-      console.log(`SKU ${targetSKU} not found`);
-      return null;
-    }
-
-    page++;
-    await new Promise(resolve => setTimeout(resolve, 300));
-  }
-}
-
-async function extractCategoriesAndAttributes(sku) {
-  console.log(`\n=== Processing SKU: ${sku} ===`);
-  
-  const productData = await findProductBySKU(sku);
-  
-  if (!productData) {
-    return null;
-  }
-
-  const result = {
-    sku: sku,
-    name: productData.name || 'N/A',
-    categories: productData.categories || [],
-    attributes: productData.attributes || {},
-    rawData: productData
-  };
-
-  console.log('Categories:', JSON.stringify(result.categories, null, 2));
-  console.log('Attributes:', JSON.stringify(result.attributes, null, 2));
-  
-  return result;
 }
 
 async function runTest() {
-  console.log(`Testing ${TEST_SKUS.length} SKUs`);
+  const allProducts = await fetchAllProductsOnce();
   
+  if (allProducts.length === 0) {
+    console.log('No products loaded');
+    return;
+  }
+
   const results = [];
   
   for (const sku of TEST_SKUS) {
-    const result = await extractCategoriesAndAttributes(sku);
-    if (result) {
-      results.push(result);
+    console.log(`\n=== Processing SKU: ${sku} ===`);
+    
+    const product = allProducts.find(p => p.sku === sku || p.id === sku);
+    
+    if (!product) {
+      console.log(`SKU ${sku} not found`);
+      continue;
     }
+
+    const result = {
+      sku: sku,
+      name: product.name || 'N/A',
+      categories: product.categories || [],
+      attributes: product.attributes || {}
+    };
+
+    console.log('Categories:', JSON.stringify(result.categories, null, 2));
+    console.log('Attributes:', JSON.stringify(result.attributes, null, 2));
+    
+    results.push(result);
   }
   
   const fs = require('fs');
