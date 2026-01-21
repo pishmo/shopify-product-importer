@@ -609,13 +609,12 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
 
 async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
-  
   try {
     const vendor = filstarProduct.manufacturer || 'Unknown';
-    console.log(`  🏷️  Vendor: ${vendor}`);
-
+    console.log(` 🏷️ Vendor: ${vendor}`);
+    
     const variantNames = ensureUniqueVariantNames(filstarProduct.variants, filstarProduct);
-
+    
     const productData = {
       product: {
         title: filstarProduct.name,
@@ -635,13 +634,16 @@ async function createShopifyProduct(filstarProduct, category) {
           weight_unit: 'kg'
         })),
         options: [
-          {
-            name: 'Вариант',
-            values: variantNames
-          }
+          { name: 'Вариант', values: variantNames }
         ]
       }
     };
+
+    // Добави колекция
+    const collectionGid = COLLECTION_MAPPING[category];
+    if (collectionGid) {
+      productData.product.collectionsToJoin = [collectionGid];
+    }
 
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
@@ -662,9 +664,8 @@ async function createShopifyProduct(filstarProduct, category) {
 
     const result = await response.json();
     const productId = result.product.id;
-    
-    console.log(`  ✅ Product created with ID: ${productId}`);
-    console.log(`  📦 Created ${filstarProduct.variants.length} variants`);
+    console.log(` ✅ Product created with ID: ${productId}`);
+    console.log(` 📦 Created ${filstarProduct.variants.length} variants`);
 
     // Качи снимки
     const imagesResponse = await fetch(
@@ -676,12 +677,10 @@ async function createShopifyProduct(filstarProduct, category) {
         }
       }
     );
-
     const imagesData = await imagesResponse.json();
     const existingImages = imagesData.images || [];
 
     let uploadedCount = 0;
-
     if (filstarProduct.image) {
       const uploaded = await uploadProductImage(productId, filstarProduct.image, existingImages);
       if (uploaded) uploadedCount++;
@@ -703,7 +702,7 @@ async function createShopifyProduct(filstarProduct, category) {
       }
     }
 
-    console.log(`  📸 Uploaded ${uploadedCount} new images`);
+    console.log(` 📸 Uploaded ${uploadedCount} new images`);
 
     // Пренареди снимките
     const finalImagesResponse = await fetch(
@@ -720,13 +719,13 @@ async function createShopifyProduct(filstarProduct, category) {
 
     stats[category].created++;
     stats[category].images += uploadedCount;
-
     await new Promise(resolve => setTimeout(resolve, 1000));
 
   } catch (error) {
-    console.error(`  ❌ Error creating product:`, error.message);
+    console.error(` ❌ Error creating product:`, error.message);
   }
 }
+
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
   console.log(`\n🔄 Updating product: ${filstarProduct.name}`);
