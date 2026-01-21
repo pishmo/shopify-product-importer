@@ -103,6 +103,9 @@ function formatVariantTitle(variant) {
   return parts.join(' / ');
 }
 
+
+// 2 част 
+
 // ============================================
 // IMAGE PROCESSING
 // ============================================
@@ -316,6 +319,7 @@ async function reorderImages(productId, imageIds) {
   
   await shopifyRequest(mutation, { id: productId, moves });
 }
+  // 3 част
 
 // ============================================
 // FILSTAR API FUNCTIONS
@@ -340,6 +344,31 @@ async function fetchFilstarProducts(categoryId, page = 1) {
   }
 }
 
+async function getAllFilstarProducts(categoryId) {
+  let allProducts = [];
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    console.log(`Зареждане на страница ${page} от категория ${formatCategoryName(categoryId)}...`);
+    const response = await fetchFilstarProducts(categoryId, page);
+    
+    if (!response || !response.products || response.products.length === 0) {
+      hasMore = false;
+      break;
+    }
+    
+    allProducts = allProducts.concat(response.products);
+    hasMore = response.pagination?.has_next || false;
+    page++;
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+  
+  console.log(`✓ Заредени ${allProducts.length} продукта от ${formatCategoryName(categoryId)}`);
+  return allProducts;
+}
+
 // ============================================
 // MAIN IMPORT LOGIC
 // ============================================
@@ -347,12 +376,10 @@ async function fetchFilstarProducts(categoryId, page = 1) {
 async function processProduct(filstarProduct, categoryId) {
   try {
     const sku = filstarProduct.sku || filstarProduct.id.toString();
-    console.log(`\nОбработка на продукт: ${filstarProduct.name} (SKU: ${sku})`);
+    console.log(`\nОбработка: ${filstarProduct.name} (SKU: ${sku})`);
     
-    // Проверка дали продуктът съществува
     const existingProduct = await findProductBySku(sku);
     
-    // Подготовка на варианти
     const variants = filstarProduct.variants.map(variant => ({
       sku: variant.sku,
       price: variant.price,
@@ -366,7 +393,6 @@ async function processProduct(filstarProduct, categoryId) {
       option1: formatVariantTitle(variant)
     }));
     
-    // Подготовка на продуктови данни
     const productData = {
       title: filstarProduct.name,
       descriptionHtml: filstarProduct.description || '',
@@ -381,18 +407,17 @@ async function processProduct(filstarProduct, categoryId) {
     let product;
     
     if (existingProduct) {
-      console.log('Продуктът съществува - актуализация...');
+      console.log('→ Актуализация на съществуващ продукт');
       product = await updateProduct(existingProduct.id, productData);
       stats.productsUpdated++;
     } else {
-      console.log('Нов продукт - създаване...');
+      console.log('→ Създаване на нов продукт');
       product = await createProduct(productData);
       stats.productsCreated++;
     }
     
-    // Обработка на изображения
     if (filstarProduct.images && filstarProduct.images.length > 0) {
-      console.log(`Обработка на ${filstarProduct.images.length} изображения...`);
+      console.log(`→ Обработка на ${filstarProduct.images.length} изображения`);
       
       const uploadedImageIds = [];
       
@@ -411,26 +436,25 @@ async function processProduct(filstarProduct, categoryId) {
             
             uploadedImageIds.push(uploadedImage.id);
             stats.imagesUploaded++;
-            console.log(`✓ Качено изображение: ${filename}`);
           }
         } catch (imgError) {
-          console.error(`Грешка при качване на изображение:`, imgError.message);
+          console.error(`  ✗ Грешка при изображение:`, imgError.message);
         }
       }
       
-      // Пренареждане на изображенията
       if (uploadedImageIds.length > 0) {
         await reorderImages(product.id, uploadedImageIds);
-        console.log('✓ Изображенията са пренаредени');
       }
     }
     
-    console.log(`✓ Продуктът е обработен успешно`);
+    console.log(`✓ Завършен`);
+    await new Promise(resolve => setTimeout(resolve, 500));
     
   } catch (error) {
-    console.error(`Грешка при обработка на продукт ${filstarProduct.name}:`, error.message);
+    console.error(`✗ Грешка при ${filstarProduct.name}:`, error.message);
     stats.errors.push({
       product: filstarProduct.name,
+      sku: filstarProduct.sku,
       error: error.message
     });
     stats.productsSkipped++;
@@ -438,62 +462,59 @@ async function processProduct(filstarProduct, categoryId) {
 }
 
 async function importBaits() {
-  console.log('============================================');
-  console.log('СТАРТИРАНЕ НА ИМПОРТ НА ЗАХРАНКИ');
+  console.log('\n============================================');
+  console.log('  ИМПОРТ НА ЗАХРАНКИ ОТ FILSTAR');
   console.log('============================================\n');
   
+  const startTime = Date.now();
+  
   for (const categoryId of FILSTAR_CATEGORIES) {
-    console.log(`\n--- Обработка на категория: ${formatCategoryName(categoryId)} (ID: ${categoryId}) ---`);
+    console.log(`\n┌─ ${formatCategoryName(categoryId)} (ID: ${categoryId}) ─┐\n`);
     
-    let page = 1;
-    let hasMore = true;
+    const products = await getAllFilstarProducts(categoryId);
     
-    while (hasMore) {
-      const response = await fetchFilstarProducts(categoryId, page);
-      
-      if (!response || !response.products || response.products.length === 0) {
-        hasMore = false;
-        break;
-      }
-      
-      console.log(`Страница ${page}: ${response.products.length} продукта`);
-      
-      for (const product of response.products) {
-        await processProduct(product, categoryId);
-        await new Promise(resolve => setTimeout(resolve, 500)); // Rate limiting
-      }
-      
-      hasMore = response.pagination && response.pagination.has_next;
-      page++;
+    if (products.length === 0) {
+      console.log('└─ Няма продукти ─┘\n');
+      continue;
     }
+    
+    for (let i = 0; i < products.length; i++) {
+      console.log(`\n[${i + 1}/${products.length}]`);
+      await processProduct(products[i], categoryId);
+    }
+    
+    console.log(`\n└─ Завършена категория ─┘\n`);
   }
   
-  // Финална статистика
+  const duration = ((Date.now() - startTime) / 1000 / 60).toFixed(2);
+  
   console.log('\n============================================');
-  console.log('ИМПОРТЪТ ПРИКЛЮЧИ');
+  console.log('  ФИНАЛНА СТАТИСТИКА');
   console.log('============================================');
-  console.log(`Създадени продукти: ${stats.productsCreated}`);
-  console.log(`Актуализирани продукти: ${stats.productsUpdated}`);
-  console.log(`Пропуснати продукти: ${stats.productsSkipped}`);
-  console.log(`Качени изображения: ${stats.imagesUploaded}`);
+  console.log(`Време: ${duration} минути`);
+  console.log(`Създадени: ${stats.productsCreated}`);
+  console.log(`Актуализирани: ${stats.productsUpdated}`);
+  console.log(`Пропуснати: ${stats.productsSkipped}`);
+  console.log(`Изображения: ${stats.imagesUploaded}`);
   console.log(`Грешки: ${stats.errors.length}`);
   
   if (stats.errors.length > 0) {
-    console.log('\nДетайли за грешките:');
+    console.log('\n--- ГРЕШКИ ---');
     stats.errors.forEach((err, idx) => {
-      console.log(`${idx + 1}. ${err.product}: ${err.error}`);
+      console.log(`${idx + 1}. ${err.product} (${err.sku}): ${err.error}`);
     });
   }
+  
+  console.log('\n============================================\n');
 }
 
 // ============================================
-// СТАРТИРАНЕ
+// START
 // ============================================
 
 importBaits().catch(error => {
-  console.error('Критична грешка:', error);
+  console.error('\n✗ КРИТИЧНА ГРЕШКА:', error);
   process.exit(1);
 });
-
 
 
