@@ -2,25 +2,21 @@
 // FILSTAR BAIT IMPORT SCRIPT - PART 1/3
 // ============================================
 
-const axios = require('axios');
+const fetch = require('node-fetch');
 const sharp = require('sharp');
-const fs = require('fs').promises;
-const path = require('path');
+
+const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
+const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
+const API_VERSION = '2024-10';
+const FILSTAR_API_BASE = 'https://filstar.com/api';
+const FILSTAR_BASE_URL = 'https://filstar.com';
 
 // ============================================
 // КОНФИГУРАЦИЯ
 // ============================================
 
 const CONFIG = {
-  shopify: {
-    domain: 'carplandia.myshopify.com',
-    accessToken: 'YOUR_SHOPIFY_ACCESS_TOKEN',
-    apiVersion: '2024-01'
-  },
-  filstar: {
-    baseUrl: 'https://www.filstar.bg/api',
-    apiKey: 'YOUR_FILSTAR_API_KEY'
-  },
   image: {
     targetWidth: 1200,
     targetHeight: 1000,
