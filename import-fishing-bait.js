@@ -381,3 +381,323 @@ async function addProductImages(productId, filstarProduct) {
     console.log(`  ⚠️  No images found`);
     return 0;
   }
+
+
+
+// част 2
+
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+    {
+      method: 'GET',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  
+  let existingImages = [];
+  if (response.ok) {
+    const data = await response.json();
+    existingImages = data.images || [];
+  }
+  
+  let uploadedCount = 0;
+  let position = existingImages.length + 1;
+  
+  for (const imageUrl of filstarProduct.images) {
+    if (imageExists(existingImages, imageUrl)) {
+      console.log(`    ⏭️  Skipping duplicate: ${getImageFilename(imageUrl)}`);
+      continue;
+    }
+    
+    const normalizedBuffer = await normalizeImage(imageUrl);
+    
+    if (normalizedBuffer) {
+      const filename = getImageFilename(imageUrl) || `image_${position}.jpg`;
+      const uploaded = await uploadImageToShopify(productId, normalizedBuffer, filename, position);
+      
+      if (uploaded) {
+        uploadedCount++;
+        position++;
+      }
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
+  console.log(`  ✅ Uploaded ${uploadedCount} new images\n`);
+  return uploadedCount;
+}
+
+// Добави продукт към колекция
+async function addProductToCollection(productId, category) {
+  const collectionId = COLLECTION_MAPPING[category];
+  
+  if (!collectionId) {
+    console.log(`  ⚠️  No collection mapping for category: ${category}`);
+    return;
+  }
+  
+  const numericCollectionId = collectionId.split('/').pop();
+  
+  try {
+    const collectData = {
+      collect: {
+        product_id: productId,
+        collection_id: numericCollectionId
+      }
+    };
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(collectData)
+      }
+    );
+    
+    if (response.ok) {
+      console.log(`  ✅ Added to collection: ${getCategoryName(category)}`);
+    } else if (response.status === 422) {
+      console.log(`  ℹ️  Already in collection: ${getCategoryName(category)}`);
+    } else {
+      const errorText = await response.text();
+      console.log(`  ⚠️  Failed to add to collection: ${response.status}`);
+    }
+    
+  } catch (error) {
+    console.error(`  ❌ Error adding to collection:`, error.message);
+  }
+}
+
+// Намери продукт в Shopify по SKU
+function findShopifyProductBySku(sku, shopifyProducts) {
+  if (!sku) return null;
+  
+  for (const product of shopifyProducts) {
+    if (product.variants && product.variants.length > 0) {
+      const hasMatchingSku = product.variants.some(v => v.sku === sku);
+      if (hasMatchingSku) {
+        return product;
+      }
+    }
+  }
+  
+  return null;
+}
+
+// Създай нов продукт в Shopify
+async function createShopifyProduct(filstarProduct, category) {
+  console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
+  
+  try {
+    const vendor = filstarProduct.manufacturer || 'Unknown';
+    console.log(`  🏷️  Vendor: ${vendor}`);
+    
+    const productData = {
+      product: {
+        title: filstarProduct.name,
+        body_html: filstarProduct.description || '',
+        vendor: vendor,
+        product_type: getCategoryName(category),
+        tags: ['Filstar', category, vendor],
+        status: 'active',
+        variants: filstarProduct.variants.map(variant => ({
+          sku: extractSKU(variant),
+          price: variant.price,
+          inventory_quantity: parseInt(variant.quantity) || 0,
+          inventory_management: 'shopify',
+          option1: formatBaitVariantName(variant),
+          barcode: variant.barcode || null,
+          weight: parseFloat(variant.weight) || 0,
+          weight_unit: 'kg'
+        })),
+        options: [
+          {
+            name: 'Вариант',
+            values: filstarProduct.variants.map(v => formatBaitVariantName(v))
+          }
+        ]
+      }
+    };
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    const productId = result.product.id;
+    
+    console.log(`  ✅ Product created with ID: ${productId}`);
+    console.log(`  📦 Created ${filstarProduct.variants.length} variants`);
+    
+    const uploadedImages = await addProductImages(productId, filstarProduct);
+    
+    await addProductToCollection(productId, category);
+    
+    stats[category].created++;
+    stats[category].images += uploadedImages;
+    
+    return result.product;
+    
+  } catch (error) {
+    console.error(`  ❌ Error creating product:`, error.message);
+    throw error;
+  }
+}
+
+// Обнови съществуващ продукт
+async function updateProduct(shopifyProduct, filstarProduct, categoryType) {
+  console.log(`\n🔄 Updating product: ${filstarProduct.name}`);
+  console.log(`  Shopify ID: ${shopifyProduct.id}`);
+  
+  try {
+    const vendor = filstarProduct.manufacturer || 'Unknown';
+    
+    const existingVariantsBySku = new Map();
+    if (shopifyProduct.variants) {
+      for (const variant of shopifyProduct.variants) {
+        if (variant.sku) {
+          existingVariantsBySku.set(variant.sku, variant);
+        }
+      }
+    }
+    
+    const variantsToUpdate = [];
+    const variantsToCreate = [];
+    
+    for (const filstarVariant of filstarProduct.variants) {
+      const sku = extractSKU(filstarVariant);
+      const existingVariant = existingVariantsBySku.get(sku);
+      
+      const variantData = {
+        sku: sku,
+        price: filstarVariant.price,
+        inventory_quantity: parseInt(filstarVariant.quantity) || 0,
+        option1: formatBaitVariantName(filstarVariant),
+        barcode: filstarVariant.barcode || null,
+        weight: parseFloat(filstarVariant.weight) || 0,
+        weight_unit: 'kg'
+      };
+      
+      if (existingVariant) {
+        variantData.id = existingVariant.id;
+        variantsToUpdate.push(variantData);
+      } else {
+        variantsToCreate.push(variantData);
+      }
+    }
+    
+    const updateData = {
+      product: {
+        id: shopifyProduct.id,
+        title: filstarProduct.name,
+        body_html: filstarProduct.description || '',
+        vendor: vendor,
+        product_type: getCategoryName(categoryType),
+        variants: [...variantsToUpdate, ...variantsToCreate],
+        options: [
+          {
+            name: 'Вариант',
+            values: filstarProduct.variants.map(v => formatBaitVariantName(v))
+          }
+        ]
+      }
+    };
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${shopifyProduct.id}.json`,
+      {
+        method: 'PUT',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update product: ${response.status} - ${errorText}`);
+    }
+    
+    console.log(`  ✅ Product updated`);
+    console.log(`  📦 Updated ${variantsToUpdate.length} variants, created ${variantsToCreate.length} new variants`);
+    
+    const uploadedImages = await addProductImages(shopifyProduct.id, filstarProduct);
+    
+    await addProductToCollection(shopifyProduct.id, categoryType);
+    
+    stats[categoryType].updated++;
+    stats[categoryType].images += uploadedImages;
+    
+    return true;
+    
+  } catch (error) {
+    console.error(`  ❌ Error updating product:`, error.message);
+    return false;
+  }
+}
+
+// Обработи един продукт
+async function processProduct(filstarProduct, category, shopifyProducts) {
+  try {
+    if (!filstarProduct.variants || filstarProduct.variants.length === 0) {
+      console.log(`⚠️  Skipping ${filstarProduct.name} - no variants`);
+      return;
+    }
+    
+    const firstSku = extractSKU(filstarProduct.variants[0]);
+    
+    if (!firstSku) {
+      console.log(`⚠️  Skipping ${filstarProduct.name} - no SKU found`);
+      return;
+    }
+    
+    const existingProduct = findShopifyProductBySku(firstSku, shopifyProducts);
+    
+    if (existingProduct) {
+      await updateProduct(existingProduct, filstarProduct, category);
+    } else {
+      await createShopifyProduct(filstarProduct, category);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+  } catch (error) {
+    console.error(`❌ Error processing product ${filstarProduct.name}:`, error.message);
+  }
+}
+
+// Главна функция
+async function main() {
+  console.log('🚀 Starting Fishing Baits Import from Filstar to Shopify\n');
+  console.log('='.repeat(60));
+  console.log('');
+  
+  try {
+
+
+  
+
+
