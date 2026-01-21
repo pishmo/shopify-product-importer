@@ -627,16 +627,7 @@ async function createShopifyProduct(filstarProduct, category) {
     const vendor = filstarProduct.manufacturer || 'Unknown';
     console.log(` 🏷️ Vendor: ${vendor}`);
     
-  
-const variantNames = ensureUniqueVariantNames(filstarProduct.variants, filstarProduct);
-const optionName = getOptionName(category);
-
-
-options: [
-  { name: optionName, values: variantNames }
-];
-
-  
+    const variantNames = ensureUniqueVariantNames(filstarProduct.variants, filstarProduct);
     
     const productData = {
       product: {
@@ -657,7 +648,7 @@ options: [
           weight_unit: 'kg'
         })),
         options: [
-          { name: 'Вариант', values: variantNames }
+          { name: getOptionName(category), values: variantNames }
         ]
       }
     };
