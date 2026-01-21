@@ -1,90 +1,128 @@
-// fetch-filstar-products.js - DEBUG версия с различни URL варианти
+// fetch-filstar-products.js - Извличане на продукти по SKU от Filstar
 const fetch = require('node-fetch');
 
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
-const FILSTAR_BASE_URL = 'https://filstar.com';
 
+// SKU номерата за търсене
 const TARGET_SKUS = ['52475', '962013', '956532', '957231', '946238', '957900'];
 
-async function testAPICall(url, authMethod) {
-  console.log(`\n🧪 Тестване: ${url}`);
-  console.log(`   Auth: ${authMethod}`);
+// Функция за fetch на продукти по SKU с пагинация
+async function fetchProductsBySKU(sku) {
+  let allProducts = [];
+  let page = 1;
+  let hasMore = true;
 
-  const headers = {
-    'Content-Type': 'application/json'
-  };
+  console.log(`\n🔍 Търсене на SKU: ${sku}`);
 
-  if (authMethod === 'Bearer') {
-    headers['Authorization'] = `Bearer ${FILSTAR_TOKEN}`;
-  } else if (authMethod === 'Token') {
-    headers['Authorization'] = `Token ${FILSTAR_TOKEN}`;
-  } else if (authMethod === 'ApiKey') {
-    headers['X-API-Key'] = FILSTAR_TOKEN;
-  }
-
-  try {
-    const response = await fetch(url, { headers });
-    
-    console.log(`   📡 Status: ${response.status}`);
-    
-    const text = await response.text();
-    console.log(`   📦 Response (first 300 chars): ${text.substring(0, 300)}`);
+  while (hasMore) {
+    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=1000&search=${sku}`;
     
     try {
-      const json = JSON.parse(text);
-      console.log(`   ✅ Valid JSON - Keys:`, Object.keys(json));
-      return json;
-    } catch (e) {
-      console.log(`   ⚠️  Not JSON`);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const products = await response.json(); // Директно array!
+      
+      console.log(`  📄 Страница ${page}: ${products.length} продукта`);
+
+      if (products && products.length > 0) {
+        allProducts = allProducts.concat(products);
+        
+        // Ако има по-малко от 1000, няма повече страници
+        if (products.length < 1000) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      } else {
+        hasMore = false;
+      }
+
+    } catch (error) {
+      console.error(`  ❌ Грешка при страница ${page}:`, error.message);
+      hasMore = false;
     }
-  } catch (error) {
-    console.log(`   ❌ Error: ${error.message}`);
   }
-  
-  return null;
+
+  console.log(`  ✅ Общо намерени: ${allProducts.length} продукта`);
+  return allProducts;
 }
 
+// Главна функция
 async function main() {
-  console.log('🚀 DEBUG - Тестване на различни API варианти\n');
-  console.log(`🔑 Token налице: ${FILSTAR_TOKEN ? 'ДА' : 'НЕ'}\n`);
+  console.log('🚀 Стартиране на извличане на продукти от Filstar...\n');
+  console.log(`📋 Търсене на ${TARGET_SKUS.length} SKU номера`);
 
-  const sku = TARGET_SKUS[0]; // Тестваме с първия SKU
+  let allFoundProducts = [];
+  const categoriesMap = new Map();
 
-  // Вариант 1: /api/products
-  await testAPICall(
-    `${FILSTAR_API_BASE}/products?page=1&limit=10&search=${sku}`,
-    'Bearer'
-  );
+  // Fetch на всички SKU
+  for (const sku of TARGET_SKUS) {
+    const products = await fetchProductsBySKU(sku);
+    allFoundProducts = allFoundProducts.concat(products);
+    
+    // Малко delay между заявките
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
 
-  // Вариант 2: без /api
-  await testAPICall(
-    `${FILSTAR_BASE_URL}/products?page=1&limit=10&search=${sku}`,
-    'Bearer'
-  );
+  console.log(`\n\n📊 ОБОБЩЕНИЕ:`);
+  console.log(`════════════════════════════════════════`);
+  console.log(`Общо намерени продукти: ${allFoundProducts.length}`);
 
-  // Вариант 3: с Token вместо Bearer
-  await testAPICall(
-    `${FILSTAR_API_BASE}/products?page=1&limit=10&search=${sku}`,
-    'Token'
-  );
+  // Извличане на категории
+  console.log(`\n\n📁 КАТЕГОРИИ (ID + Parent ID):`);
+  console.log(`════════════════════════════════════════`);
+  
+  allFoundProducts.forEach(product => {
+    // Проверяваме различни възможни имена на полетата
+    const categoryId = product.category_id || product.categoryId || product.category?.id;
+    const parentId = product.parent_category_id || product.parentCategoryId || product.category?.parent_id;
+    const categoryName = product.category_name || product.categoryName || product.category?.name;
+    
+    if (categoryId) {
+      const key = `${categoryId}`;
+      if (!categoriesMap.has(key)) {
+        categoriesMap.set(key, {
+          id: categoryId,
+          parent_id: parentId || null,
+          name: categoryName || 'N/A'
+        });
+      }
+    }
+  });
 
-  // Вариант 4: с API version
-  await testAPICall(
-    `${FILSTAR_API_BASE}/${API_VERSION}/products?page=1&limit=10&search=${sku}`,
-    'Bearer'
-  );
+  if (categoriesMap.size > 0) {
+    categoriesMap.forEach((cat) => {
+      console.log(`  ID: ${cat.id} | Parent ID: ${cat.parent_id} | Name: ${cat.name}`);
+    });
+  } else {
+    console.log(`  ⚠️  Няма открити категории (проверете структурата на продуктите)`);
+  }
 
-  // Вариант 5: без search параметър - всички продукти
-  await testAPICall(
-    `${FILSTAR_API_BASE}/products?page=1&limit=10`,
-    'Bearer'
-  );
+  // Показване на всички атрибути за всеки продукт
+  console.log(`\n\n🎣 ПРОДУКТИ И ТЕХНИТЕ АТРИБУТИ:`);
+  console.log(`════════════════════════════════════════`);
 
-  console.log('\n✅ Тестване завършено');
+  allFoundProducts.forEach((product, index) => {
+    console.log(`\n[${index + 1}] SKU: ${product.sku || product.code || product.id} | ${product.name}`);
+    console.log(JSON.stringify(product, null, 2));
+    console.log(`────────────────────────────────────────`);
+  });
+
+  console.log(`\n✅ Готово!`);
 }
 
+// Стартиране
 main().catch(error => {
   console.error('❌ Фатална грешка:', error);
   process.exit(1);
