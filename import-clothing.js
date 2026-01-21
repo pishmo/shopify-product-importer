@@ -951,7 +951,7 @@ async function main() {
       }
     }
 
-    await deleteExtraProducts(clothingProducts, allShopifyProducts);
+ //   await deleteExtraProducts(clothingProducts, allShopifyProducts);
 
     console.log('\n\n' + '='.repeat(80));
     console.log('📊 FINAL STATISTICS');
