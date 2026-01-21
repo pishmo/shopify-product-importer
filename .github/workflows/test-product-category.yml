@@ -1,4 +1,4 @@
-name: TEST Test Products CategoriesAtribut
+name: TEST Test Products Categories Atribut
 
 on:
   workflow_dispatch:  # Ръчно стартиране
