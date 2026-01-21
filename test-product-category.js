@@ -1,6 +1,6 @@
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
-const TEST_SKU = '957436';
+const TEST_SKU = '52475' , '962013','962013',  '956532', '957231' , '946238' ,'957900' ;
 
 async function testProductCategory() {
   console.log(`🔍 Searching for product with SKU: ${TEST_SKU}\n`);
