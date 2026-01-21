@@ -252,3 +252,357 @@ function getCategoryType(filstarProduct) {
   
   return null;
 }
+
+
+// 2 ра част
+
+
+// Форматиране на variant name за облекло: модел / цвят / размер
+function formatClothingVariantName(variant, filstarProduct) {
+  if (!variant.attributes || variant.attributes.length === 0) {
+    return variant.sku || 'Default';
+  }
+  
+  const parts = [];
+  
+  // 1. Модел (ако има)
+  if (variant.model && variant.model.trim()) {
+    parts.push(variant.model.trim());
+  }
+  
+  // 2. Цвят
+  const color = variant.attributes.find(a => 
+    a.attribute_name.includes('ЦВЯТ') || a.attribute_name.includes('COLOR')
+  )?.value;
+  if (color) {
+    parts.push(color);
+  }
+  
+  // 3. Размер
+  const size = variant.attributes.find(a => 
+    a.attribute_name.includes('РАЗМЕР') || a.attribute_name.includes('SIZE')
+  )?.value;
+  if (size) {
+    parts.push(size);
+  }
+  
+  return parts.length > 0 ? parts.join(' / ') : variant.sku;
+}
+
+// Уникални variant names
+function ensureUniqueVariantNames(variants, filstarProduct) {
+  const names = variants.map(v => formatClothingVariantName(v, filstarProduct));
+  const counts = {};
+  
+  return names.map((name, index) => {
+    counts[name] = (counts[name] || 0) + 1;
+    if (counts[name] > 1) {
+      return `${name} (${variants[index].sku})`;
+    }
+    return name;
+  });
+}
+
+// Извличане на SKU от filename
+function extractSkuFromImageFilename(filename) {
+  if (!filename) return '999999';
+  const match = filename.match(/(\d{6})/);
+  return match ? match[1] : '999999';
+}
+
+function getImageFilename(src) {
+  if (!src || typeof src !== 'string') {
+    return null;
+  }
+  
+  const urlParts = src.split('/').pop();
+  const withoutQuery = urlParts.split('?')[0];
+  
+  let cleanFilename = withoutQuery;
+  
+  cleanFilename = cleanFilename.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '');
+  cleanFilename = cleanFilename.replace(/-\d{14}-\d+/g, '');
+  
+  const parts = cleanFilename.split('_');
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1].split('.')[0];
+    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
+      parts.pop();
+      const extension = cleanFilename.split('.').pop();
+      cleanFilename = parts.join('_') + '.' + extension;
+    }
+  }
+  
+  cleanFilename = cleanFilename.replace(/^_+/, '');
+  cleanFilename = cleanFilename.replace(/_+(\.[a-z]+)$/i, '$1');
+  cleanFilename = cleanFilename.replace(/_+/g, '_');
+  
+  const filenameParts = cleanFilename.split('.');
+  if (filenameParts.length > 1) {
+    const extension = filenameParts.pop().toLowerCase();
+    cleanFilename = filenameParts.join('.') + '.' + extension;
+  }
+  
+  return cleanFilename;
+}
+
+function imageExists(existingImages, newImageUrl) {
+  const newFilename = getImageFilename(newImageUrl);
+  if (!newFilename) return false;
+  
+  return existingImages.some(img => {
+    const existingFilename = getImageFilename(img.src);
+    return existingFilename && existingFilename === newFilename;
+  });
+}
+
+async function normalizeImage(imageUrl) {
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status}`);
+    }
+    
+    const imageBuffer = await response.buffer();
+    const metadata = await sharp(imageBuffer).metadata();
+    const originalWidth = metadata.width;
+    const originalHeight = metadata.height;
+    
+    if (originalWidth === TARGET_WIDTH && originalHeight === TARGET_HEIGHT) {
+      console.log(`    ⏭️  Already normalized: ${originalWidth}x${originalHeight}`);
+      return null;
+    }
+    
+    console.log(`    🔧 Normalizing: ${originalWidth}x${originalHeight} → ${TARGET_WIDTH}x${TARGET_HEIGHT}`);
+    
+    const normalizedBuffer = await sharp(imageBuffer)
+      .resize(TARGET_WIDTH, TARGET_HEIGHT, {
+        fit: 'contain',
+        background: BACKGROUND_COLOR,
+        position: 'center'
+      })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    
+    const originalSize = (imageBuffer.length / 1024).toFixed(1);
+    const newSize = (normalizedBuffer.length / 1024).toFixed(1);
+    console.log(`       Size: ${originalSize}KB → ${newSize}KB`);
+    
+    return normalizedBuffer;
+    
+  } catch (error) {
+    console.error(`    ❌ Error normalizing:`, error.message);
+    return null;
+  }
+}
+
+async function uploadProductImage(productId, imageUrl, existingImages) {
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    console.error(`  ✗ Invalid image URL`);
+    return false;
+  }
+
+  if (imageExists(existingImages, imageUrl)) {
+    const filename = getImageFilename(imageUrl);
+    console.log(`  ⏭️  Image already exists, skipping: ${filename}`);
+    return false;
+  }
+
+  const filename = getImageFilename(imageUrl);
+  console.log(`  📸 Uploading new image: ${filename}`);
+
+  try {
+    const normalizedBuffer = await normalizeImage(imageUrl);
+    
+    if (!normalizedBuffer) {
+      console.log(`  ⚠️  Skipping image due to normalization error`);
+      return false;
+    }
+
+    const base64Image = normalizedBuffer.toString('base64');
+
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image: {
+            attachment: base64Image,
+            filename: filename
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      
+      if (errorText.includes('failed to download') || errorText.includes('file not found')) {
+        console.log(`  ⚠️  Image not accessible, skipping: ${filename}`);
+      } else {
+        console.error(`  ✗ Failed to upload image: ${response.status} - ${errorText}`);
+      }
+      return false;
+    }
+
+    const result = await response.json();
+    console.log(`  ✅ Normalized image uploaded (ID: ${result.image.id})`);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
+
+  } catch (error) {
+    console.log(`  ⚠️  Upload error, skipping image: ${error.message}`);
+    return false;
+  }
+}
+
+async function fetchMainImageFromFilstarPage(slug) {
+  if (!slug) return null;
+  
+  const productUrl = `${FILSTAR_BASE_URL}/${slug}`;
+  
+  try {
+    console.log(`    🌐 Fetching main image from: ${productUrl}`);
+    
+    const response = await fetch(productUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; ShopifyImporter/1.0)',
+        'Accept': 'text/html'
+      }
+    });
+    
+    if (!response.ok) {
+      console.log(`    ⚠️  Failed to fetch page: ${response.status}`);
+      return null;
+    }
+    
+    const html = await response.text();
+    
+    const ogImageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+    if (ogImageMatch) {
+      const imageUrl = ogImageMatch[1];
+      console.log(`    ✓ Found OG image: ${getImageFilename(imageUrl)}`);
+      return imageUrl;
+    }
+    
+    console.log(`    ⚠️  No main image found in HTML`);
+    return null;
+  } catch (error) {
+    console.log(`    ⚠️  Error fetching page: ${error.message}`);
+    return null;
+  }
+}
+
+async function reorderProductImages(productId, filstarProduct, existingImages) {
+  console.log(`  🔄 Reordering images...`);
+  
+  if (!existingImages || existingImages.length === 0) {
+    console.log(`    ⚠️  No existing images`);
+    return false;
+  }
+
+  let mainImageFromPage = null;
+  if (filstarProduct.slug) {
+    mainImageFromPage = await fetchMainImageFromFilstarPage(filstarProduct.slug);
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  const allImages = [];
+  const seenFilenames = new Set();
+
+  const addImage = (url, type, priority = 0) => {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
+    const filename = getImageFilename(fullUrl);
+    if (filename && !seenFilenames.has(filename)) {
+      seenFilenames.add(filename);
+      const sku = extractSkuFromImageFilename(filename);
+      allImages.push({ url: fullUrl, filename, type, sku, priority });
+    }
+  };
+
+  if (mainImageFromPage) {
+    addImage(mainImageFromPage, 'main_page', 1000);
+  }
+
+  if (filstarProduct.image) {
+    addImage(filstarProduct.image, 'main_api', 900);
+  }
+
+  if (filstarProduct.images) {
+    filstarProduct.images.forEach(img => addImage(img, 'additional', 500));
+  }
+
+  if (filstarProduct.variants) {
+    filstarProduct.variants.forEach(v => {
+      if (v.image) addImage(v.image, 'variant', 100);
+    });
+  }
+
+  allImages.sort((a, b) => {
+    if (a.priority !== b.priority) return b.priority - a.priority;
+    if (a.sku === '999999' && b.sku !== '999999') return -1;
+    if (a.sku !== '999999' && b.sku === '999999') return 1;
+    if (a.sku === '999999' && b.sku === '999999') {
+      return a.filename.localeCompare(b.filename);
+    }
+    return a.sku.localeCompare(b.sku);
+  });
+
+  console.log(`    📋 Final order (${allImages.length} images):`);
+  allImages.forEach((img, i) => {
+    const label = img.sku === '999999' ? '🔤' : `🔢 ${img.sku}`;
+    const priority = img.priority > 0 ? ` [P:${img.priority}]` : '';
+    console.log(`      ${i+1}. ${label}${priority} ${img.filename}`);
+  });
+
+  const reorderedImages = [];
+  for (let i = 0; i < allImages.length; i++) {
+    const match = existingImages.find(img => {
+      const imgSrc = img.src || img.url || (typeof img === 'string' ? img : null);
+      if (!imgSrc) return false;
+      return getImageFilename(imgSrc) === allImages[i].filename;
+    });
+    if (match) {
+      const imgId = match.id || (typeof match === 'object' && match.id);
+      if (imgId) {
+        reorderedImages.push({ id: imgId, position: i + 1 });
+      }
+    }
+  }
+
+  if (reorderedImages.length === 0) {
+    console.log(`    ⚠️  No images matched for reordering`);
+    return false;
+  }
+
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
+    {
+      method: 'PUT',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ product: { id: productId, images: reorderedImages } })
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`    ❌ Failed to reorder: ${response.status} - ${errorText}`);
+    return false;
+  }
+
+  console.log(`    ✅ Reordered ${reorderedImages.length} images`);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return true;
+}
+
+
+
