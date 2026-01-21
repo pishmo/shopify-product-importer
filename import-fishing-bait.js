@@ -125,7 +125,7 @@ async function fetchAllFishingBaits() {
   while (hasMore) {
     console.log(`  Fetching page ${page}...`);
     
-    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=100`;
+    const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`;
     
     try {
       const response = await fetch(url, {
