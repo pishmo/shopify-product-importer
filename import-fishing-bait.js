@@ -102,3 +102,219 @@ function formatVariantTitle(variant) {
   
   return parts.join(' / ');
 }
+
+// ============================================
+// IMAGE PROCESSING
+// ============================================
+
+async function normalizeImage(imageUrl) {
+  try {
+    const response = await axios.get(imageUrl, { 
+      responseType: 'arraybuffer',
+      timeout: 30000 
+    });
+    
+    const image = sharp(response.data);
+    const metadata = await image.metadata();
+    
+    const scale = Math.min(
+      CONFIG.image.targetWidth / metadata.width,
+      CONFIG.image.targetHeight / metadata.height
+    );
+    
+    const newWidth = Math.round(metadata.width * scale);
+    const newHeight = Math.round(metadata.height * scale);
+    
+    const normalized = await image
+      .resize(newWidth, newHeight, { fit: 'inside' })
+      .extend({
+        top: Math.floor((CONFIG.image.targetHeight - newHeight) / 2),
+        bottom: Math.ceil((CONFIG.image.targetHeight - newHeight) / 2),
+        left: Math.floor((CONFIG.image.targetWidth - newWidth) / 2),
+        right: Math.ceil((CONFIG.image.targetWidth - newWidth) / 2),
+        background: CONFIG.image.background
+      })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    
+    return normalized;
+  } catch (error) {
+    console.error(`Грешка при нормализация на изображение ${imageUrl}:`, error.message);
+    return null;
+  }
+}
+
+// ============================================
+// SHOPIFY API FUNCTIONS
+// ============================================
+
+async function shopifyRequest(query, variables = {}) {
+  try {
+    const response = await axios.post(
+      `https://${CONFIG.shopify.domain}/admin/api/${CONFIG.shopify.apiVersion}/graphql.json`,
+      { query, variables },
+      {
+        headers: {
+          'X-Shopify-Access-Token': CONFIG.shopify.accessToken,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (response.data.errors) {
+      throw new Error(JSON.stringify(response.data.errors));
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error('Shopify API грешка:', error.message);
+    throw error;
+  }
+}
+
+async function findProductBySku(sku) {
+  const query = `
+    query findProduct($query: String!) {
+      products(first: 1, query: $query) {
+        edges {
+          node {
+            id
+            title
+            variants(first: 100) {
+              edges {
+                node {
+                  id
+                  sku
+                }
+              }
+            }
+            images(first: 250) {
+              edges {
+                node {
+                  id
+                  url
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  
+  const data = await shopifyRequest(query, { query: `sku:${sku}` });
+  return data.products.edges[0]?.node || null;
+}
+
+async function createProduct(productData) {
+  const mutation = `
+    mutation createProduct($input: ProductInput!) {
+      productCreate(input: $input) {
+        product {
+          id
+          title
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  
+  const data = await shopifyRequest(mutation, { input: productData });
+  
+  if (data.productCreate.userErrors.length > 0) {
+    throw new Error(JSON.stringify(data.productCreate.userErrors));
+  }
+  
+  return data.productCreate.product;
+}
+
+async function updateProduct(productId, productData) {
+  const mutation = `
+    mutation updateProduct($input: ProductInput!) {
+      productUpdate(input: $input) {
+        product {
+          id
+          title
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  
+  productData.id = productId;
+  const data = await shopifyRequest(mutation, { input: productData });
+  
+  if (data.productUpdate.userErrors.length > 0) {
+    throw new Error(JSON.stringify(data.productUpdate.userErrors));
+  }
+  
+  return data.productUpdate.product;
+}
+
+async function uploadImage(productId, imageBuffer, filename, altText = '') {
+  const mutation = `
+    mutation productCreateMedia($media: [CreateMediaInput!]!, $productId: ID!) {
+      productCreateMedia(media: $media, productId: $productId) {
+        media {
+          ... on MediaImage {
+            id
+            image {
+              url
+            }
+          }
+        }
+        mediaUserErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  
+  const base64Image = imageBuffer.toString('base64');
+  
+  const media = [{
+    originalSource: `data:image/jpeg;base64,${base64Image}`,
+    alt: altText,
+    mediaContentType: 'IMAGE'
+  }];
+  
+  const data = await shopifyRequest(mutation, { 
+    productId, 
+    media 
+  });
+  
+  if (data.productCreateMedia.mediaUserErrors.length > 0) {
+    throw new Error(JSON.stringify(data.productCreateMedia.mediaUserErrors));
+  }
+  
+  return data.productCreateMedia.media[0];
+}
+
+async function reorderImages(productId, imageIds) {
+  const mutation = `
+    mutation productReorderMedia($id: ID!, $moves: [MoveInput!]!) {
+      productReorderMedia(id: $id, moves: $moves) {
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  
+  const moves = imageIds.map((id, index) => ({
+    id,
+    newPosition: index.toString()
+  }));
+  
+  await shopifyRequest(mutation, { id: productId, moves });
+}
+
+
