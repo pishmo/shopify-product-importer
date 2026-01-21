@@ -72,6 +72,20 @@ function getCategoryName(category) {
   return names[category] || category;
 }
 
+
+
+// ФУНКЦИИ
+
+function getOptionName(category) {
+  if (category === 'shoes') return 'Размер / Номер';
+  if (['tshirts', 'pants', 'jackets', 'sets', 'gloves'].includes(category)) return 'Размер';
+  return 'Вариант';
+}
+
+
+
+
+
 async function getAllShopifyProducts() {
   console.log('📦 Fetching all Shopify products...');
   
