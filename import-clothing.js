@@ -729,13 +729,11 @@ async function createShopifyProduct(filstarProduct, category) {
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
   console.log(`\n🔄 Updating product: ${filstarProduct.name}`);
-  
   try {
     const productId = shopifyProduct.id;
     const vendor = filstarProduct.manufacturer || 'Unknown';
-
     const variantNames = ensureUniqueVariantNames(filstarProduct.variants, filstarProduct);
-
+    
     const updateData = {
       product: {
         id: productId,
@@ -764,13 +762,53 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
       throw new Error(`Failed to update product: ${response.status} - ${errorText}`);
     }
 
-    console.log(`  ✅ Product updated`);
+    console.log(` ✅ Product updated`);
 
-    // Обнови варианти
+    // Добави към колекция ако не е
+    const collectionGid = COLLECTION_MAPPING[category];
+    if (collectionGid) {
+      const collectionId = collectionGid.split('/').pop();
+      
+      // Провери дали вече е в колекцията
+      const collectsCheck = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json?product_id=${productId}&collection_id=${collectionId}`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const collectsData = await collectsCheck.json();
+      
+      if (!collectsData.collects || collectsData.collects.length === 0) {
+        // Добави към колекцията
+        await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              collect: {
+                product_id: productId,
+                collection_id: collectionId
+              }
+            })
+          }
+        );
+        console.log(` 📁 Added to collection`);
+      }
+    }
+
+    // Update variants
     for (let i = 0; i < filstarProduct.variants.length; i++) {
       const filstarVariant = filstarProduct.variants[i];
       const shopifyVariant = shopifyProduct.variants.find(v => v.sku === filstarVariant.sku);
-
+      
       if (shopifyVariant) {
         const variantUpdateData = {
           variant: {
@@ -795,14 +833,13 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
             body: JSON.stringify(variantUpdateData)
           }
         );
-
         await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
-    console.log(`  📦 Updated ${filstarProduct.variants.length} variants`);
+    console.log(` 📦 Updated ${filstarProduct.variants.length} variants`);
 
-    // Качи нови снимки
+    // Upload new images
     const imagesResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
       {
@@ -815,7 +852,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
 
     const imagesData = await imagesResponse.json();
     const existingImages = imagesData.images || [];
-
     let uploadedCount = 0;
 
     if (filstarProduct.image) {
@@ -840,10 +876,10 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
     }
 
     if (uploadedCount > 0) {
-      console.log(`  📸 Uploaded ${uploadedCount} new images`);
+      console.log(` 📸 Uploaded ${uploadedCount} new images`);
     }
 
-    // Пренареди снимките
+    // Reorder images
     const finalImagesResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
       {
@@ -853,18 +889,19 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
         }
       }
     );
+
     const finalImagesData = await finalImagesResponse.json();
     await reorderProductImages(productId, filstarProduct, finalImagesData.images || []);
 
     stats[category].updated++;
     stats[category].images += uploadedCount;
-
     await new Promise(resolve => setTimeout(resolve, 1000));
 
   } catch (error) {
-    console.error(`  ❌ Error updating product:`, error.message);
+    console.error(` ❌ Error updating product:`, error.message);
   }
 }
+
 
 async function main() {
   console.log('🚀 Starting Filstar clothing import...\n');
