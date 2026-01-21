@@ -16,16 +16,17 @@ const BACKGROUND_COLOR = { r: 255, g: 255, b: 255, alpha: 1 };
 
 // Колекции за облекло (TODO: добави GID-овете на колекциите)
 const COLLECTION_MAPPING = {
-  shoes: null,
-  tshirts: null,
-  pants: null,
-  jackets: null,
-  hats: null,
-  gloves: null,
-  sunglasses: null,
-  sets: null,
-  other: null
+  shoes: 'gid://shopify/Collection/739347595646',
+  tshirts: 'gid://shopify/Collection/739347038590',
+  pants: 'gid://shopify/Collection/739347136894',
+  jackets: 'gid://shopify/Collection/739347235198',
+  hats: 'gid://shopify/Collection/739347399038',
+  gloves: 'gid://shopify/Collection/739347530110',
+  sunglasses: 'gid://shopify/Collection/739347628414',
+  sets: 'gid://shopify/Collection/739347267966',
+  other: 'gid://shopify/Collection/739347661182'
 };
+
 
 // Filstar категории за облекло
 const FILSTAR_CLOTHING_CATEGORY_IDS = {
