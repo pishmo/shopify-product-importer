@@ -1,7 +1,7 @@
 name: TEST Test Products CategoriesAtribut
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Ръчно стартиране
 
 jobs:
   import:
