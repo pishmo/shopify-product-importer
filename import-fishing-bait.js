@@ -317,4 +317,183 @@ async function reorderImages(productId, imageIds) {
   await shopifyRequest(mutation, { id: productId, moves });
 }
 
+// ============================================
+// FILSTAR API FUNCTIONS
+// ============================================
+
+async function fetchFilstarProducts(categoryId, page = 1) {
+  try {
+    const response = await axios.get(`${CONFIG.filstar.baseUrl}/products`, {
+      params: {
+        api_key: CONFIG.filstar.apiKey,
+        category_id: categoryId,
+        page: page,
+        limit: 50
+      },
+      timeout: 30000
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Грешка при извличане на продукти от категория ${categoryId}:`, error.message);
+    return null;
+  }
+}
+
+// ============================================
+// MAIN IMPORT LOGIC
+// ============================================
+
+async function processProduct(filstarProduct, categoryId) {
+  try {
+    const sku = filstarProduct.sku || filstarProduct.id.toString();
+    console.log(`\nОбработка на продукт: ${filstarProduct.name} (SKU: ${sku})`);
+    
+    // Проверка дали продуктът съществува
+    const existingProduct = await findProductBySku(sku);
+    
+    // Подготовка на варианти
+    const variants = filstarProduct.variants.map(variant => ({
+      sku: variant.sku,
+      price: variant.price,
+      inventoryPolicy: 'DENY',
+      inventoryManagement: 'SHOPIFY',
+      inventoryQuantities: [{
+        availableQuantity: variant.quantity || 0,
+        locationId: 'gid://shopify/Location/YOUR_LOCATION_ID'
+      }],
+      barcode: variant.barcode || '',
+      option1: formatVariantTitle(variant)
+    }));
+    
+    // Подготовка на продуктови данни
+    const productData = {
+      title: filstarProduct.name,
+      descriptionHtml: filstarProduct.description || '',
+      vendor: filstarProduct.manufacturer || 'Filstar',
+      productType: formatCategoryName(categoryId),
+      tags: ['Захранка', formatCategoryName(categoryId)],
+      status: 'ACTIVE',
+      variants: variants,
+      collectionsToJoin: [COLLECTION_MAPPING[categoryId]]
+    };
+    
+    let product;
+    
+    if (existingProduct) {
+      console.log('Продуктът съществува - актуализация...');
+      product = await updateProduct(existingProduct.id, productData);
+      stats.productsUpdated++;
+    } else {
+      console.log('Нов продукт - създаване...');
+      product = await createProduct(productData);
+      stats.productsCreated++;
+    }
+    
+    // Обработка на изображения
+    if (filstarProduct.images && filstarProduct.images.length > 0) {
+      console.log(`Обработка на ${filstarProduct.images.length} изображения...`);
+      
+      const uploadedImageIds = [];
+      
+      for (const image of filstarProduct.images) {
+        try {
+          const normalizedBuffer = await normalizeImage(image.url);
+          
+          if (normalizedBuffer) {
+            const filename = cleanFilename(image.filename || path.basename(image.url));
+            const uploadedImage = await uploadImage(
+              product.id,
+              normalizedBuffer,
+              filename,
+              filstarProduct.name
+            );
+            
+            uploadedImageIds.push(uploadedImage.id);
+            stats.imagesUploaded++;
+            console.log(`✓ Качено изображение: ${filename}`);
+          }
+        } catch (imgError) {
+          console.error(`Грешка при качване на изображение:`, imgError.message);
+        }
+      }
+      
+      // Пренареждане на изображенията
+      if (uploadedImageIds.length > 0) {
+        await reorderImages(product.id, uploadedImageIds);
+        console.log('✓ Изображенията са пренаредени');
+      }
+    }
+    
+    console.log(`✓ Продуктът е обработен успешно`);
+    
+  } catch (error) {
+    console.error(`Грешка при обработка на продукт ${filstarProduct.name}:`, error.message);
+    stats.errors.push({
+      product: filstarProduct.name,
+      error: error.message
+    });
+    stats.productsSkipped++;
+  }
+}
+
+async function importBaits() {
+  console.log('============================================');
+  console.log('СТАРТИРАНЕ НА ИМПОРТ НА ЗАХРАНКИ');
+  console.log('============================================\n');
+  
+  for (const categoryId of FILSTAR_CATEGORIES) {
+    console.log(`\n--- Обработка на категория: ${formatCategoryName(categoryId)} (ID: ${categoryId}) ---`);
+    
+    let page = 1;
+    let hasMore = true;
+    
+    while (hasMore) {
+      const response = await fetchFilstarProducts(categoryId, page);
+      
+      if (!response || !response.products || response.products.length === 0) {
+        hasMore = false;
+        break;
+      }
+      
+      console.log(`Страница ${page}: ${response.products.length} продукта`);
+      
+      for (const product of response.products) {
+        await processProduct(product, categoryId);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Rate limiting
+      }
+      
+      hasMore = response.pagination && response.pagination.has_next;
+      page++;
+    }
+  }
+  
+  // Финална статистика
+  console.log('\n============================================');
+  console.log('ИМПОРТЪТ ПРИКЛЮЧИ');
+  console.log('============================================');
+  console.log(`Създадени продукти: ${stats.productsCreated}`);
+  console.log(`Актуализирани продукти: ${stats.productsUpdated}`);
+  console.log(`Пропуснати продукти: ${stats.productsSkipped}`);
+  console.log(`Качени изображения: ${stats.imagesUploaded}`);
+  console.log(`Грешки: ${stats.errors.length}`);
+  
+  if (stats.errors.length > 0) {
+    console.log('\nДетайли за грешките:');
+    stats.errors.forEach((err, idx) => {
+      console.log(`${idx + 1}. ${err.product}: ${err.error}`);
+    });
+  }
+}
+
+// ============================================
+// СТАРТИРАНЕ
+// ============================================
+
+importBaits().catch(error => {
+  console.error('Критична грешка:', error);
+  process.exit(1);
+});
+
+
 
