@@ -14,7 +14,7 @@ async function fetchProductsBySKU(sku) {
   let page = 1;
   let hasMore = true;
 
-  console.log(`\n🔍 Търсене на SKU: ${sku}`);
+  console.log(`🔍 Търсене на SKU: ${sku}`);
 
   while (hasMore) {
     const url = `${FILSTAR_API_BASE}/products?page=${page}&limit=1000&search=${sku}`;
@@ -31,14 +31,12 @@ async function fetchProductsBySKU(sku) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const products = await response.json(); // Директно array!
+      const products = await response.json();
       
-      console.log(`  📄 Страница ${page}: ${products.length} продукта`);
-
       if (products && products.length > 0) {
         allProducts = allProducts.concat(products);
+        console.log(`  ✅ Намерени: ${products.length}`);
         
-        // Ако има по-малко от 1000, няма повече страници
         if (products.length < 1000) {
           hasMore = false;
         } else {
@@ -49,19 +47,17 @@ async function fetchProductsBySKU(sku) {
       }
 
     } catch (error) {
-      console.error(`  ❌ Грешка при страница ${page}:`, error.message);
+      console.error(`  ❌ Грешка:`, error.message);
       hasMore = false;
     }
   }
 
-  console.log(`  ✅ Общо намерени: ${allProducts.length} продукта`);
   return allProducts;
 }
 
 // Главна функция
 async function main() {
-  console.log('🚀 Стартиране на извличане на продукти от Filstar...\n');
-  console.log(`📋 Търсене на ${TARGET_SKUS.length} SKU номера`);
+  console.log('🚀 Извличане на продукти от Filstar\n');
 
   let allFoundProducts = [];
   const categoriesMap = new Map();
@@ -70,56 +66,66 @@ async function main() {
   for (const sku of TARGET_SKUS) {
     const products = await fetchProductsBySKU(sku);
     allFoundProducts = allFoundProducts.concat(products);
-    
-    // Малко delay между заявките
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  console.log(`\n\n📊 ОБОБЩЕНИЕ:`);
-  console.log(`════════════════════════════════════════`);
-  console.log(`Общо намерени продукти: ${allFoundProducts.length}`);
+  console.log(`\n📊 Общо продукти: ${allFoundProducts.length}\n`);
 
   // Извличане на категории
-  console.log(`\n\n📁 КАТЕГОРИИ (ID + Parent ID):`);
-  console.log(`════════════════════════════════════════`);
+  console.log(`📁 КАТЕГОРИИ:\n${'='.repeat(80)}`);
   
   allFoundProducts.forEach(product => {
-    // Проверяваме различни възможни имена на полетата
-    const categoryId = product.category_id || product.categoryId || product.category?.id;
-    const parentId = product.parent_category_id || product.parentCategoryId || product.category?.parent_id;
-    const categoryName = product.category_name || product.categoryName || product.category?.name;
-    
-    if (categoryId) {
-      const key = `${categoryId}`;
-      if (!categoriesMap.has(key)) {
-        categoriesMap.set(key, {
-          id: categoryId,
-          parent_id: parentId || null,
-          name: categoryName || 'N/A'
-        });
-      }
+    if (product.categories && product.categories.length > 0) {
+      product.categories.forEach(cat => {
+        const key = cat.id;
+        if (!categoriesMap.has(key)) {
+          categoriesMap.set(key, {
+            id: cat.id,
+            parent_id: cat.parent_id,
+            name: cat.name,
+            parent_name: cat.parent_name
+          });
+        }
+      });
     }
   });
 
-  if (categoriesMap.size > 0) {
-    categoriesMap.forEach((cat) => {
-      console.log(`  ID: ${cat.id} | Parent ID: ${cat.parent_id} | Name: ${cat.name}`);
-    });
-  } else {
-    console.log(`  ⚠️  Няма открити категории (проверете структурата на продуктите)`);
-  }
-
-  // Показване на всички атрибути за всеки продукт
-  console.log(`\n\n🎣 ПРОДУКТИ И ТЕХНИТЕ АТРИБУТИ:`);
-  console.log(`════════════════════════════════════════`);
-
-  allFoundProducts.forEach((product, index) => {
-    console.log(`\n[${index + 1}] SKU: ${product.sku || product.code || product.id} | ${product.name}`);
-    console.log(JSON.stringify(product, null, 2));
-    console.log(`────────────────────────────────────────`);
+  categoriesMap.forEach((cat) => {
+    console.log(`ID: ${cat.id.padEnd(4)} | Parent: ${(cat.parent_id || 'NULL').toString().padEnd(4)} | ${cat.name} (${cat.parent_name || 'ROOT'})`);
   });
 
-  console.log(`\n✅ Готово!`);
+  // Показване на продукти
+  console.log(`\n🎣 ПРОДУКТИ:\n${'='.repeat(80)}`);
+
+  allFoundProducts.forEach((product, index) => {
+    console.log(`\n[${index + 1}] ${product.name}`);
+    console.log(`    ID: ${product.id} | Manufacturer: ${product.manufacturer}`);
+    
+    // Категории
+    if (product.categories && product.categories.length > 0) {
+      product.categories.forEach(cat => {
+        console.log(`    📁 Category: ${cat.name} (ID: ${cat.id}, Parent: ${cat.parent_id || 'NULL'})`);
+      });
+    }
+    
+    // Варианти
+    console.log(`    📦 Варианти: ${product.variants?.length || 0}`);
+    if (product.variants && product.variants.length > 0) {
+      product.variants.forEach((variant, vIdx) => {
+        console.log(`       [${vIdx + 1}] SKU: ${variant.sku} | Model: ${variant.model} | Price: ${variant.price} EUR | Qty: ${variant.quantity}`);
+        
+        // Атрибути
+        if (variant.attributes && variant.attributes.length > 0) {
+          variant.attributes.forEach(attr => {
+            console.log(`           • ${attr.attribute_name}: ${attr.value}`);
+          });
+        }
+      });
+    }
+  });
+
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`✅ Готово! Намерени ${allFoundProducts.length} продукта с ${categoriesMap.size} уникални категории`);
 }
 
 // Стартиране
