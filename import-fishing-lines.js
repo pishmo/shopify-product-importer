@@ -788,7 +788,8 @@ async function updateShopifyProduct(existingProduct, filstarProduct, category) {
         id: productGid,
         title: filstarProduct.name,
         descriptionHtml: filstarProduct.description || '',
-        vendor: filstarProduct.brand || 'Filstar',
+        vendor: filstarProduct.manufacturer || filstarProduct.brand || '',
+
         productType: category
       }
     };
