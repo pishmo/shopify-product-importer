@@ -161,21 +161,22 @@ function formatLineVariantName(variant) {
     parts.push(japaneseSize);
   }
 
-  // 4. Тест (kg/LB) - с интервал преди LB
-  const testKg = variant.attributes.find(a => 
-    a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
-  )?.value;
-  const testLb = variant.attributes.find(a => 
-    a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('LB')
-  )?.value;
-  
-  if (testKg && testLb) {
-    parts.push(`${testKg}кг/${testLb} LB`);
-  } else if (testKg) {
-    parts.push(`${testKg}кг`);
-  } else if (testLb) {
-    parts.push(`${testLb} LB`);
-  }
+ // 4. Тест (kg/LB) - с интервал след /
+const testKg = variant.attributes.find(a => 
+  a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG')
+)?.value;
+const testLb = variant.attributes.find(a => 
+  a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('LB')
+)?.value;
+
+if (testKg && testLb) {
+  parts.push(`${testKg}кг / ${testLb}LB`);
+} else if (testKg) {
+  parts.push(`${testKg}кг`);
+} else if (testLb) {
+  parts.push(`${testLb}LB`);
+}
+
 
   return parts.length > 0 ? parts.join(' / ') : variant.sku;
 }
