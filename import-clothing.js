@@ -37,7 +37,7 @@ const FILSTAR_CLOTHING_CATEGORY_IDS = {
   hats: ['88'],
   gloves: ['89'],
   sunglasses: ['92'],
-  sets: ['91'],
+  sets: ['87'],
   other: ['95']
 };
 
