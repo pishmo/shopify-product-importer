@@ -621,7 +621,8 @@ async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
   
   try {
-    const vendor = filstarProduct.manufacturer || 'Unknown';
+    const vendor = filstarProduct.manufacturer || filstarProduct.brand || '';
+
     console.log(`  🏷️  Vendor: ${vendor}`);
 
     const variantNames = ensureUniqueVariantNames(filstarProduct.variants, filstarProduct);
