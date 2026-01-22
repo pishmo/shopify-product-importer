@@ -21,39 +21,13 @@ async function getCollectionProducts(collectionId) {
   let pageInfo = null;
 
   while (hasNextPage) {
-    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?limit=250`;
+    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250`;
     if (pageInfo) url += `&page_info=${pageInfo}`;
-
-    const response = await fetch(url, {
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      console.error(`❌ Failed: ${response.status}`);
-      break;
-    }
-
-    const data = await response.json();
-    allProducts = allProducts.concat(data.products);
-
-    const linkHeader = response.headers.get('Link');
-    if (linkHeader && linkHeader.includes('rel="next"')) {
-      const match = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-      pageInfo = match ? match[1] : null;
-      hasNextPage = !!pageInfo;
-    } else {
-      hasNextPage = false;
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // ... останалото същото
   }
-
-  console.log(`✅ Fetched ${allProducts.length} products`);
-  return allProducts;
 }
+
 
 function fixVariantName(name) {
   if (!name || typeof name !== 'string') return name;
