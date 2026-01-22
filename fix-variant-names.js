@@ -93,29 +93,37 @@ async function getCollectionProducts(collectionGid) {
 
 function fixVariantName(name) {
   if (!name || typeof name !== 'string') return null;
-  
-  if (name.includes('#')) return null;
 
   let fixed = name;
   let changed = false;
 
+  // 1. Замени Ø (скандинавска главна) → ⌀
   if (fixed.includes('Ø')) {
     fixed = fixed.replace(/Ø/g, '⌀');
     changed = true;
   }
 
+  // 2. Замени ø (скандинавска малка) → ⌀
   if (fixed.includes('ø')) {
     fixed = fixed.replace(/ø/g, '⌀');
     changed = true;
   }
 
+  // 3. Добави ⌀ и мм за "/ 0.X " (без символ и мм)
   if (/\/\s+0\.\d+\s+/.test(fixed) && !fixed.includes('⌀')) {
     fixed = fixed.replace(/\/\s+(0\.\d+)\s+/g, '/ ⌀$1мм ');
+    changed = true;
+  }
+  
+  // 4. Добави ⌀ и мм за "/ #0.X " (японска номерация + диаметър)
+  if (/\/\s+#0\.\d+\s+/.test(fixed) && !fixed.includes('⌀')) {
+    fixed = fixed.replace(/\/\s+#(0\.\d+)\s+/g, '/ #⌀$1мм ');
     changed = true;
   }
 
   return changed ? fixed : null;
 }
+
 
 async function updateVariant(variantGid, newName) {
   // Извлечи числовото ID от GID
