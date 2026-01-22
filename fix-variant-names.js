@@ -118,50 +118,36 @@ function fixVariantName(name) {
 }
 
 async function updateVariant(variantGid, newName) {
-  const mutation = `
-    mutation ($input: ProductVariantInput!) {
-      productVariantUpdate(input: $input) {
-        productVariant {
-          id
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  `;
-
+  // Извлечи числовото ID от GID
+  const variantId = variantGid.split('/').pop();
+  
   const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`,
     {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        query: mutation,
-        variables: {
-          input: {
-            id: variantGid,
-            selectedOptions: [{ name: 'Вариант', value: newName }]
-          }
+        variant: {
+          id: parseInt(variantId),
+          option1: newName
         }
       })
     }
   );
 
-  const result = await response.json();
-
-  if (result.data.productVariantUpdate.userErrors.length > 0) {
-    console.error(`  ❌ Failed:`, result.data.productVariantUpdate.userErrors);
+  if (!response.ok) {
+    const error = await response.text();
+    console.error(`  ❌ Failed: ${error}`);
     return false;
   }
 
   await new Promise(resolve => setTimeout(resolve, 500));
   return true;
 }
+
 
 async function processProduct(product) {
   if (!product.variants || !product.variants.edges || product.variants.edges.length === 0) {
