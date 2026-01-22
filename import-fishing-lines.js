@@ -834,6 +834,12 @@ async function updateShopifyProduct(existingProduct, filstarProduct, category) {
   }
 }
 
+
+
+
+
+
+
 async function addProductToCollection(productId, category) {
   const collectionId = COLLECTION_MAPPING[category];
   
