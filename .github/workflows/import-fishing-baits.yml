@@ -3,8 +3,8 @@ name: Import Fishing Baits from Filstar
 
 on:
   schedule:
-    - cron: '0 23 * * *'  # 01:00 EET = 23:00 UTC
-  workflow_dispatch:  # Ръчно стартиране
+    - cron: '0 12 * * *'  # Всеки ден в 12:00 сутринта (12 часа след въдиците)
+  workflow_dispatch:
 
 jobs:
   import-baits:
