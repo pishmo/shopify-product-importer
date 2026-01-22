@@ -33,23 +33,25 @@ async function getCollectionProducts(collectionId) {
     
     const data = await response.json();
     
-    if (data.products && data.products.length > 0) {
-      allProducts = allProducts.concat(data.products);
-      console.log(`  Page ${page}: ${data.products.length} products`);
-      
-      if (data.products.length < 250) {
-        hasMore = false;
-      } else {
-        page++;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    } else {
-      hasMore = false;
-    }
-  }
+async function getCollectionProducts(collectionId) {
+  console.log(`\n📦 Fetching collection ${collectionId}...`);
   
-  console.log(`  ✅ Total: ${allProducts.length} products`);
-  return allProducts;
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?limit=250`,
+    {
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  
+  const data = await response.json();
+  console.log(`  DEBUG - Response:`, JSON.stringify(data).substring(0, 200));
+  console.log(`  DEBUG - Products array exists:`, !!data.products);
+  console.log(`  DEBUG - Products length:`, data.products?.length);
+  
+  return data.products || [];
 }
 
 
