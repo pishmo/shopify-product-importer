@@ -54,34 +54,36 @@ async function getCollectionProducts(collectionId) {
   console.log(`✅ Fetched ${allProducts.length} products`);
   return allProducts;
 }
+
 function fixVariantName(name) {
   if (!name || typeof name !== 'string') return name;
+  
+  // Пропускай японска номерация
   if (name.includes('#')) return null;
 
   let fixed = name;
   let changed = false;
 
-  // 1. "Xмм" → "øXмм"
-  if (/\d+\.?\d*мм/.test(fixed) && !fixed.includes('ø')) {
-    fixed = fixed.replace(/(\d+\.?\d*)мм/g, 'ø$1мм');
+  // 1. Замени Ø (скандинавска главна) → ⌀
+  if (fixed.includes('Ø')) {
+    fixed = fixed.replace(/Ø/g, '⌀');
     changed = true;
   }
 
-  // 2. "/ 0.X /" → "/ ø0.Xмм /"
-  if (/\/\s+0\.\d+\s+\//.test(fixed)) {
-    fixed = fixed.replace(/\/\s+(0\.\d+)\s+\//g, '/ ø$1мм /');
+  // 2. Замени ø (скандинавска малка) → ⌀
+  if (fixed.includes('ø')) {
+    fixed = fixed.replace(/ø/g, '⌀');
     changed = true;
   }
-  
-  // 3. "/ 0.X " (без "/" след) → "/ ø0.Xмм "
-  if (/\/\s+0\.\d+\s+(?!\/)/.test(fixed) && !changed) {
-    fixed = fixed.replace(/\/\s+(0\.\d+)(\s+)/g, '/ ø$1мм$2');
+
+  // 3. Добави ⌀ и мм за "/ 0.X " (без символ и мм)
+  if (/\/\s+0\.\d+\s+/.test(fixed) && !fixed.includes('⌀')) {
+    fixed = fixed.replace(/\/\s+(0\.\d+)\s+/g, '/ ⌀$1мм ');
     changed = true;
   }
 
   return changed ? fixed : null;
 }
-
 
 async function updateVariant(variantId, newName) {
   const response = await fetch(
@@ -138,7 +140,6 @@ async function processProduct(product) {
     }
   }
 }
-
 
 async function main() {
   console.log('🔧 Starting variant name fix...\n');
