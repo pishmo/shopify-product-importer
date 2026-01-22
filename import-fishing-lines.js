@@ -763,22 +763,16 @@ async function createShopifyProduct(filstarProduct, category) {
 
 async function updateShopifyProduct(existingProduct, filstarProduct, category) {
   console.log(`\n🔄 Updating product: ${filstarProduct.name}`);
-  
   const productGid = `gid://shopify/Product/${existingProduct.id}`;
+  const productId = existingProduct.id;
   const collectionId = COLLECTION_MAPPING[category];
   
   try {
     const mutation = `
       mutation updateProduct($input: ProductInput!) {
         productUpdate(input: $input) {
-          product {
-            id
-            title
-          }
-          userErrors {
-            field
-            message
-          }
+          product { id title }
+          userErrors { field message }
         }
       }
     `;
@@ -789,12 +783,10 @@ async function updateShopifyProduct(existingProduct, filstarProduct, category) {
         title: filstarProduct.name,
         descriptionHtml: filstarProduct.description || '',
         vendor: filstarProduct.manufacturer || filstarProduct.brand || '',
-
         productType: category
       }
     };
     
-    // Добави колекция само ако има mapping
     if (collectionId) {
       variables.input.collectionsToJoin = [collectionId];
     }
@@ -812,16 +804,15 @@ async function updateShopifyProduct(existingProduct, filstarProduct, category) {
     );
     
     const result = await response.json();
-    
     if (result.data?.productUpdate?.userErrors?.length > 0) {
-      console.error('  ❌ Errors:', result.data.productUpdate.userErrors);
+      console.error(' ❌ Errors:', result.data.productUpdate.userErrors);
     } else {
-      console.log(`  ✅ Updated product fields${collectionId ? ' and added to collection' : ''}`);
+      console.log(` ✅ Updated product fields${collectionId ? ' and added to collection' : ''}`);
     }
     
-    // Актуализирай снимките (твоят съществуващ код)
+    // Fetch existing images
     const imagesResponse = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${existingProduct.id}/images.json`,
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
       {
         headers: {
           'X-Shopify-Access-Token': ACCESS_TOKEN,
@@ -833,14 +824,61 @@ async function updateShopifyProduct(existingProduct, filstarProduct, category) {
     const imagesData = await imagesResponse.json();
     const existingImages = imagesData.images || [];
     
-    // ... останалият ти код за снимки ...
+    // Collect all images from Filstar
+    const filstarImages = [];
+    if (filstarProduct.image) {
+      filstarImages.push(filstarProduct.image);
+    }
+    if (filstarProduct.images && Array.isArray(filstarProduct.images)) {
+      filstarImages.push(...filstarProduct.images);
+    }
+    if (filstarProduct.variants && Array.isArray(filstarProduct.variants)) {
+      filstarProduct.variants.forEach(variant => {
+        if (variant.image) {
+          filstarImages.push(variant.image);
+        }
+      });
+    }
+    
+    // Upload new images
+    let uploadedCount = 0;
+    for (const imageUrl of filstarImages) {
+      const uploaded = await uploadProductImage(productId, imageUrl, existingImages);
+      if (uploaded) uploadedCount++;
+    }
+    
+    console.log(` 📸 Uploaded ${uploadedCount} new images`);
+    
+    // Reorder images
+    if (uploadedCount > 0) {
+      // Fetch updated images after uploads
+      const updatedImagesResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      const updatedImagesData = await updatedImagesResponse.json();
+      await reorderProductImages(productId, filstarProduct, updatedImagesData.images || []);
+    } else {
+      // No new uploads, but still reorder existing images
+      await reorderProductImages(productId, filstarProduct, existingImages);
+    }
+    
+    // Update statistics
+    if (!stats[category]) {
+      stats[category] = { created: 0, updated: 0, images: 0 };
+    }
+    stats[category].updated++;
+    stats[category].images += uploadedCount;
     
   } catch (error) {
-    console.error(`  ❌ Error updating product:`, error.message);
+    console.error(` ❌ Error updating product:`, error.message);
   }
 }
-
-
 
 
 
