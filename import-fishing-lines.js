@@ -381,10 +381,11 @@ async function normalizeImage(imageUrl) {
     const originalWidth = metadata.width;
     const originalHeight = metadata.height;
     
-    if (originalWidth === TARGET_WIDTH && originalHeight === TARGET_HEIGHT) {
-      console.log(`    ⏭️  Already normalized: ${originalWidth}x${originalHeight}`);
-      return null;
-    }
+ if (originalWidth === TARGET_WIDTH && originalHeight === TARGET_HEIGHT) {
+  console.log(` ⏭️ Already normalized: ${originalWidth}x${originalHeight}`);
+  return imageBuffer;
+}
+
     
     console.log(`    🔧 Normalizing: ${originalWidth}x${originalHeight} → ${TARGET_WIDTH}x${TARGET_HEIGHT}`);
     
