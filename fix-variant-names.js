@@ -17,16 +17,41 @@ let stats = { checked: 0, updated: 0, skipped: 0 };
 async function getCollectionProducts(collectionId) {
   console.log(`\n📦 Fetching products from collection ${collectionId}...`);
   let allProducts = [];
-  let hasNextPage = true;
-  let pageInfo = null;
+  let page = 1;
+  let hasMore = true;
 
-  while (hasNextPage) {
-    let url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250`;
-    if (pageInfo) url += `&page_info=${pageInfo}`;
+  while (hasMore) {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250&page=${page}`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     
-    // ... останалото същото
+    const data = await response.json();
+    
+    if (data.products && data.products.length > 0) {
+      allProducts = allProducts.concat(data.products);
+      console.log(`  Page ${page}: ${data.products.length} products`);
+      
+      if (data.products.length < 250) {
+        hasMore = false;
+      } else {
+        page++;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } else {
+      hasMore = false;
+    }
   }
+  
+  console.log(`  ✅ Total: ${allProducts.length} products`);
+  return allProducts;
 }
+
 
 
 function fixVariantName(name) {
