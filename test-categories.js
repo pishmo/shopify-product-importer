@@ -5,7 +5,7 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // SKU номерата за търсене
-const TARGET_SKUS = ['52475', '962013', '956532', '957231', '946238', '957900'];
+const TARGET_SKUS = ['957383'];
 
 // Функция за fetch на продукти по SKU с пагинация
 async function fetchProductsBySKU(sku) {
