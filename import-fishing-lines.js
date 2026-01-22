@@ -811,6 +811,43 @@ async function updateShopifyProduct(existingProduct, filstarProduct, category) {
       console.log(` ✅ Updated product fields${collectionId ? ' and added to collection' : ''}`);
     }
     
+    // Временна логика: замяна на Ø с ø в имената на вариантите
+    const variantsResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/variants.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    const variantsData = await variantsResponse.json();
+    const variants = variantsData.variants || [];
+
+    for (const variant of variants) {
+      if (variant.option1 && variant.option1.includes('Ø')) {
+        const newOption1 = variant.option1.replace(/Ø/g, 'ø');
+        await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variant.id}.json`,
+          {
+            method: 'PUT',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              variant: {
+                id: variant.id,
+                option1: newOption1
+              }
+            })
+          }
+        );
+        console.log(` 🔄 Updated variant: ${variant.option1} → ${newOption1}`);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+    
     // Fetch existing images
     const imagesResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}/images.json`,
