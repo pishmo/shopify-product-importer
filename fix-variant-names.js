@@ -16,24 +16,42 @@ let stats = { checked: 0, updated: 0, skipped: 0 };
 
 async function getCollectionProducts(collectionId) {
   console.log(`\n📦 Fetching collection ${collectionId}...`);
-  
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?limit=250`,
-    {
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
+  let allProducts = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250&page=${page}`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        }
       }
+    );
+    
+    const data = await response.json();
+    
+    if (data.products && data.products.length > 0) {
+      allProducts = allProducts.concat(data.products);
+      console.log(`  Page ${page}: ${data.products.length} products`);
+      
+      if (data.products.length < 250) {
+        hasMore = false;
+      } else {
+        page++;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } else {
+      hasMore = false;
     }
-  );
+  }
   
-  const data = await response.json();
-  console.log(`  DEBUG - Response:`, JSON.stringify(data).substring(0, 200));
-  console.log(`  DEBUG - Products array exists:`, !!data.products);
-  console.log(`  DEBUG - Products length:`, data.products?.length);
-  
-  return data.products || [];
+  console.log(`  ✅ Total: ${allProducts.length} products`);
+  return allProducts;
 }
+
 
 function fixVariantName(name) {
   if (!name || typeof name !== 'string') return name;
