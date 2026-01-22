@@ -56,22 +56,26 @@ async function getCollectionProducts(collectionId) {
 }
 function fixVariantName(name) {
   if (!name || typeof name !== 'string') return name;
-  
-  // Пропускай японска номерация
   if (name.includes('#')) return null;
 
   let fixed = name;
   let changed = false;
 
-  // 1. Замени "Xмм" с "øXмм"
+  // 1. "Xмм" → "øXмм"
   if (/\d+\.?\d*мм/.test(fixed) && !fixed.includes('ø')) {
     fixed = fixed.replace(/(\d+\.?\d*)мм/g, 'ø$1мм');
     changed = true;
   }
 
-  // 2. Добави "ø" и "мм" за "/ 0.X " (с интервал след)
+  // 2. "/ 0.X /" → "/ ø0.Xмм /"
   if (/\/\s+0\.\d+\s+\//.test(fixed)) {
     fixed = fixed.replace(/\/\s+(0\.\d+)\s+\//g, '/ ø$1мм /');
+    changed = true;
+  }
+  
+  // 3. "/ 0.X " (без "/" след) → "/ ø0.Xмм "
+  if (/\/\s+0\.\d+\s+(?!\/)/.test(fixed) && !changed) {
+    fixed = fixed.replace(/\/\s+(0\.\d+)(\s+)/g, '/ ø$1мм$2');
     changed = true;
   }
 
