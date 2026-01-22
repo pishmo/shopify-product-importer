@@ -15,25 +15,6 @@ const LINE_COLLECTION_IDS = [
 let stats = { checked: 0, updated: 0, skipped: 0 };
 
 async function getCollectionProducts(collectionId) {
-  console.log(`\n📦 Fetching products from collection ${collectionId}...`);
-  let allProducts = [];
-  let page = 1;
-  let hasMore = true;
-
-  while (hasMore) {
-    const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collections/${collectionId}/products.json?fields=id,title,variants&limit=250&page=${page}`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    const data = await response.json();
-    
-async function getCollectionProducts(collectionId) {
   console.log(`\n📦 Fetching collection ${collectionId}...`);
   
   const response = await fetch(
@@ -53,8 +34,6 @@ async function getCollectionProducts(collectionId) {
   
   return data.products || [];
 }
-
-
 
 function fixVariantName(name) {
   if (!name || typeof name !== 'string') return name;
