@@ -54,7 +54,6 @@ async function getCollectionProducts(collectionId) {
   console.log(`✅ Fetched ${allProducts.length} products`);
   return allProducts;
 }
-
 function fixVariantName(name) {
   if (!name || typeof name !== 'string') return name;
   
@@ -70,14 +69,15 @@ function fixVariantName(name) {
     changed = true;
   }
 
-  // 2. Добави "ø" и "мм" за "/ 0.X" без мм
-  if (/\/\s*0\.\d+(?!\d*мм)/.test(fixed) && !fixed.includes('ø')) {
-    fixed = fixed.replace(/\/\s*(0\.\d+)(?!\d*мм)/g, '/ ø$1мм');
+  // 2. Добави "ø" и "мм" за "/ 0.X " (с интервал след)
+  if (/\/\s+0\.\d+\s+\//.test(fixed)) {
+    fixed = fixed.replace(/\/\s+(0\.\d+)\s+\//g, '/ ø$1мм /');
     changed = true;
   }
 
   return changed ? fixed : null;
 }
+
 
 async function updateVariant(variantId, newName) {
   const response = await fetch(
