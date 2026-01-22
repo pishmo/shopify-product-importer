@@ -109,15 +109,9 @@ function fixVariantName(name) {
     changed = true;
   }
 
-  // 3. Добави ⌀ и мм за "/ 0.X " (без символ и мм)
-  if (/\/\s+0\.\d+\s+/.test(fixed) && !fixed.includes('⌀')) {
+  // 3. Добави ⌀ и мм за "/ 0.X " (без символ и мм, БЕЗ диез)
+  if (/\/\s+0\.\d+\s+/.test(fixed) && !fixed.includes('⌀') && !fixed.includes('#')) {
     fixed = fixed.replace(/\/\s+(0\.\d+)\s+/g, '/ ⌀$1мм ');
-    changed = true;
-  }
-  
-  // 4. Добави ⌀ и мм за "/ #0.X " (японска номерация + диаметър)
-  if (/\/\s+#0\.\d+\s+/.test(fixed) && !fixed.includes('⌀')) {
-    fixed = fixed.replace(/\/\s+#(0\.\d+)\s+/g, '/ #⌀$1мм ');
     changed = true;
   }
 
