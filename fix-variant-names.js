@@ -97,26 +97,15 @@ function fixVariantName(name) {
   let fixed = name;
   let changed = false;
 
-  // 1. Замени Ø (скандинавска главна) → ⌀
-  if (fixed.includes('Ø')) {
-    fixed = fixed.replace(/Ø/g, '⌀');
-    changed = true;
-  }
-
-  // 2. Замени ø (скандинавска малка) → ⌀
-  if (fixed.includes('ø')) {
-    fixed = fixed.replace(/ø/g, '⌀');
-    changed = true;
-  }
-
-  // 3. Добави ⌀ и мм за "/ 0.X " (без символ и мм, БЕЗ диез)
-  if (/\/\s+0\.\d+\s+/.test(fixed) && !fixed.includes('⌀') && !fixed.includes('#')) {
-    fixed = fixed.replace(/\/\s+(0\.\d+)\s+/g, '/ ⌀$1мм ');
+  // Замени #⌀ → # (премахни грешно добавения символ при японска номерация)
+  if (fixed.includes('#⌀')) {
+    fixed = fixed.replace(/#⌀/g, '#');
     changed = true;
   }
 
   return changed ? fixed : null;
 }
+
 
 
 async function updateVariant(variantGid, newName) {
