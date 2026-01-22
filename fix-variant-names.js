@@ -108,6 +108,11 @@ async function updateVariant(variantId, newName) {
 }
 
 async function processProduct(product) {
+  if (!product.variants || !Array.isArray(product.variants)) {
+    console.log(`⚠️ Skipping ${product.title} - no variants`);
+    return;
+  }
+  
   stats.checked++;
   
   for (const variant of product.variants) {
@@ -129,6 +134,7 @@ async function processProduct(product) {
     }
   }
 }
+
 
 async function main() {
   console.log('🔧 Starting variant name fix...\n');
