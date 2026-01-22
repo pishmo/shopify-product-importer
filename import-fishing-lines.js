@@ -272,7 +272,11 @@ function formatLineVariantName(variant, filstarProduct) {
     a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM')
   )?.value;
   if (diameter) {
-    parts.push(`⌀${diameter}мм`);
+   
+    parts.push(`ø${diameter}мм`);
+
+
+    
   }
   
   // 4. Японска номерация
