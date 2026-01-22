@@ -97,7 +97,13 @@ function fixVariantName(name) {
   let fixed = name;
   let changed = false;
 
-  // Замени #⌀ → # (премахни грешно добавения символ при японска номерация)
+  // 1. Ако има #0.XXмм → замени # с ⌀ (грешка, трябва да е диаметър)
+  if (/#\d+\.?\d*мм/.test(fixed)) {
+    fixed = fixed.replace(/#(\d+\.?\d*мм)/g, '⌀$1');
+    changed = true;
+  }
+
+  // 2. Замени #⌀ → # (ако все още има)
   if (fixed.includes('#⌀')) {
     fixed = fixed.replace(/#⌀/g, '#');
     changed = true;
