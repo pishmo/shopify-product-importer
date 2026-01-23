@@ -1,6 +1,5 @@
 
 const fetch = require('node-fetch');
-const sharp = require('sharp');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
