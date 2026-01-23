@@ -12,30 +12,17 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  nets_and_caps: ['17'],
-  slingshots: ['26'],
-  carp_fishing: ['37'],
-  pike_and_catfish: ['45'],
-  pole_and_match: ['50'],
-  knives: ['59'],
-  boxes_and_bags: ['61'],
-  chairs_umbrellas_tents: ['63'],
-  other: ['68']
+  
+  carp_fishing: ['37'] 
 };
 
 const ACCESSORIES_PARENT_ID = '11';
 
 // Shopify collection IDs
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
-  nets_and_caps: 'gid://shopify/Collection/739661087102',
-  slingshots: 'gid://shopify/Collection/739661119870',
-  carp_fishing: 'gid://shopify/Collection/739661152638',
-  pike_and_catfish: 'gid://shopify/Collection/739661185406',
-  pole_and_match: 'gid://shopify/Collection/739661218174',
-  knives: 'gid://shopify/Collection/739661250942',
-  boxes_and_bags: 'gid://shopify/Collection/739661316478',
-  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782',
-  other: 'gid://shopify/Collection/739661447550'
+  
+  carp_fishing: 'gid://shopify/Collection/739661152638'
+ 
 };
 
 // Статистика
