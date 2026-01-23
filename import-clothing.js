@@ -67,15 +67,15 @@ const stats = {
 // Имена на категориите
 function getCategoryName(category) {
   const names = {
-   // shoes: 'Обувки',
-   // tshirts: 'Тениски',
-   // pants: 'Панталони',
-   // jackets: 'Якета',
-  //  hats: 'Шапки',
- //   gloves: 'Ръкавици',
-  //  sunglasses: 'Слънчеви очила',
+    shoes: 'Обувки',
+    tshirts: 'Тениски',
+    pants: 'Панталони',
+    jackets: 'Якета',
+    hats: 'Шапки',
+    gloves: 'Ръкавици',
+    sunglasses: 'Слънчеви очила',
     sets: 'Комплекти и костюми',
-//    other: 'Друго облекло'
+    other: 'Друго облекло'
   };
   return names[category] || category;
 }
@@ -201,7 +201,7 @@ async function fetchAllProducts() {
       console.log(`Fetching page ${page}...`);
       
       const response = await fetch(
-        `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`,
+        `${FILSTAR_API_BASE}/products?category_id=87&page=${page}&limit=1000`,
         {
           headers: {
             'Authorization': `Bearer ${FILSTAR_TOKEN}`
