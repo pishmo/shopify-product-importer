@@ -835,5 +835,3 @@ async function importAccessories() {
 importAccessories().catch(console.error);
 
 
-// Стартирай импорта
-importAccessories();
