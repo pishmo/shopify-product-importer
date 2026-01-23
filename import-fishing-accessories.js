@@ -804,7 +804,7 @@ async function importAccessories() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // TEST MODE - спри след 1 продукт
-        if (TEST_MODE && processedCount >= 50) {
+        if (TEST_MODE && processedCount >= 10) {
           console.log('\n✅ Test completed, stopping...');
           break;
         }
