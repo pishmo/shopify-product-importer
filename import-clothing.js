@@ -85,7 +85,7 @@ function getCategoryName(category) {
 // ФУНКЦИИ
 
 function getOptionName(category) {
-  if (category === 'shoes') return 'Размер / Номер';
+  if (category === 'shoes') return 'Размер';
   if (['tshirts', 'pants', 'jackets', 'sets', 'gloves'].includes(category)) return 'Размер';
   return 'Вариант';
 }
