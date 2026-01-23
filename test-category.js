@@ -19,14 +19,16 @@ const TEST_SKUS = [
   '961464'  // аксесоари други
 ];
 
-async function fetchWithPagination(sku) {
+async function fetchAllProducts() {
+  console.log('📦 Fetching all products from Filstar...\n');
   let allProducts = [];
   let page = 1;
   let hasMore = true;
   
   while (hasMore) {
+    console.log(`  Fetching page ${page}...`);
     const response = await fetch(
-      `${FILSTAR_API_BASE}/products?page=${page}&limit=1000&search=${sku}`,
+      `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`,
       {
         headers: {
           'Authorization': `Bearer ${FILSTAR_TOKEN}`,
@@ -39,28 +41,33 @@ async function fetchWithPagination(sku) {
     
     if (data.data && data.data.length > 0) {
       allProducts = allProducts.concat(data.data);
+      console.log(`    ✓ Page ${page}: ${data.data.length} products`);
       hasMore = data.data.length === 1000;
       page++;
     } else {
       hasMore = false;
     }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
+  console.log(`\n✅ Total products fetched: ${allProducts.length}\n`);
   return allProducts;
 }
 
 async function testAccessoriesCategories() {
-  console.log('🧪 Testing Filstar API for accessories categories\n');
+  const allProducts = await fetchAllProducts();
+  
+  console.log('🧪 Searching for test SKUs...\n');
   
   const results = [];
   
   for (const sku of TEST_SKUS) {
-    console.log(`📍 Testing SKU: ${sku}`);
+    console.log(`📍 Looking for SKU: ${sku}`);
     
-    const products = await fetchWithPagination(sku);
+    const product = allProducts.find(p => p.sku === sku);
     
-    if (products.length > 0) {
-      const product = products[0];
+    if (product) {
       console.log(`   ✅ Found: ${product.name}`);
       console.log(`   🏷️  Categories:`, product.categories);
       console.log('');
@@ -73,8 +80,6 @@ async function testAccessoriesCategories() {
     } else {
       console.log(`   ❌ Not found\n`);
     }
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
   console.log('\n📊 SUMMARY:\n');
