@@ -981,6 +981,7 @@ async function main() {
 
       console.log(`\n${'='.repeat(80)}`);
       console.log(`Processing: ${filstarProduct.name} [${getCategoryName(category)}]`);
+	  console.log(`[${currentIndex}/${totalProducts}]`);
       console.log(`${'='.repeat(80)}`);
 
       const existingProduct = allShopifyProducts.find(sp =>
