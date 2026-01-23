@@ -478,6 +478,10 @@ console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: $
 
     // Качи и нормализирай изображения
     if (filstarProduct.images && filstarProduct.images.length > 0) {
+      // Качи и нормализирай изображения
+if (filstarProduct.images && filstarProduct.images.length > 0) {
+  console.log(` 🖼️ Images from Filstar:`, filstarProduct.images);
+  console.log(` 🖼️ Processing ${filstarProduct.images.length} images...`);
       console.log(`  🖼️  Processing ${filstarProduct.images.length} images...`);
       
       const uploadedImages = [];
