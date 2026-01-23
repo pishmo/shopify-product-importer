@@ -839,9 +839,7 @@ async function importAccessories() {
         
       }
       
-      if (TEST_MODE && processedCount >= 1) {
-        break;
-      }
+     
     }
     
     // Покажи финална статистика
