@@ -154,6 +154,10 @@ function formatVariantName(attributes) {
   if (!attributes || attributes.length === 0) {
     return 'Стандартен';
   }
+
+// debug
+console.log(` 🔍 Attributes:`, attributes.map(a => a.attribute_name));
+
   
   return attributes
     .filter(attr => attr.attribute_name !== 'ЖИВАРНИЦИ И КЕПЧЕТА')
