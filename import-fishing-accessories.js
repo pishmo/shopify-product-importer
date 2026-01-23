@@ -53,7 +53,7 @@ const stats = {
 
 // TEST MODE - само за 1 категория
 const TEST_MODE = true;
-const TEST_CATEGORY = 'knives';
+const TEST_CATEGORY = 'boxes_and_bags';
 
 // Функция за нормализация на изображения
 async function normalizeImage(imageUrl, sku) {
