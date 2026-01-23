@@ -401,6 +401,13 @@ async function createShopifyProduct(filstarProduct, categoryType) {
   
   try {
     const vendor = filstarProduct.manufacturer || 'Unknown';
+
+
+const vendor = filstarProduct.manufacturer || 'Unknown';
+console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
+
+
+    
     const productType = getCategoryName(categoryType);
     
     // Подготви варианти
