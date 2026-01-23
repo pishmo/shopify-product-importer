@@ -1,8 +1,8 @@
 name: Import Fishing Lines
 
 on:
-  schedule:
-    - cron: '0 10 * * *'  # Всеки ден в 10:00 сутринта (2 часа след въдиците)
+  # schedule:
+   # - cron: '0 10 * * *'  # Всеки ден в 10:00 сутринта (2 часа след въдиците)
   workflow_dispatch:
 
 jobs:
