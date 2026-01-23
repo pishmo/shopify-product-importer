@@ -2,8 +2,8 @@
 name: Import Fishing Baits from Filstar
 
 on:
-  schedule:
-    - cron: '0 12 * * *'  # Всеки ден в 12:00 сутринта (12 часа след въдиците)
+  # schedule:
+  #  - cron: '0 12 * * *'  # Всеки ден в 12:00 сутринта (12 часа след въдиците)
   workflow_dispatch:
 
 jobs:
