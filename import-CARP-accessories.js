@@ -27,15 +27,9 @@ const SHOPIFY_ACCESSORIES_COLLECTIONS = {
 
 // Статистика
 const stats = {
-  nets_and_caps: { created: 0, updated: 0, images: 0 },
-  slingshots: { created: 0, updated: 0, images: 0 },
-  carp_fishing: { created: 0, updated: 0, images: 0 },
-  pike_and_catfish: { created: 0, updated: 0, images: 0 },
-  pole_and_match: { created: 0, updated: 0, images: 0 },
-  knives: { created: 0, updated: 0, images: 0 },
-  boxes_and_bags: { created: 0, updated: 0, images: 0 },
-  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }
+  
+  carp_fishing: { created: 0, updated: 0, images: 0 }
+  
 };
 
 // TEST MODE - само за 1 категория
