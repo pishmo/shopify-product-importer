@@ -52,8 +52,8 @@ const stats = {
 };
 
 // TEST MODE - само за 1 категория
-const TEST_MODE = true;
-const TEST_CATEGORY = 'other';
+//const TEST_MODE = true;
+//const TEST_CATEGORY = 'other';
 
 // Функция за нормализация на изображения
 async function normalizeImage(imageUrl, sku) {
@@ -830,10 +830,13 @@ async function importAccessories() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // TEST MODE - спри след 1 продукт
-        if (TEST_MODE && processedCount >= 10) {
-          console.log('\n✅ Test completed, stopping...');
-          break;
-        }
+       // if (TEST_MODE && processedCount >= 10) {
+       //   console.log('\n✅ Test completed, stopping...');
+       //   break;
+       // }
+
+
+        
       }
       
       if (TEST_MODE && processedCount >= 1) {
