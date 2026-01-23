@@ -65,7 +65,10 @@ async function testAccessoriesCategories() {
   for (const sku of TEST_SKUS) {
     console.log(`📍 Looking for SKU: ${sku}`);
     
-    const product = allProducts.find(p => p.sku === sku);
+   const product = allProducts.find(p => 
+  p.variants?.some(v => v.sku === sku)
+);
+
     
     if (product) {
       console.log(`   ✅ Found: ${product.name}`);
