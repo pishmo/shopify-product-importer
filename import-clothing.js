@@ -979,6 +979,7 @@ async function main() {
 let currentIndex = 0;
 	  
     for (const filstarProduct of clothingProducts) {
+	  currentIndex++;
       const category = getCategoryType(filstarProduct);
       if (!category) continue;
 
