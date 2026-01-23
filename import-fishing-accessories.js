@@ -556,7 +556,7 @@ if (filstarProduct.images && filstarProduct.images.length > 0) {
     console.error(`  ❌ Error creating product: ${error.message}`);
     return null;
   }
-
+}
 
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
