@@ -1,46 +1,80 @@
-const fetch = require('node-fetch');
-
-const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
+const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 
-async function testFilters() {
-  console.log('🧪 Testing Filstar API category filters\n');
+async function testSearchFormat(url, description) {
+  console.log(`\n=== ${description} ===`);
+  console.log(`URL: ${url}`);
   
-  const tests = [
-    { url: `${FILSTAR_API_BASE}/products?category_id=87&limit=5`, desc: 'category_id=87 (sets)' },
-    { url: `${FILSTAR_API_BASE}/products?category=87&limit=5`, desc: 'category=87' },
-    { url: `${FILSTAR_API_BASE}/products?parent_category_id=10&limit=5`, desc: 'parent_category_id=10 (clothing)' },
-    { url: `${FILSTAR_API_BASE}/products?categories=87&limit=5`, desc: 'categories=87' },
-    { url: `${FILSTAR_API_BASE}/products?filter[category_id]=87&limit=5`, desc: 'filter[category_id]=87' },
-    { url: `${FILSTAR_API_BASE}/products?limit=5`, desc: 'NO FILTER (baseline)' }
-  ];
-  
-  for (const test of tests) {
-    console.log(`\n📍 ${test.desc}`);
-    console.log(`   ${test.url}`);
+  try {
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
+    });
     
-    try {
-      const response = await fetch(test.url, {
-        headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
-      });
+    const products = await response.json();
+    
+    console.log(`✅ Response OK`);
+    console.log(`Products count: ${Array.isArray(products) ? products.length : 'Not an array'}`);
+    
+    if (Array.isArray(products) && products.length > 0) {
+      const firstProduct = products[0];
+      console.log(`First product: ${firstProduct.name}`);
+      console.log(`Categories:`, firstProduct.categories?.map(c => `${c.name} (ID:${c.id})`).join(', '));
       
-      const products = await response.json();
-      console.log(`   ✅ Status: ${response.status} | Products returned: ${products.length}`);
-      
-      if (products.length > 0) {
-        const p = products[0];
-        console.log(`   📦 First: ${p.name}`);
-        console.log(`   🏷️  Cat IDs: ${p.categories?.map(c => c.id).join(', ') || 'none'}`);
-      }
-      
-      await new Promise(r => setTimeout(r, 600));
-      
-    } catch (error) {
-      console.log(`   ❌ Error: ${error.message}`);
+      // Провери дали има категория 84
+      const hasCategory84 = firstProduct.categories?.some(c => c.id?.toString() === '84');
+      console.log(`Has category 84: ${hasCategory84 ? '✅ YES' : '❌ NO'}`);
     }
+  } catch (error) {
+    console.log(`❌ Error: ${error.message}`);
   }
-  
-  console.log('\n✅ Test complete');
 }
 
-testFilters();
+async function runTests() {
+  console.log('🔍 Testing different search formats for category ID 84\n');
+  
+  // Тест 1: search=category:84
+  await testSearchFormat(
+    `${FILSTAR_API_BASE}/products?search=category:84&per_page=5`,
+    'Format: search=category:84'
+  );
+  
+  // Тест 2: search=category_id:84
+  await testSearchFormat(
+    `${FILSTAR_API_BASE}/products?search=category_id:84&per_page=5`,
+    'Format: search=category_id:84'
+  );
+  
+  // Тест 3: search[category]=84
+  await testSearchFormat(
+    `${FILSTAR_API_BASE}/products?search[category]=84&per_page=5`,
+    'Format: search[category]=84'
+  );
+  
+  // Тест 4: category=84
+  await testSearchFormat(
+    `${FILSTAR_API_BASE}/products?category=84&per_page=5`,
+    'Format: category=84'
+  );
+  
+  // Тест 5: category_id=84
+  await testSearchFormat(
+    `${FILSTAR_API_BASE}/products?category_id=84&per_page=5`,
+    'Format: category_id=84'
+  );
+  
+  // Тест 6: filter[category]=84
+  await testSearchFormat(
+    `${FILSTAR_API_BASE}/products?filter[category]=84&per_page=5`,
+    'Format: filter[category]=84'
+  );
+  
+  // Тест 7: categories=84
+  await testSearchFormat(
+    `${FILSTAR_API_BASE}/products?categories=84&per_page=5`,
+    'Format: categories=84'
+  );
+  
+  console.log('\n✅ All tests completed!');
+}
+
+runTests();
