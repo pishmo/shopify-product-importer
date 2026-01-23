@@ -156,6 +156,13 @@ function formatVariantName(attributes) {
   }
   
   return attributes
+    .filter(attr => attr.attribute_name !== 'ЖИВАРНИЦИ И КЕПЧЕТА')
+    .map(attr => `${attr.attribute_name} ${attr.value}`)
+    .join(' / ');
+}
+
+  
+  return attributes
     .map(attr => `${attr.attribute_name} ${attr.value}`)
     .join(' / ');
 }
