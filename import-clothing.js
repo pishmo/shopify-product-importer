@@ -201,7 +201,7 @@ async function fetchAllProducts() {
       console.log(`Fetching page ${page}...`);
       
       const response = await fetch(
-        `${FILSTAR_API_BASE}/products?page=${page}&limit=1000&search=category:87`,
+        `${FILSTAR_API_BASE}/products?page=${page}&limit=1000&search=Комплекти и костюми`,
         {
           headers: {
             'Authorization': `Bearer ${FILSTAR_TOKEN}`
