@@ -33,11 +33,21 @@ const COLLECTION_MAPPING = {
 
 
 // Filstar категории за облекло
+	
+	// Filstar категории за облекло
 const FILSTAR_CLOTHING_CATEGORY_IDS = {
- 
+  shoes: ['90'],
+  tshirts: ['84'],
+  pants: ['85'],
+  jackets: ['86'],
+  hats: ['88'],
+  gloves: ['89'],
+  sunglasses: ['92'],
   sets: ['87'],
-
+  other: ['95']
 };
+
+	
 
 const CLOTHING_PARENT_ID = '10';
 
@@ -57,15 +67,15 @@ const stats = {
 // Имена на категориите
 function getCategoryName(category) {
   const names = {
-    shoes: 'Обувки',
-    tshirts: 'Тениски',
-    pants: 'Панталони',
-    jackets: 'Якета',
-    hats: 'Шапки',
-    gloves: 'Ръкавици',
-    sunglasses: 'Слънчеви очила',
+   // shoes: 'Обувки',
+   // tshirts: 'Тениски',
+   // pants: 'Панталони',
+   // jackets: 'Якета',
+  //  hats: 'Шапки',
+ //   gloves: 'Ръкавици',
+  //  sunglasses: 'Слънчеви очила',
     sets: 'Комплекти и костюми',
-    other: 'Друго облекло'
+//    other: 'Друго облекло'
   };
   return names[category] || category;
 }
