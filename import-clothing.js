@@ -34,15 +34,15 @@ const COLLECTION_MAPPING = {
 
 // Filstar категории за облекло
 const FILSTAR_CLOTHING_CATEGORY_IDS = {
-//  shoes: ['90'],
-//  tshirts: ['84'],
-//  pants: ['85'],
-//  jackets: ['86'],
-//  hats: ['88'],
-//  gloves: ['89'],
- // sunglasses: ['92'],
-  sets: ['87']
-//  other: ['95']
+  shoes: ['90'],
+  tshirts: ['84'],
+  pants: ['85'],
+  jackets: ['86'],
+  hats: ['88'],
+  gloves: ['89'],
+  sunglasses: ['92'],
+  sets: ['87'],
+  other: ['95']
 };
 
 const CLOTHING_PARENT_ID = '10';
