@@ -19,16 +19,14 @@ const TEST_SKUS = [
   '961464'  // аксесоари други
 ];
 
-async function testAccessoriesCategories() {
-  console.log('🧪 Testing Filstar API for accessories categories\n');
+async function fetchWithPagination(sku) {
+  let allProducts = [];
+  let page = 1;
+  let hasMore = true;
   
-  const results = [];
-  
-  for (const sku of TEST_SKUS) {
-    console.log(`📍 Testing SKU: ${sku}`);
-    
+  while (hasMore) {
     const response = await fetch(
-      `${FILSTAR_API_BASE}/products?search=${sku}`,
+      `${FILSTAR_API_BASE}/products?page=${page}&limit=1000&search=${sku}`,
       {
         headers: {
           'Authorization': `Bearer ${FILSTAR_TOKEN}`,
@@ -40,7 +38,29 @@ async function testAccessoriesCategories() {
     const data = await response.json();
     
     if (data.data && data.data.length > 0) {
-      const product = data.data[0];
+      allProducts = allProducts.concat(data.data);
+      hasMore = data.data.length === 1000;
+      page++;
+    } else {
+      hasMore = false;
+    }
+  }
+  
+  return allProducts;
+}
+
+async function testAccessoriesCategories() {
+  console.log('🧪 Testing Filstar API for accessories categories\n');
+  
+  const results = [];
+  
+  for (const sku of TEST_SKUS) {
+    console.log(`📍 Testing SKU: ${sku}`);
+    
+    const products = await fetchWithPagination(sku);
+    
+    if (products.length > 0) {
+      const product = products[0];
       console.log(`   ✅ Found: ${product.name}`);
       console.log(`   🏷️  Categories:`, product.categories);
       console.log('');
