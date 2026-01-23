@@ -243,7 +243,7 @@ function getCategoryType(filstarProduct) {
 
 
 // Филтрирай само категория , въведи номер на категорията от мапинга
-  if (!filstarProduct.categories.some(c => c.id?.toString() === '88')) {
+  if (!filstarProduct.categories.some(c => c.id?.toString() === '90')) {
     return null;
   }
 
