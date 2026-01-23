@@ -1,10 +1,11 @@
 name: Import Fishing Accessories
 on:
   workflow_dispatch:
-//  schedule:
-//    - cron: '0 2 * * *'  # Всеки ден в 2:00 UTC (4:00 EET)
+#  schedule:
+#    - cron: '0 2 * * *'  # Всеки ден в 2:00 UTC (4:00 EET)
 
 jobs:
+
   import-accessories:
     runs-on: ubuntu-latest
     
