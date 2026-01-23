@@ -53,7 +53,7 @@ const stats = {
 
 // TEST MODE - само за 1 категория
 const TEST_MODE = true;
-const TEST_CATEGORY = 'pike_and_catfish';
+const TEST_CATEGORY = 'pole_and_match';
 
 // Функция за нормализация на изображения
 async function normalizeImage(imageUrl, sku) {
