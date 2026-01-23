@@ -749,9 +749,8 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 async function importAccessories() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('======================================================================');
-  
   if (TEST_MODE) {
-    console.log(`⚠️  TEST MODE: Processing only ${TEST_CATEGORY} category`);
+    console.log(`⚠️ TEST MODE: Processing only ${TEST_CATEGORY} category`);
     console.log('======================================================================\n');
   }
   
@@ -761,20 +760,16 @@ async function importAccessories() {
     
     // Филтрирай аксесоари по parent_id
     const accessoriesProducts = allProducts.filter(product => {
-      return product.categories?.some(cat => 
-        cat.parent_id?.toString() === ACCESSORIES_PARENT_ID
-      );
+      return product.categories?.some(cat => cat.parent_id?.toString() === ACCESSORIES_PARENT_ID);
     });
     
     console.log(`📊 Found ${accessoriesProducts.length} accessories products\n`);
     
     // Групирай по категории
     const categorizedProducts = {};
-    
     for (const categoryType of Object.keys(FILSTAR_ACCESSORIES_CATEGORY_IDS)) {
       categorizedProducts[categoryType] = [];
     }
-    
     for (const product of accessoriesProducts) {
       const categoryType = getCategoryType(product);
       categorizedProducts[categoryType].push(product);
@@ -783,18 +778,16 @@ async function importAccessories() {
     // Покажи статистика
     console.log('📋 Products by category:');
     for (const [type, products] of Object.entries(categorizedProducts)) {
-      console.log(`  ${getCategoryName(type)}: ${products.length} products`);
+      console.log(` ${getCategoryName(type)}: ${products.length} products`);
     }
     console.log('');
     
     // Обработи продуктите
     let processedCount = 0;
-    
     for (const [categoryType, products] of Object.entries(categorizedProducts)) {
-      if (TEST_MODE && categoryType !== TEST_CATEGORY) {
-        continue;
-      }
-      
+      // if (TEST_MODE && categoryType !== TEST_CATEGORY) {
+      //   continue;
+      // }
       if (products.length === 0) {
         continue;
       }
@@ -803,51 +796,49 @@ async function importAccessories() {
       console.log(`Processing ${getCategoryName(categoryType)} (${products.length} products)`);
       console.log('='.repeat(70));
       
-      for (const product of products) {
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
         processedCount++;
         
-        console.log(`\nProcessing: ${product.name}`);
+        console.log(`\n${'━'.repeat(70)}`);
+        console.log(`[${i + 1}/${products.length}] Processing: ${product.name}`);
         
         // Намери първия SKU от вариантите
         const firstSku = product.variants?.[0]?.sku;
-        
         if (!firstSku) {
-          console.log('  ⚠️  No SKU found, skipping...');
+          console.log(' ⚠️ No SKU found, skipping...');
           continue;
         }
         
         // Провери дали продуктът съществува в Shopify
         const existingProduct = await findProductBySku(firstSku);
-        
         if (existingProduct) {
-          console.log(`  ✓ Found existing product (ID: ${existingProduct.id})`);
+          console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
           await updateShopifyProduct(existingProduct, product, categoryType);
         } else {
-          console.log(`  ✓ Product not found, creating new...`);
+          console.log(` ✓ Product not found, creating new...`);
           await createShopifyProduct(product, categoryType);
         }
         
         // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // TEST MODE - спри след 1 продукт
-       // if (TEST_MODE && processedCount >= 10) {
-       //   console.log('\n✅ Test completed, stopping...');
-       //   break;
-       // }
-
-
-        
+        // // TEST MODE - спри след 10 продукта
+        // if (TEST_MODE && processedCount >= 10) {
+        //   console.log('\n✅ Test completed, stopping...');
+        //   break;
+        // }
       }
       
-     
+      // if (TEST_MODE && processedCount >= 10) {
+      //   break;
+      // }
     }
     
     // Покажи финална статистика
     console.log('\n' + '='.repeat(70));
     console.log('📊 IMPORT SUMMARY');
     console.log('='.repeat(70));
-    
     for (const [type, stat] of Object.entries(stats)) {
       if (stat.created > 0 || stat.updated > 0 || stat.images > 0) {
         console.log(`${getCategoryName(type)}:`);
@@ -861,14 +852,13 @@ async function importAccessories() {
     const totalCreated = Object.values(stats).reduce((sum, s) => sum + s.created, 0);
     const totalUpdated = Object.values(stats).reduce((sum, s) => sum + s.updated, 0);
     const totalImages = Object.values(stats).reduce((sum, s) => sum + s.images, 0);
-    
     console.log(`TOTAL: ${totalCreated} created | ${totalUpdated} updated | ${totalImages} images`);
     console.log('='.repeat(70));
-    
   } catch (error) {
     console.error('❌ Fatal error:', error);
   }
 }
+
 
 // Стартирай импорта
 importAccessories();
