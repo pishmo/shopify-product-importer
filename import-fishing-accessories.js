@@ -231,3 +231,328 @@ async function fetchAllProducts() {
   console.log(`\n✅ Total products fetched: ${allProducts.length}\n`);
   return allProducts;
 }
+
+
+// 2  част 
+
+
+// Функция за намиране на продукт в Shopify по SKU
+async function findProductBySku(sku) {
+  try {
+    const query = `
+      {
+        products(first: 1, query: "sku:${sku}") {
+          edges {
+            node {
+              id
+              title
+              handle
+              images(first: 50) {
+                edges {
+                  node {
+                    id
+                    src
+                  }
+                }
+              }
+              variants(first: 100) {
+                edges {
+                  node {
+                    id
+                    sku
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query })
+      }
+    );
+
+    const data = await response.json();
+    
+    if (data.data?.products?.edges?.length > 0) {
+      return data.data.products.edges[0].node;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`  ❌ Error finding product by SKU: ${error.message}`);
+    return null;
+  }
+}
+
+// Функция за добавяне на продукт в колекция
+async function addProductToCollection(productId, categoryType) {
+  const collectionId = SHOPIFY_ACCESSORIES_COLLECTIONS[categoryType];
+  
+  if (!collectionId) {
+    console.log(`  ⚠️  No collection mapping for category: ${categoryType}`);
+    return;
+  }
+
+  try {
+    const mutation = `
+      mutation {
+        collectionAddProducts(
+          id: "${collectionId}",
+          productIds: ["${productId}"]
+        ) {
+          collection {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: mutation })
+      }
+    );
+
+    const data = await response.json();
+    
+    if (data.data?.collectionAddProducts?.userErrors?.length > 0) {
+      console.log(`  ⚠️  Collection errors:`, data.data.collectionAddProducts.userErrors);
+    }
+  } catch (error) {
+    console.error(`  ❌ Error adding to collection: ${error.message}`);
+  }
+}
+
+// Функция за пренареждане на изображенията
+async function reorderProductImages(productGid, images) {
+  try {
+    const imageIds = images.map(img => `"${img.id}"`).join(', ');
+    
+    const mutation = `
+      mutation {
+        productReorderImages(
+          id: "${productGid}",
+          moves: [${images.map((img, index) => `{
+            id: "${img.id}",
+            newPosition: "${index}"
+          }`).join(', ')}]
+        ) {
+          product {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: mutation })
+      }
+    );
+
+    const data = await response.json();
+    
+    if (data.data?.productReorderImages?.userErrors?.length > 0) {
+      console.log(`  ⚠️  Reorder errors:`, data.data.productReorderImages.userErrors);
+      return false;
+    }
+    
+    console.log(`    ✅ Reordered ${images.length} images`);
+    return true;
+  } catch (error) {
+    console.error(`  ❌ Error reordering images: ${error.message}`);
+    return false;
+  }
+}
+
+// Функция за създаване на нов продукт
+async function createShopifyProduct(filstarProduct, categoryType) {
+  console.log(`\n🆕 Creating: ${filstarProduct.name}`);
+  
+  try {
+    const vendor = filstarProduct.manufacturer || 'Unknown';
+    const productType = getCategoryName(categoryType);
+    
+    // Подготви варианти
+    const variants = filstarProduct.variants.map(variant => {
+      const variantName = formatVariantName(variant.attributes);
+      
+      return {
+        option1: variantName,
+        price: variant.price?.toString() || '0',
+        sku: variant.sku,
+        barcode: variant.barcode || variant.sku,
+        inventory_quantity: parseInt(variant.quantity) || 0,
+        inventory_management: 'shopify'
+      };
+    });
+
+    // Създай продукта
+    const productData = {
+      product: {
+        title: filstarProduct.name,
+        body_html: filstarProduct.description || filstarProduct.short_description || '',
+        vendor: vendor,
+        product_type: productType,
+        tags: ['Filstar', categoryType, vendor],
+        status: 'active',
+        variants: variants,
+        options: [
+          { name: 'Вариант' }
+        ]
+      }
+    };
+
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    const productId = result.product.id;
+    const productGid = `gid://shopify/Product/${productId}`;
+    
+    console.log(`  ✅ Created product ID: ${productId}`);
+    console.log(`  📦 Created ${variants.length} variants`);
+
+    // Добави в колекция
+    await addProductToCollection(productGid, categoryType);
+
+    // Качи и нормализирай изображения
+    if (filstarProduct.images && filstarProduct.images.length > 0) {
+      console.log(`  🖼️  Processing ${filstarProduct.images.length} images...`);
+      
+      const uploadedImages = [];
+      
+      for (const imageUrl of filstarProduct.images) {
+        const filename = imageUrl.split('/').pop();
+        const normalizedBuffer = await normalizeImage(imageUrl, filstarProduct.variants[0].sku);
+        
+        if (normalizedBuffer) {
+          const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
+          
+          if (resourceUrl) {
+            const attachMutation = `
+              mutation {
+                productCreateMedia(
+                  productId: "${productGid}",
+                  media: [{
+                    originalSource: "${resourceUrl}",
+                    mediaContentType: IMAGE
+                  }]
+                ) {
+                  media {
+                    ... on MediaImage {
+                      id
+                      image {
+                        url
+                      }
+                    }
+                  }
+                  mediaUserErrors {
+                    field
+                    message
+                  }
+                }
+              }
+            `;
+            
+            const attachResponse = await fetch(
+              `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+              {
+                method: 'POST',
+                headers: {
+                  'X-Shopify-Access-Token': ACCESS_TOKEN,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: attachMutation })
+              }
+            );
+            
+            const attachData = await attachResponse.json();
+            
+            if (attachData.data?.productCreateMedia?.media?.[0]) {
+              uploadedImages.push(attachData.data.productCreateMedia.media[0]);
+              console.log(`    ✓ Uploaded: ${filename}`);
+              stats[categoryType].images++;
+            }
+          }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      console.log(`  ✅ Uploaded ${uploadedImages.length} images`);
+    }
+
+    stats[categoryType].created++;
+    return result.product;
+
+  } catch (error) {
+    console.error(`  ❌ Error creating product: ${error.message}`);
+    return null;
+  }
+}
+
+// Функция за получаване на име на категория
+function getCategoryName(categoryType) {
+  const names = {
+    nets_and_caps: 'Живарници и кепчета',
+    slingshots: 'Прашки',
+    carp_fishing: 'Аксесоари шарански риболов',
+    pike_and_catfish: 'Аксесоари щука и сом',
+    pole_and_match: 'Аксесоари щека и мач',
+    knives: 'Ножове',
+    boxes_and_bags: 'Кутии и калъфи',
+    chairs_umbrellas_tents: 'Столове и палатки',
+    other: 'Други аксесоари'
+  };
+  
+  return names[categoryType] || 'Аксесоари';
+}
+
+
+
+
