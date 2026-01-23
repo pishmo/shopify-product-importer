@@ -155,9 +155,9 @@ function formatVariantName(attributes, sku) {
   }
   
 
-    .filter(attr => attr.attribute_name !== 'РИБОЛОВ С ЩЕКА И МАЧ')
-    .filter(attr => attr.attribute_name !== 'ЖИВАРНИЦИ И КЕПЧЕТА')
-    .filter(attr => attr.attribute_name !== 'ШАРАНСКИ РИБОЛОВ')
+    .filter(attr => attr.attribute_name !== 'РИБОЛОВ С ЩЕКА И МАЧ');
+    .filter(attr => attr.attribute_name !== 'ЖИВАРНИЦИ И КЕПЧЕТА');
+    .filter(attr => attr.attribute_name !== 'ШАРАНСКИ РИБОЛОВ') ;
 
 
   
