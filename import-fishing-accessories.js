@@ -403,7 +403,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const vendor = filstarProduct.manufacturer || 'Unknown';
 
 
-const vendor = filstarProduct.manufacturer || 'Unknown';
+
 console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
 
 
