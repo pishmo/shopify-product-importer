@@ -154,12 +154,20 @@ function formatVariantName(attributes, sku) {
     return sku || 'Стандартен';
   }
   
-
-    .filter(attr => attr.attribute_name !== 'РИБОЛОВ С ЩЕКА И МАЧ');
-    .filter(attr => attr.attribute_name !== 'ЖИВАРНИЦИ И КЕПЧЕТА');
-    .filter(attr => attr.attribute_name !== 'ШАРАНСКИ РИБОЛОВ') ;
-
-
+  // Списък с категорийни атрибути за филтриране
+  const excludeAttributes = [
+    'ЖИВАРНИЦИ И КЕПЧЕТА',
+    'ПРАШКИ',
+    'АКСЕСОАРИ ШАРАНСКИ РИБОЛОВ',
+    'АКСЕСОАРИ ЩУКА И СОМ',
+    'АКСЕСОАРИ ЩЕКА И МАЧ',
+    'НОЖОВЕ',
+    'КУТИИ И КАЛЪФИ',
+    'СТОЛОВЕ И ПАЛАТКИ',
+    'ДРУГИ АКСЕСОАРИ'
+  ];
+  
+  const filtered = attributes.filter(attr => !excludeAttributes.includes(attr.attribute_name));
   
   if (filtered.length === 0) {
     return sku || 'Стандартен';
@@ -179,7 +187,6 @@ function formatVariantName(attributes, sku) {
   
   return parts.join(' / ');
 }
-
 
 
 // Функция за определяне на типа аксесоар
