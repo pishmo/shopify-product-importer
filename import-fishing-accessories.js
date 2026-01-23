@@ -160,6 +160,8 @@ console.log(` 🔍 Attributes:`, attributes.map(a => a.attribute_name));
 
   
   return attributes
+
+    .filter(attr => attr.attribute_name !== 'РИБОЛОВ С ЩЕКА И МАЧ')
     .filter(attr => attr.attribute_name !== 'ЖИВАРНИЦИ И КЕПЧЕТА')
     .filter(attr => attr.attribute_name !== 'ШАРАНСКИ РИБОЛОВ')
     .map(attr => `${attr.attribute_name} ${attr.value}`)
