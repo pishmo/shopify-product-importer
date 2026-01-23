@@ -977,7 +977,7 @@ async function main() {
 
 
 let currentIndex = 0;
-	  
+const totalProducts = clothingProducts.length;	  
     for (const filstarProduct of clothingProducts) {
 	  currentIndex++;
       const category = getCategoryType(filstarProduct);
