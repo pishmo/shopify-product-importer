@@ -41,12 +41,12 @@ const data = await response.json();
 if (data && data.length > 0) {
   allProducts = allProducts.concat(data);
   console.log(` ✓ Page ${page}: ${data.length} products`);
-  hasMore = data.length === 1000;
   page++;
+  hasMore = data.length > 0; // продължава докато има продукти
+  if (page > 10) hasMore = false; // safety limit
 } else {
   hasMore = false;
 }
-
 
 
 
