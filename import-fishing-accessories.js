@@ -161,11 +161,8 @@ function formatVariantName(attributes) {
     .join(' / ');
 }
 
-  
-  return attributes
-    .map(attr => `${attr.attribute_name} ${attr.value}`)
-    .join(' / ');
-}
+
+
 
 // Функция за определяне на типа аксесоар
 function getCategoryType(product) {
