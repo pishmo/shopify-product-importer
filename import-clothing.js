@@ -243,7 +243,7 @@ function getCategoryType(filstarProduct) {
 
 
 // Филтрирай само категория 84 (Комплекти и костюми)
-  if (!filstarProduct.categories.some(c => c.id?.toString() === '84')) {
+  if (!filstarProduct.categories.some(c => c.id?.toString() === '95')) {
     return null;
   }
 
