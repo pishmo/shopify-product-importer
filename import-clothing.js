@@ -125,14 +125,17 @@ async function getAllShopifyProducts() {
       
       console.log(`  ✓ Page ${pageCount}: ${data.products.length} products (Total: ${allProducts.length})`);
       
-      const linkHeader = response.headers.get('Link');
-      if (linkHeader && linkHeader.includes('rel="next"')) {  // ✅ Проверка за null преди .includes()
-        const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-        pageInfo = nextMatch ? nextMatch[1] : null;
-        hasNextPage = !!pageInfo;
-      } else {
-        hasNextPage = false;
-      }
+     const linkHeader = response.headers.get('Link');
+if (linkHeader) {
+  const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+  pageInfo = nextMatch ? nextMatch[1] : null;
+  hasNextPage = !!pageInfo;
+} else {
+  hasNextPage = false;
+}
+
+
+
       
       await new Promise(resolve => setTimeout(resolve, 500));
       
