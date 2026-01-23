@@ -624,7 +624,6 @@ async function reorderProductImages(productId, filstarProduct, existingImages) {
 }
 
 // 3та част
-
 async function createShopifyProduct(filstarProduct, category) {
   console.log(`\n🆕 Creating new product: ${filstarProduct.name}`);
   try {
@@ -657,12 +656,6 @@ async function createShopifyProduct(filstarProduct, category) {
       }
     };
 
-    // Добави колекция
-    const collectionGid = COLLECTION_MAPPING[category];
-    if (collectionGid) {
-      productData.product.collectionsToJoin = [collectionGid];
-    }
-
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
       {
@@ -684,6 +677,31 @@ async function createShopifyProduct(filstarProduct, category) {
     const productId = result.product.id;
     console.log(` ✅ Product created with ID: ${productId}`);
     console.log(` 📦 Created ${filstarProduct.variants.length} variants`);
+
+    // Добави към колекция
+    const collectionGid = COLLECTION_MAPPING[category];
+    if (collectionGid) {
+      const collectionId = collectionGid.split('/').pop();
+      
+      await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/collects.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            collect: {
+              product_id: productId,
+              collection_id: collectionId
+            }
+          })
+        }
+      );
+      console.log(` 📁 Added to collection`);
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
 
     // Качи снимки
     const imagesResponse = await fetch(
@@ -743,6 +761,9 @@ async function createShopifyProduct(filstarProduct, category) {
     console.error(` ❌ Error creating product:`, error.message);
   }
 }
+
+
+
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
   console.log(`\n🔄 Updating product: ${filstarProduct.name}`);
