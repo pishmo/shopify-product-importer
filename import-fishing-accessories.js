@@ -478,8 +478,6 @@ console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: $
     // Добави в колекция
     await addProductToCollection(productGid, categoryType);
 
-    // Качи и нормализирай изображения
-    if (filstarProduct.images && filstarProduct.images.length > 0) {
       // Качи и нормализирай изображения
 if (filstarProduct.images && filstarProduct.images.length > 0) {
   console.log(` 🖼️ Images from Filstar:`, filstarProduct.images);
