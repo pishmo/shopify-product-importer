@@ -975,6 +975,9 @@ async function main() {
     const clothingProducts = allFilstarProducts.filter(p => getCategoryType(p) !== null);
     console.log(`\n👕 Found ${clothingProducts.length} clothing products to import\n`);
 
+
+let currentIndex = 0;
+	  
     for (const filstarProduct of clothingProducts) {
       const category = getCategoryType(filstarProduct);
       if (!category) continue;
