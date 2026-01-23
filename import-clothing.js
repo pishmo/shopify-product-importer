@@ -826,7 +826,7 @@ console.log('   Title:', updateData.product.title);
 console.log('   Vendor:', updateData.product.vendor);
 console.log('   Product Type:', updateData.product.product_type);
 console.log('   Tags:', updateData.product.tags);
-
+console.log('   Variant Names:', variantNames);
 
 
 
