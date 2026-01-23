@@ -819,6 +819,18 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, category) {
       }
     };
 
+// дебуг за махане
+
+console.log('🐛 DEBUG - Product data being sent:');
+console.log('   Title:', productData.product.title);
+console.log('   Vendor:', productData.product.vendor);
+console.log('   Product Type:', productData.product.product_type);
+console.log('   Tags:', productData.product.tags);
+
+
+
+
+	  
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
       {
