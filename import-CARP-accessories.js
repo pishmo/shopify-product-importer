@@ -728,7 +728,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 // Главна функция за импорт
 async function importAccessories() {
-  console.log('🚀 Starting Filstar Accessories Import\n');
+  console.log('🚀 Starting Filstar Carp Accessories Import\n');
   console.log('======================================================================');
   if (TEST_MODE) {
     console.log(`⚠️ TEST MODE: Processing only ${TEST_CATEGORY} category`);
@@ -751,24 +751,25 @@ async function importAccessories() {
     for (const categoryType of Object.keys(FILSTAR_ACCESSORIES_CATEGORY_IDS)) {
       categorizedProducts[categoryType] = [];
     }
+    
     for (const product of accessoriesProducts) {
       const categoryType = getCategoryType(product);
-      categorizedProducts[categoryType].push(product);
+      // Обработвай само carp_fishing продукти
+      if (categoryType === 'carp_fishing') {
+        categorizedProducts[categoryType].push(product);
+      }
     }
     
     // Покажи статистика
     console.log('📋 Products by category:');
     for (const [type, products] of Object.entries(categorizedProducts)) {
-      console.log(` ${getCategoryName(type)}: ${products.length} products`);
+      console.log(`  ${getCategoryName(type)}: ${products.length} products`);
     }
     console.log('');
     
     // Обработи продуктите
     let processedCount = 0;
     for (const [categoryType, products] of Object.entries(categorizedProducts)) {
-      // if (TEST_MODE && categoryType !== TEST_CATEGORY) {
-      //   continue;
-      // }
       if (products.length === 0) {
         continue;
       }
@@ -787,33 +788,23 @@ async function importAccessories() {
         // Намери първия SKU от вариантите
         const firstSku = product.variants?.[0]?.sku;
         if (!firstSku) {
-          console.log(' ⚠️ No SKU found, skipping...');
+          console.log('  ⚠️  No SKU found, skipping...');
           continue;
         }
         
         // Провери дали продуктът съществува в Shopify
         const existingProduct = await findProductBySku(firstSku);
         if (existingProduct) {
-          console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
+          console.log(`  ✓ Found existing product (ID: ${existingProduct.id})`);
           await updateShopifyProduct(existingProduct, product, categoryType);
         } else {
-          console.log(` ✓ Product not found, creating new...`);
+          console.log(`  ✓ Product not found, creating new...`);
           await createShopifyProduct(product, categoryType);
         }
         
         // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // // TEST MODE - спри след 10 продукта
-        // if (TEST_MODE && processedCount >= 10) {
-        //   console.log('\n✅ Test completed, stopping...');
-        //   break;
-        // }
       }
-      
-      // if (TEST_MODE && processedCount >= 10) {
-      //   break;
-      // }
     }
     
     // Покажи финална статистика
@@ -823,9 +814,9 @@ async function importAccessories() {
     for (const [type, stat] of Object.entries(stats)) {
       if (stat.created > 0 || stat.updated > 0 || stat.images > 0) {
         console.log(`${getCategoryName(type)}:`);
-        console.log(` ✨ Created: ${stat.created} products`);
-        console.log(` 🔄 Updated: ${stat.updated} products`);
-        console.log(` 🖼️ Images: ${stat.images} uploaded`);
+        console.log(`  ✨ Created: ${stat.created} products`);
+        console.log(`  🔄 Updated: ${stat.updated} products`);
+        console.log(`  🖼️  Images: ${stat.images} uploaded`);
         console.log('-'.repeat(70));
       }
     }
@@ -839,6 +830,9 @@ async function importAccessories() {
     console.error('❌ Fatal error:', error);
   }
 }
+
+// Стартирай импорта
+importAccessories().catch(console.error);
 
 
 // Стартирай импорта
