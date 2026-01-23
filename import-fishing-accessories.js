@@ -166,7 +166,8 @@ function formatVariantName(attributes, sku) {
     'Раници, чанти, кошчета и кофи',
     'СТОЛОВЕ И ПАЛАТКИ',
     'ДРУГИ', 'Други',
-    'МУХАРСКИ РУБОЛОВ'
+    'МУХАРСКИ РУБОЛОВ',
+     'ШАРАНСКИ РИБОЛОВ', 'Фидери'
   ];
   
   const filtered = attributes.filter(attr => !excludeAttributes.includes(attr.attribute_name));
