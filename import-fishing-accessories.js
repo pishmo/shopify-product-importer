@@ -149,25 +149,36 @@ async function uploadImageToShopify(imageBuffer, filename) {
   }
 }
 
-// Функция за форматиране на име на вариант
-function formatVariantName(attributes) {
+function formatVariantName(attributes, sku) {
   if (!attributes || attributes.length === 0) {
-    return 'Стандартен';
+    return sku || 'Стандартен';
   }
-
-// debug
-console.log(` 🔍 Attributes:`, attributes.map(a => a.attribute_name));
-
   
-  return attributes
 
     .filter(attr => attr.attribute_name !== 'РИБОЛОВ С ЩЕКА И МАЧ')
     .filter(attr => attr.attribute_name !== 'ЖИВАРНИЦИ И КЕПЧЕТА')
     .filter(attr => attr.attribute_name !== 'ШАРАНСКИ РИБОЛОВ')
-    .map(attr => `${attr.attribute_name} ${attr.value}`)
-    .join(' / ');
-}
 
+
+  
+  if (filtered.length === 0) {
+    return sku || 'Стандартен';
+  }
+  
+  // Търси "МОДЕЛ" атрибут
+  const modelAttr = filtered.find(attr => attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
+  const otherAttrs = filtered.filter(attr => !attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
+  
+  const parts = [];
+  if (modelAttr) {
+    parts.push(`${modelAttr.attribute_name} ${modelAttr.value}`);
+  }
+  otherAttrs.forEach(attr => {
+    parts.push(`${attr.attribute_name} ${attr.value}`);
+  });
+  
+  return parts.join(' / ');
+}
 
 
 
