@@ -37,16 +37,19 @@ async function fetchAllProducts() {
       }
     );
     
-    const data = await response.json();
-    
-    if (data.data && data.data.length > 0) {
-      allProducts = allProducts.concat(data.data);
-      console.log(`    ✓ Page ${page}: ${data.data.length} products`);
-      hasMore = data.data.length === 1000;
-      page++;
-    } else {
-      hasMore = false;
-    }
+const data = await response.json();
+if (data && data.length > 0) {
+  allProducts = allProducts.concat(data);
+  console.log(` ✓ Page ${page}: ${data.length} products`);
+  hasMore = data.length === 1000;
+  page++;
+} else {
+  hasMore = false;
+}
+
+
+
+
     
     await new Promise(resolve => setTimeout(resolve, 500));
   }
@@ -65,7 +68,7 @@ async function testAccessoriesCategories() {
   for (const sku of TEST_SKUS) {
     console.log(`📍 Looking for SKU: ${sku}`);
     
-   const product = allProducts.find(p => 
+const product = allProducts.find(p => 
   p.variants?.some(v => v.sku === sku)
 );
 
