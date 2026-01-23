@@ -1,80 +1,68 @@
-const FILSTAR_API_BASE = 'https://filstar.com/api';
+// test-accessories-categories.js - Тест за извличане на category IDs за аксесоари
+const fetch = require('node-fetch');
+
+const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
+const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
+const API_VERSION = '2024-10';
+const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-async function testSearchFormat(url, description) {
-  console.log(`\n=== ${description} ===`);
-  console.log(`URL: ${url}`);
+const TEST_SKUS = [
+  '955952', // живарници и кепчета
+  '926579', // прашки
+  '961194', // шарански риболов
+  '951949', // риболов на щука и сом
+  '946802', // риболов на щека и мач
+  '946750', // ножове
+  '962914', // кутии кошчета и калъфи
+  '963718', // столове, чадъри и палатки
+  '961464'  // аксесоари други
+];
+
+async function testAccessoriesCategories() {
+  console.log('🧪 Testing Filstar API for accessories categories\n');
   
-  try {
-    const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${FILSTAR_TOKEN}` }
-    });
+  const results = [];
+  
+  for (const sku of TEST_SKUS) {
+    console.log(`📍 Testing SKU: ${sku}`);
     
-    const products = await response.json();
+    const response = await fetch(
+      `${FILSTAR_API_BASE}/products?search=${sku}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     
-    console.log(`✅ Response OK`);
-    console.log(`Products count: ${Array.isArray(products) ? products.length : 'Not an array'}`);
+    const data = await response.json();
     
-    if (Array.isArray(products) && products.length > 0) {
-      const firstProduct = products[0];
-      console.log(`First product: ${firstProduct.name}`);
-      console.log(`Categories:`, firstProduct.categories?.map(c => `${c.name} (ID:${c.id})`).join(', '));
+    if (data.data && data.data.length > 0) {
+      const product = data.data[0];
+      console.log(`   ✅ Found: ${product.name}`);
+      console.log(`   🏷️  Categories:`, product.categories);
+      console.log('');
       
-      // Провери дали има категория 84
-      const hasCategory84 = firstProduct.categories?.some(c => c.id?.toString() === '84');
-      console.log(`Has category 84: ${hasCategory84 ? '✅ YES' : '❌ NO'}`);
+      results.push({
+        sku: sku,
+        name: product.name,
+        categories: product.categories
+      });
+    } else {
+      console.log(`   ❌ Not found\n`);
     }
-  } catch (error) {
-    console.log(`❌ Error: ${error.message}`);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
+  
+  console.log('\n📊 SUMMARY:\n');
+  results.forEach(r => {
+    console.log(`SKU ${r.sku}: ${r.name}`);
+    console.log(`   Categories:`, r.categories);
+    console.log('');
+  });
 }
 
-async function runTests() {
-  console.log('🔍 Testing different search formats for category ID 84\n');
-  
-  // Тест 1: search=category:84
-  await testSearchFormat(
-    `${FILSTAR_API_BASE}/products?search=category:84&per_page=5`,
-    'Format: search=category:84'
-  );
-  
-  // Тест 2: search=category_id:84
-  await testSearchFormat(
-    `${FILSTAR_API_BASE}/products?search=category_id:84&per_page=5`,
-    'Format: search=category_id:84'
-  );
-  
-  // Тест 3: search[category]=84
-  await testSearchFormat(
-    `${FILSTAR_API_BASE}/products?search[category]=84&per_page=5`,
-    'Format: search[category]=84'
-  );
-  
-  // Тест 4: category=84
-  await testSearchFormat(
-    `${FILSTAR_API_BASE}/products?category=84&per_page=5`,
-    'Format: category=84'
-  );
-  
-  // Тест 5: category_id=84
-  await testSearchFormat(
-    `${FILSTAR_API_BASE}/products?category_id=84&per_page=5`,
-    'Format: category_id=84'
-  );
-  
-  // Тест 6: filter[category]=84
-  await testSearchFormat(
-    `${FILSTAR_API_BASE}/products?filter[category]=84&per_page=5`,
-    'Format: filter[category]=84'
-  );
-  
-  // Тест 7: categories=84
-  await testSearchFormat(
-    `${FILSTAR_API_BASE}/products?categories=84&per_page=5`,
-    'Format: categories=84'
-  );
-  
-  console.log('\n✅ All tests completed!');
-}
-
-runTests();
+testAccessoriesCategories();
