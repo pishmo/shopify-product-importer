@@ -1,3 +1,4 @@
+
 // import-clothing.js - Импорт на облекло с нормализация на снимки
 const fetch = require('node-fetch');
 const sharp = require('sharp');
@@ -25,6 +26,9 @@ const COLLECTION_MAPPING = {
   sunglasses: 'gid://shopify/Collection/739347628414',
   sets: 'gid://shopify/Collection/739347267966',
   other: 'gid://shopify/Collection/739347661182'
+
+
+  
 };
 
 
