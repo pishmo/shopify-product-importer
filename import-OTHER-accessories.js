@@ -28,8 +28,8 @@ const SHOPIFY_ACCESSORIES_COLLECTIONS = {
 // Статистика
 const stats = {
   
-  boxes_and_bags: { created: 0, updated: 0, images: 0 }
-  
+ 
+   other: { created: 0, updated: 0, images: 0 }
 };
 
 // TEST MODE - само за 1 категория
