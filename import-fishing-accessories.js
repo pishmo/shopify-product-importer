@@ -884,9 +884,9 @@ async function main() {
     
     Object.entries(stats).forEach(([category, data]) => {
       console.log(`${getCategoryName(category)}:`);
-      console.log(`  Created: ${result.created}`);
-      console.log(`  Updated: ${result.updated}`);
-      console.log(`  Images: ${result.images}\n`);
+      console.log(`  Created: ${data.created}`);
+      console.log(`  Updated: ${data.updated}`);
+      console.log(`  Images: ${data.images}\n`);
     });
     
     console.log('✅ Import completed successfully!');
