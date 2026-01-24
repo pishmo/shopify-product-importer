@@ -1,4 +1,4 @@
-// import-BOX-accessories.js - Импорт на аксесоари Шаранджийски от Filstar API
+// import-OTHER-accessories.js - Импорт на аксесоари Drugi от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -13,7 +13,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-   boxes_and_bags: ['61']
+   other: ['68']
 };
 
 const ACCESSORIES_PARENT_ID = '11';
