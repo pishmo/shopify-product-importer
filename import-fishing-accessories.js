@@ -358,7 +358,7 @@ async function findProductBySku(sku) {
     const data = await response.json();
     
     if (result.data?.products?.edges?.length > 0) {
-      return result.result.products.edges[0].node;
+      return result.data.products.edges[0].node;
     }
     
     return null;
