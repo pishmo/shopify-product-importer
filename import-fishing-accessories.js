@@ -762,7 +762,7 @@ async function main() {
     // Филтрирай само аксесоарите от 4-те категории
 
 
-  const accessoryProducts = allProducts.filter(p => p.variants?.[0]?.sku === '961680');
+  const accessoryProducts = allProducts.filter(p => p.variants?.[0]?.sku === '962894');
 
 
 
