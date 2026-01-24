@@ -13,7 +13,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-  carp_fishing: ['37'] 
+   boxes_and_bags: ['61'],
 };
 
 const ACCESSORIES_PARENT_ID = '11';
