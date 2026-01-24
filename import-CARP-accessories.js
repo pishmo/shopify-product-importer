@@ -36,6 +36,155 @@ const stats = {
 const TEST_MODE = false;
 const TEST_CATEGORY = 'other';
 
+
+
+//////////////////////////// бърз режим
+
+
+const FAST_CLEANUP_MODE = false; // Промени на true за бърз режим
+
+// Категорийни тагове - ИЗВЪН функцията за по-добра производителност
+const CATEGORY_TAGS_TO_REMOVE = [
+  'ШАРАНСКИ РИБОЛОВ',
+  'ШАРАНСКИ РИБОЛОВ Шарански стойки',
+  'ШАРАНСКИ РИБОЛОВ Ракети',
+  'ШАРАНСКИ РИБОЛОВ Готови монтажи',
+  'ШАРАНСКИ РИБОЛОВ Материали за монтажи',
+  'ШАРАНСКИ РИБОЛОВ Стопери и рингове',
+  'ШАРАНСКИ РИБОЛОВ Инструменти',
+  'ШАРАНСКИ РИБОЛОВ Други',
+  'ШАРАНСКИ РИБОЛОВ Аларми и индикатори',
+  'ШАРАНСКИ РИБОЛОВ Фидери',
+  'ШАРАНСКИ РИБОЛОВ PVA материали'
+];
+
+
+
+// Функция за бързо почистване на колекция
+async function fastCleanupCollection(collectionId, categoryType) {
+  console.log(`\n🧹 FAST CLEANUP MODE: Cleaning ${getCategoryName(categoryType)}`);
+  
+  // Вземи всички продукти от колекцията
+  const query = `
+    {
+      collection(id: "${collectionId}") {
+        products(first: 250) {
+          edges {
+            node {
+              id
+              title
+              variants(first: 100) {
+                edges {
+                  node {
+                    id
+                    sku
+                    displayName
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query })
+    }
+  );
+  
+  const data = await response.json();
+  const products = data.data?.collection?.products?.edges || [];
+  
+  console.log(`  📦 Found ${products.length} products to check`);
+  
+  let cleanedCount = 0;
+  
+  for (const productEdge of products) {
+    const product = productEdge.node;
+    const variants = product.variants.edges;
+    
+    for (const variantEdge of variants) {
+      const variant = variantEdge.node;
+      const currentName = variant.displayName.split(' - ').pop(); // Вземи само variant option
+      const cleanedName = cleanVariantName(currentName, variant.sku);
+      
+      if (currentName !== cleanedName) {
+        console.log(`  🔧 Cleaning: "${currentName}" → "${cleanedName}"`);
+        
+        // Update variant
+        const updateMutation = `
+          mutation {
+            productVariantUpdate(input: {
+              id: "${variant.id}",
+              options: ["${cleanedName.replace(/"/g, '\\"')}"]
+            }) {
+              productVariant {
+                id
+              }
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `;
+        
+        const updateResponse = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: updateMutation })
+          }
+        );
+        
+        const updateData = await updateResponse.json();
+        
+        if (updateData.data?.productVariantUpdate?.userErrors?.length > 0) {
+          console.log(`    ❌ Error:`, updateData.data.productVariantUpdate.userErrors);
+        } else {
+          cleanedCount++;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+  }
+  
+  console.log(`  ✅ Cleaned ${cleanedCount} variants\n`);
+  return cleanedCount;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Функция за нормализация на изображения
 async function normalizeImage(imageUrl, sku) {
   try {
