@@ -739,11 +739,13 @@ async function importAccessories() {
     // Вземи всички продукти от Filstar
     const allProducts = await fetchAllProducts();
     
-    // Филтрирай аксесоари по parent_id
-    const accessoriesProducts = allProducts.filter(product => {
-      return product.categories?.some(cat => cat.parent_id?.toString() === ACCESSORIES_PARENT_ID);
-    });
-    
+  // Филтрирай аксесоари по category ID 68 И parent_id 11
+const accessoriesProducts = allProducts.filter(product => {
+  return product.categories?.some(cat => 
+    cat.id?.toString() === '68' && cat.parent_id?.toString() === '11'
+  );
+});
+
     console.log(`📊 Found ${accessoriesProducts.length} accessories products\n`);
     
     // Групирай по категории
