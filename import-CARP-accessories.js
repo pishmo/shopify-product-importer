@@ -58,7 +58,33 @@ const CATEGORY_TAGS_TO_REMOVE = [
   'ШАРАНСКИ РИБОЛОВ PVA материали'
 ];
 
-
+// НОВА ФУНКЦИЯ - добави тук
+function cleanVariantName(variantName, sku) {
+  if (!variantName) {
+    return sku || 'Стандартен';
+  }
+  
+  const trimmed = variantName.trim();
+  
+  // Провери дали целият стринг е категориен таг
+  if (CATEGORY_TAGS_TO_REMOVE.includes(trimmed)) {
+    return sku || 'Стандартен';
+  }
+  
+  // Провери дали има "/" и след последния "/" е категориен таг
+  if (trimmed.includes(' / ')) {
+    const parts = trimmed.split(' / ');
+    const lastPart = parts[parts.length - 1].trim();
+    
+    if (CATEGORY_TAGS_TO_REMOVE.includes(lastPart)) {
+      parts.pop();
+      const cleaned = parts.join(' / ').trim();
+      return cleaned || sku || 'Стандартен';
+    }
+  }
+  
+  return trimmed;
+}
 
 // Функция за бързо почистване на колекция
 async function fastCleanupCollection(collectionId, categoryType) {
