@@ -691,48 +691,51 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
-      if (newImagesUploaded > 0) {
-        console.log(`  ✅ Uploaded ${newImagesUploaded} new images`);
-        
-        // Пренареди изображенията
-        const updatedProductQuery = `
-          {
-            product(id: \"${productGid}\") {
-              images(first: 50) {
-                edges {
-                  node {
-                    id
-                    src
-                  }
-                }
-              }
-            }
+if (newImagesUploaded > 0) {
+  console.log(`  ✅ Uploaded ${newImagesUploaded} new images`);
+} else {
+  console.log(`  ℹ️  No new images to upload`);
+}
+
+// Винаги fetch-вай и reorder-вай снимките
+const updatedProductQuery = `
+  {
+    product(id: \"${productGid}\") {
+      images(first: 50) {
+        edges {
+          node {
+            id
+            src
           }
-        `;
-        
-        const updatedResponse = await fetch(
-          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ query: updatedProductQuery })
-          }
-        );
-        
-        const updatedData = await updatedResponse.json();
-        const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
-          id: edge.node.id,
-          src: edge.node.src
-        })) || [];
-        
-        if (allImages.length > 0) {
-          console.log(`  🔄 Reordering images...`);
-          await reorderProductImages(productGid, allImages);
         }
-      } else {
+      }
+    }
+  }
+`;
+
+const updatedResponse = await fetch(
+  `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+  {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': ACCESS_TOKEN,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ query: updatedProductQuery })
+  }
+);
+
+const updatedData = await updatedResponse.json();
+const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
+  id: edge.node.id,
+  src: edge.node.src
+})) || [];
+
+if (allImages.length > 0) {
+  console.log(`  🔄 Reordering images...`);
+  await reorderProductImages(productGid, filstarProduct);
+}
+ else {
         console.log(`  ℹ️  No new images to upload`);
       }
     }
