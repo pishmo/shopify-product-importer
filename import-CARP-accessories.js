@@ -41,7 +41,7 @@ const TEST_CATEGORY = 'other';
 //////////////////////////// бърз режим
 
 
-const FAST_CLEANUP_MODE = false; // Промени на true за бърз режим
+const FAST_CLEANUP_MODE = true; // Промени на true за бърз режим
 
 // Категорийни тагове - ИЗВЪН функцията за по-добра производителност
 const CATEGORY_TAGS_TO_REMOVE = [
