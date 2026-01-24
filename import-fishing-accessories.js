@@ -286,9 +286,9 @@ async function fetchAllProducts() {
       
       if (data && data.length > 0) {
         allProducts = allProducts.concat(data);
-        console.log(`  ✓ Page ${page}: ${result.length} products`);
+        console.log(`  ✓ Page ${page}: ${data.length} products`);
         page++;
-        hasMore = result.length > 0;
+        hasMore = data.length > 0;
         
         if (page > 10) {
           console.log('  ⚠️  Safety limit reached (10 pages)');
