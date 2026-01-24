@@ -733,6 +733,21 @@ const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
 
 if (allImages.length > 0) {
   console.log(`  🔄 Reordering images...`);
+
+
+// Подреди според Filstar реда
+const filstarOrder = filstarProduct.images.map(url => url.split('/').pop());
+allImages.sort((a, b) => {
+  const aName = a.src.split('/').pop().split('?')[0];
+  const bName = b.src.split('/').pop().split('?')[0];
+  const aIndex = filstarOrder.indexOf(aName);
+  const bIndex = filstarOrder.indexOf(bName);
+  return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+});
+
+
+
+  
 await reorderProductImages(productGid, allImages);
 
 }
