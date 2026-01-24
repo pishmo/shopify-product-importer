@@ -125,13 +125,12 @@ async function updateVariant(variantId, newTitle) {
       },
       body: JSON.stringify({
         variant: {
-          id: numericId,
-          title: newTitle
+          option1: newTitle  // ✅ Използвай option1, НЕ title
         }
       })
     }
   );
-
+  
   const result = await response.json();
   
   if (!response.ok) {
@@ -140,6 +139,7 @@ async function updateVariant(variantId, newTitle) {
   
   return { userErrors: [] };
 }
+
 
 
 async function cleanupVariants() {
