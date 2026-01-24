@@ -13,7 +13,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-   boxes_and_bags: ['61'],
+   boxes_and_bags: ['61']
 };
 
 const ACCESSORIES_PARENT_ID = '11';
@@ -21,14 +21,14 @@ const ACCESSORIES_PARENT_ID = '11';
 // Shopify collection IDs
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
   
-   boxes_and_bags: 'gid://shopify/Collection/739661316478',
+   boxes_and_bags: 'gid://shopify/Collection/739661316478'
  
 };
 
 // Статистика
 const stats = {
   
-  carp_fishing: { created: 0, updated: 0, images: 0 }
+  boxes_and_bags: { created: 0, updated: 0, images: 0 }
   
 };
 
