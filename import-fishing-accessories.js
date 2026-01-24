@@ -733,7 +733,8 @@ const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
 
 if (allImages.length > 0) {
   console.log(`  🔄 Reordering images...`);
-  await reorderProductImages(productGid, filstarProduct);
+await reorderProductImages(productGid, allImages);
+
 }
  else {
         console.log(`  ℹ️  No new images to upload`);
