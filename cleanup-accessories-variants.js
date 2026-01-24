@@ -143,9 +143,17 @@ async function updateVariant(variantId, newTitle) {
     }
   );
 
-  const { data } = await response.json();
-  return data.productVariantUpdate;
+  const result = await response.json();
+  
+  // Провери за грешки
+  if (!result.data) {
+    console.log(`   ❌ GraphQL Error: ${JSON.stringify(result.errors)}`);
+    return { userErrors: [{ message: 'GraphQL error' }] };
+  }
+  
+  return result.data.productVariantUpdate;
 }
+
 
 async function cleanupVariants() {
   console.log('🧹 Starting variant cleanup...\n');
