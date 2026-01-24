@@ -746,6 +746,23 @@ if (allImages.length > 0) {
 
   // Подреди според Filstar реда
   const filstarOrder = filstarProduct.images.map(url => url.split('/').pop());
+
+// Scrape главната снимка от Filstar
+const productUrl = `https://filstar.com/${filstarProduct.slug}`;
+const ogImage = await scrapeOgImage(productUrl);
+if (ogImage) {
+  const ogFilename = ogImage.split('/').pop();
+  const ogIndex = filstarOrder.indexOf(ogFilename);
+  if (ogIndex > 0) {
+    filstarOrder.splice(ogIndex, 1);
+    filstarOrder.unshift(ogFilename);
+    console.log('  🎯 OG image moved to first:', ogFilename);
+  }
+}
+
+
+
+  
   console.log('  🐛 Filstar order:', filstarOrder.slice(0, 3));
   
   allImages.sort((a, b) => {
