@@ -760,10 +760,12 @@ async function main() {
     const allProducts = await fetchAllProducts();
     
     // Филтрирай само аксесоарите от 4-те категории
-    const accessoryProducts = allProducts.filter(product => {
-      const categoryType = getCategoryType(product);
-      return categoryType !== null;
-    });
+
+
+  const accessoryProducts = allProducts.filter(p => p.variants?.[0]?.sku === '961680');
+
+
+
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
     
