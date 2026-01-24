@@ -878,6 +878,26 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // Главна функция за импорт
 async function importAccessories() {
   console.log('🚀 Starting Filstar Carp Accessories Import\n');
+  
+  // FAST CLEANUP MODE - само почистване на варианти
+  if (FAST_CLEANUP_MODE) {
+    console.log('⚡ FAST CLEANUP MODE ENABLED\n');
+    console.log('='.repeat(70));
+    
+    let totalCleaned = 0;
+    
+    for (const [categoryType, collectionId] of Object.entries(SHOPIFY_ACCESSORIES_COLLECTIONS)) {
+      const cleaned = await fastCleanupCollection(collectionId, categoryType);
+      totalCleaned += cleaned;
+    }
+    
+    console.log('='.repeat(70));
+    console.log(`✅ CLEANUP COMPLETE: ${totalCleaned} variants cleaned`);
+    console.log('='.repeat(70));
+    return;
+  }
+  
+  // НОРМАЛЕН ИМПОРТ РЕЖИМ
   console.log('======================================================================');
   if (TEST_MODE) {
     console.log(`⚠️ TEST MODE: Processing only ${TEST_CATEGORY} category`);
@@ -979,6 +999,8 @@ async function importAccessories() {
     console.error('❌ Fatal error:', error);
   }
 }
+
+
 
 // Стартирай импорта
 importAccessories().catch(console.error);
