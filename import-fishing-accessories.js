@@ -284,7 +284,7 @@ async function fetchAllProducts() {
 
       const data = await response.json();
       
-      if (data && result.length > 0) {
+      if (data && data.length > 0) {
         allProducts = allProducts.concat(data);
         console.log(`  ✓ Page ${page}: ${result.length} products`);
         page++;
