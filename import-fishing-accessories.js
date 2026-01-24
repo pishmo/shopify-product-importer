@@ -462,7 +462,7 @@ if (result.errors) {
      
     
     if (result.data?.productReorderImages?.userErrors?.length > 0) {
-      console.log(`  ⚠️  Reorder errors:`, result.result.productReorderImages.userErrors);
+      console.log(`  ⚠️  Reorder errors:`, result.data.productReorderImages.userErrors);
       return false;
     }
     
