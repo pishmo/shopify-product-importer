@@ -166,7 +166,9 @@ function formatVariantName(attributes, sku) {
       'СТОЛОВЕ И ПАЛАТКИ',
       'ДРУГИ', 'Други',
       'МУХАРСКИ РУБОЛОВ',
-      'ШАРАНСКИ РИБОЛОВ', 'Фидери'
+      'ШАРАНСКИ РИБОЛОВ', 'Фидери',
+      'РИБОЛОВ С ЩЕКА И МАЧ',  // ← ДОБАВЕНО
+      'ЩЕКА И МАЧ'              // ← ДОБАВЕНО (вариация)
     ];
     
     return !excludeList.includes(name);
@@ -201,6 +203,7 @@ function formatVariantName(attributes, sku) {
   
   return result;
 }
+
 
 // Функция за определяне на типа аксесоар
 function getCategoryType(product) {
