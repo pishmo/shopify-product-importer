@@ -755,7 +755,7 @@ async function importAccessories() {
     for (const product of accessoriesProducts) {
       const categoryType = getCategoryType(product);
       // Обработвай само other_fishing продукти
-      if (categoryType === 'boxes_and_bags') {
+     if (categoryType === 'other') {  
         categorizedProducts[categoryType].push(product);
       }
     }
