@@ -10,50 +10,42 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-// Filstar category IDs за аксесоари
+// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  nets_and_caps: ['17'],
-  slingshots: ['26'],
-  carp_fishing: ['37'],
   pike_and_catfish: ['45'],
   pole_and_match: ['50'],
   knives: ['59'],
-  boxes_and_bags: ['61'],
-  chairs_umbrellas_tents: ['63'],
-  other: ['68']
+  chairs_umbrellas_tents: ['63']
 };
 
 const ACCESSORIES_PARENT_ID = '11';
 
-// Shopify collection IDs
+// Shopify collection IDs - САМО 4 КАТЕГОРИИ
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
-  nets_and_caps: 'gid://shopify/Collection/739661087102',
-  slingshots: 'gid://shopify/Collection/739661119870',
-  carp_fishing: 'gid://shopify/Collection/739661152638',
   pike_and_catfish: 'gid://shopify/Collection/739661185406',
   pole_and_match: 'gid://shopify/Collection/739661218174',
   knives: 'gid://shopify/Collection/739661250942',
-  boxes_and_bags: 'gid://shopify/Collection/739661316478',
-  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782',
-  other: 'gid://shopify/Collection/739661447550'
+  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782'
 };
 
-// Статистика
+// Статистика - САМО 4 КАТЕГОРИИ
 const stats = {
-  nets_and_caps: { created: 0, updated: 0, images: 0 },
-  slingshots: { created: 0, updated: 0, images: 0 },
-  carp_fishing: { created: 0, updated: 0, images: 0 },
   pike_and_catfish: { created: 0, updated: 0, images: 0 },
   pole_and_match: { created: 0, updated: 0, images: 0 },
   knives: { created: 0, updated: 0, images: 0 },
-  boxes_and_bags: { created: 0, updated: 0, images: 0 },
-  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }
+  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 }
 };
 
-// TEST MODE - само за 1 категория
+// TEST MODE
 const TEST_MODE = false;
-const TEST_CATEGORY = 'other';
+const TEST_CATEGORY = 'knives';
+
+
+
+// 2 част
+
+
+
 
 // Функция за нормализация на изображения
 async function normalizeImage(imageUrl, sku) {
@@ -100,8 +92,8 @@ async function uploadImageToShopify(imageBuffer, filename) {
       mutation {
         stagedUploadsCreate(input: [{
           resource: IMAGE,
-          filename: "${filename}",
-          mimeType: "image/jpeg",
+          filename: \"${filename}\",
+          mimeType: \"image/jpeg\",
           httpMethod: POST
         }]) {
           stagedTargets {
@@ -149,28 +141,36 @@ async function uploadImageToShopify(imageBuffer, filename) {
   }
 }
 
+// ПОПРАВЕНА функция за форматиране на име на вариант
 function formatVariantName(attributes, sku) {
   if (!attributes || attributes.length === 0) {
     return sku || 'Стандартен';
   }
   
-  // Списък с категорийни атрибути за филтриране
-  const excludeAttributes = [
-    'ЖИВАРНИЦИ И КЕПЧЕТА',
-    'ПРАШКИ',
-    'АКСЕСОАРИ ШАРАНСКИ РИБОЛОВ',
-    'АКСЕСОАРИ ЩУКА И СОМ',
-    'АКСЕСОАРИ ЩЕКА И МАЧ',
-    'НОЖОВЕ',
-    'КУТИИ, КОШЧЕТА И КАЛЪФИ',
-    'Раници, чанти, кошчета и кофи',
-    'СТОЛОВЕ И ПАЛАТКИ',
-    'ДРУГИ', 'Други',
-    'МУХАРСКИ РУБОЛОВ',
-     'ШАРАНСКИ РИБОЛОВ', 'Фидери'
-  ];
-  
-  const filtered = attributes.filter(attr => !excludeAttributes.includes(attr.attribute_name));
+  // Филтрирай атрибути започващи с "Аксесоари" или други категорийни имена
+  const filtered = attributes.filter(attr => {
+    const name = attr.attribute_name || '';
+    
+    // Премахни всички атрибути започващи с "Аксесоари"
+    if (name.startsWith('Аксесоари') || name.startsWith('АКСЕСОАРИ')) {
+      return false;
+    }
+    
+    // Премахни други категорийни имена
+    const excludeList = [
+      'ЖИВАРНИЦИ И КЕПЧЕТА',
+      'ПРАШКИ',
+      'НОЖОВЕ',
+      'КУТИИ, КОШЧЕТА И КАЛЪФИ',
+      'Раници, чанти, кошчета и кофи',
+      'СТОЛОВЕ И ПАЛАТКИ',
+      'ДРУГИ', 'Други',
+      'МУХАРСКИ РУБОЛОВ',
+      'ШАРАНСКИ РИБОЛОВ', 'Фидери'
+    ];
+    
+    return !excludeList.includes(name);
+  });
   
   if (filtered.length === 0) {
     return sku || 'Стандартен';
@@ -188,14 +188,24 @@ function formatVariantName(attributes, sku) {
     parts.push(`${attr.attribute_name} ${attr.value}`);
   });
   
-  return parts.join(' / ');
+  // Съедини частите
+  let result = parts.join(' / ');
+  
+  // Премахни "/" от началото и края
+  result = result.replace(/^\/+|\/+$/g, '').trim();
+  
+  // Ако е празно след филтъра, използвай SKU
+  if (!result || result === '') {
+    return sku || 'Стандартен';
+  }
+  
+  return result;
 }
-
 
 // Функция за определяне на типа аксесоар
 function getCategoryType(product) {
   if (!product.categories || product.categories.length === 0) {
-    return 'other';
+    return null;
   }
   
   for (const category of product.categories) {
@@ -208,8 +218,29 @@ function getCategoryType(product) {
     }
   }
   
-  return 'other';
+  return null;
 }
+
+// Функция за получаване на име на категория
+function getCategoryName(categoryType) {
+  const names = {
+    pike_and_catfish: 'Аксесоари щука и сом',
+    pole_and_match: 'Аксесоари щека и мач',
+    knives: 'Ножове',
+    chairs_umbrellas_tents: 'Столове и палатки'
+  };
+  
+  return names[categoryType] || 'Аксесоари';
+}
+
+
+
+
+
+// 3 та част
+
+
+
 
 // Функция за извличане на всички продукти от Filstar
 async function fetchAllProducts() {
@@ -264,16 +295,12 @@ async function fetchAllProducts() {
   return allProducts;
 }
 
-
-// 2  част 
-
-
 // Функция за намиране на продукт в Shopify по SKU
 async function findProductBySku(sku) {
   try {
     const query = `
       {
-        products(first: 1, query: "sku:${sku}") {
+        products(first: 1, query: \"sku:${sku}\") {
           edges {
             node {
               id
@@ -339,8 +366,8 @@ async function addProductToCollection(productId, categoryType) {
     const mutation = `
       mutation {
         collectionAddProducts(
-          id: "${collectionId}",
-          productIds: ["${productId}"]
+          id: \"${collectionId}\",
+          productIds: [\"${productId}\"]
         ) {
           collection {
             id
@@ -378,15 +405,13 @@ async function addProductToCollection(productId, categoryType) {
 // Функция за пренареждане на изображенията
 async function reorderProductImages(productGid, images) {
   try {
-    const imageIds = images.map(img => `"${img.id}"`).join(', ');
-    
     const mutation = `
       mutation {
         productReorderImages(
-          id: "${productGid}",
+          id: \"${productGid}\",
           moves: [${images.map((img, index) => `{
-            id: "${img.id}",
-            newPosition: "${index}"
+            id: \"${img.id}\",
+            newPosition: \"${index}\"
           }`).join(', ')}]
         ) {
           product {
@@ -433,18 +458,13 @@ async function createShopifyProduct(filstarProduct, categoryType) {
   
   try {
     const vendor = filstarProduct.manufacturer || 'Unknown';
-
-
-
-console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
-
-
+    console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
     
     const productType = getCategoryName(categoryType);
     
-    // Подготви варианти
+    // Подготви варианти с поправено форматиране
     const variants = filstarProduct.variants.map(variant => {
-      const variantName = formatVariantName(variant.attributes);
+      const variantName = formatVariantName(variant.attributes, variant.sku);
       
       return {
         option1: variantName,
@@ -499,10 +519,8 @@ console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: $
     // Добави в колекция
     await addProductToCollection(productGid, categoryType);
 
-      // Качи и нормализирай изображения
-if (filstarProduct.images && filstarProduct.images.length > 0) {
-  console.log(` 🖼️ Images from Filstar:`, filstarProduct.images);
-  console.log(` 🖼️ Processing ${filstarProduct.images.length} images...`);
+    // Качи и нормализирай изображения
+    if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Processing ${filstarProduct.images.length} images...`);
       
       const uploadedImages = [];
@@ -518,9 +536,9 @@ if (filstarProduct.images && filstarProduct.images.length > 0) {
             const attachMutation = `
               mutation {
                 productCreateMedia(
-                  productId: "${productGid}",
+                  productId: \"${productGid}\",
                   media: [{
-                    originalSource: "${resourceUrl}",
+                    originalSource: \"${resourceUrl}\",
                     mediaContentType: IMAGE
                   }]
                 ) {
@@ -577,27 +595,6 @@ if (filstarProduct.images && filstarProduct.images.length > 0) {
   }
 }
 
-// Функция за получаване на име на категория
-function getCategoryName(categoryType) {
-  const names = {
-    nets_and_caps: 'Живарници и кепчета',
-    slingshots: 'Прашки',
-    carp_fishing: 'Аксесоари шарански риболов',
-    pike_and_catfish: 'Аксесоари щука и сом',
-    pole_and_match: 'Аксесоари щека и мач',
-    knives: 'Ножове',
-    boxes_and_bags: 'Кутии и калъфи',
-    chairs_umbrellas_tents: 'Столове и палатки',
-    other: 'Други аксесоари'
-  };
-  
-  return names[categoryType] || 'Аксесоари';
-}
-
-
-// 3 част
-
-
 // Функция за обновяване на съществуващ продукт
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\n🔄 Updating: ${filstarProduct.name}`);
@@ -643,9 +640,9 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             const attachMutation = `
               mutation {
                 productCreateMedia(
-                  productId: "${productGid}",
+                  productId: \"${productGid}\",
                   media: [{
-                    originalSource: "${resourceUrl}",
+                    originalSource: \"${resourceUrl}\",
                     mediaContentType: IMAGE
                   }]
                 ) {
@@ -696,7 +693,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         // Пренареди изображенията
         const updatedProductQuery = `
           {
-            product(id: "${productGid}") {
+            product(id: \"${productGid}\") {
               images(first: 50) {
                 edges {
                   node {
@@ -745,122 +742,105 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   }
 }
 
-// Главна функция за импорт
-async function importAccessories() {
+// MAIN функция
+async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
-  console.log('======================================================================');
-  if (TEST_MODE) {
-    console.log(`⚠️ TEST MODE: Processing only ${TEST_CATEGORY} category`);
-    console.log('======================================================================\n');
-  }
+  console.log('📋 Categories to import:');
+  console.log('  - Аксесоари щука и сом (45)');
+  console.log('  - Аксесоари щека и мач (50)');
+  console.log('  - Ножове (59)');
+  console.log('  - Столове и палатки (63)\n');
   
   try {
-    // Вземи всички продукти от Filstar
+    // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
     
-    // Филтрирай аксесоари по parent_id
-    const accessoriesProducts = allProducts.filter(product => {
-      return product.categories?.some(cat => cat.parent_id?.toString() === ACCESSORIES_PARENT_ID);
+    // Филтрирай само аксесоарите от 4-те категории
+    const accessoryProducts = allProducts.filter(product => {
+      const categoryType = getCategoryType(product);
+      return categoryType !== null;
     });
     
-    console.log(`📊 Found ${accessoriesProducts.length} accessories products\n`);
+    console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
     
-    // Групирай по категории
-    const categorizedProducts = {};
-    for (const categoryType of Object.keys(FILSTAR_ACCESSORIES_CATEGORY_IDS)) {
-      categorizedProducts[categoryType] = [];
-    }
-    for (const product of accessoriesProducts) {
+    // Групирай по категория
+    const productsByCategory = {
+      pike_and_catfish: [],
+      pole_and_match: [],
+      knives: [],
+      chairs_umbrellas_tents: []
+    };
+    
+    accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
-      categorizedProducts[categoryType].push(product);
-    }
+      if (categoryType) {
+        productsByCategory[categoryType].push(product);
+      }
+    });
     
-    // Покажи статистика
-    console.log('📋 Products by category:');
-    for (const [type, products] of Object.entries(categorizedProducts)) {
-      console.log(` ${getCategoryName(type)}: ${products.length} products`);
-    }
+    // Покажи разпределението
+    console.log('📊 Products by category:');
+    Object.entries(productsByCategory).forEach(([type, products]) => {
+      console.log(`  ${getCategoryName(type)}: ${products.length} products`);
+    });
     console.log('');
     
-    // Обработи продуктите
-    let processedCount = 0;
-    for (const [categoryType, products] of Object.entries(categorizedProducts)) {
-      // if (TEST_MODE && categoryType !== TEST_CATEGORY) {
-      //   continue;
-      // }
-      if (products.length === 0) {
-        continue;
-      }
+    // TEST MODE проверка
+    const categoriesToProcess = TEST_MODE 
+      ? { [TEST_CATEGORY]: productsByCategory[TEST_CATEGORY] }
+      : productsByCategory;
+    
+    // Обработи всяка категория
+    for (const [categoryType, products] of Object.entries(categoriesToProcess)) {
+      if (products.length === 0) continue;
       
-      console.log(`\n${'='.repeat(70)}`);
-      console.log(`Processing ${getCategoryName(categoryType)} (${products.length} products)`);
-      console.log('='.repeat(70));
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`📂 Processing category: ${getCategoryName(categoryType)}`);
+      console.log(`${'='.repeat(60)}\n`);
       
-      for (let i = 0; i < products.length; i++) {
-        const product = products[i];
-        processedCount++;
-        
-        console.log(`\n${'━'.repeat(70)}`);
-        console.log(`[${i + 1}/${products.length}] Processing: ${product.name}`);
-        
-        // Намери първия SKU от вариантите
-        const firstSku = product.variants?.[0]?.sku;
-        if (!firstSku) {
-          console.log(' ⚠️ No SKU found, skipping...');
+      for (const product of products) {
+        if (!product.variants || product.variants.length === 0) {
+          console.log(`⏭️  Skipping ${product.name} - no variants`);
           continue;
         }
         
-        // Провери дали продуктът съществува в Shopify
+        const firstSku = product.variants[0].sku;
         const existingProduct = await findProductBySku(firstSku);
+        
         if (existingProduct) {
-          console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
           await updateShopifyProduct(existingProduct, product, categoryType);
         } else {
-          console.log(` ✓ Product not found, creating new...`);
           await createShopifyProduct(product, categoryType);
         }
         
-        // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // // TEST MODE - спри след 10 продукта
-        // if (TEST_MODE && processedCount >= 10) {
-        //   console.log('\n✅ Test completed, stopping...');
-        //   break;
-        // }
-      }
-      
-      // if (TEST_MODE && processedCount >= 10) {
-      //   break;
-      // }
-    }
-    
-    // Покажи финална статистика
-    console.log('\n' + '='.repeat(70));
-    console.log('📊 IMPORT SUMMARY');
-    console.log('='.repeat(70));
-    for (const [type, stat] of Object.entries(stats)) {
-      if (stat.created > 0 || stat.updated > 0 || stat.images > 0) {
-        console.log(`${getCategoryName(type)}:`);
-        console.log(` ✨ Created: ${stat.created} products`);
-        console.log(` 🔄 Updated: ${stat.updated} products`);
-        console.log(` 🖼️ Images: ${stat.images} uploaded`);
-        console.log('-'.repeat(70));
       }
     }
     
-    const totalCreated = Object.values(stats).reduce((sum, s) => sum + s.created, 0);
-    const totalUpdated = Object.values(stats).reduce((sum, s) => sum + s.updated, 0);
-    const totalImages = Object.values(stats).reduce((sum, s) => sum + s.images, 0);
-    console.log(`TOTAL: ${totalCreated} created | ${totalUpdated} updated | ${totalImages} images`);
-    console.log('='.repeat(70));
+    // Финална статистика
+    console.log(`\n${'='.repeat(60)}`);
+    console.log('📊 FINAL STATISTICS');
+    console.log(`${'='.repeat(60)}\n`);
+    
+    Object.entries(stats).forEach(([category, data]) => {
+      console.log(`${getCategoryName(category)}:`);
+      console.log(`  Created: ${data.created}`);
+      console.log(`  Updated: ${data.updated}`);
+      console.log(`  Images: ${data.images}\n`);
+    });
+    
+    console.log('✅ Import completed successfully!');
+    
   } catch (error) {
     console.error('❌ Fatal error:', error);
+    process.exit(1);
   }
 }
 
+main();
 
-// Стартирай импорта
-importAccessories();
+
+
+
 
 
