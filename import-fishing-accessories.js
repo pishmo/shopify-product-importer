@@ -734,23 +734,23 @@ const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
 if (allImages.length > 0) {
   console.log(`  🔄 Reordering images...`);
 
-
-// Подреди според Filstar реда
-const filstarOrder = filstarProduct.images.map(url => url.split('/').pop());
-allImages.sort((a, b) => {
-  const aName = a.src.split('/').pop().split('?')[0];
-  const bName = b.src.split('/').pop().split('?')[0];
-  const aIndex = filstarOrder.indexOf(aName);
-  const bIndex = filstarOrder.indexOf(bName);
-  return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-});
-
-
-
+  // Подреди според Filstar реда
+  const filstarOrder = filstarProduct.images.map(url => url.split('/').pop());
+  console.log('  🐛 Filstar order:', filstarOrder.slice(0, 3));
   
-await reorderProductImages(productGid, allImages);
+  allImages.sort((a, b) => {
+    const aName = a.src.split('/').pop().split('?')[0];
+    const bName = b.src.split('/').pop().split('?')[0];
+    const aIndex = filstarOrder.indexOf(aName);
+    const bIndex = filstarOrder.indexOf(bName);
+    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+  });
 
+  console.log('  🐛 Shopify order after sort:', allImages.slice(0, 3).map(i => i.src.split('/').pop()));
+  
+  await reorderProductImages(productGid, allImages);
 }
+
  else {
         console.log(`  ℹ️  No new images to upload`);
       }
