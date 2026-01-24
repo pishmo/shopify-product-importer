@@ -728,7 +728,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 // Главна функция за импорт
 async function importAccessories() {
-  console.log('🚀 Starting Filstar Carp Accessories Import\n');
+  console.log('🚀 Starting Filstar Other Accessories Import\n');
   console.log('======================================================================');
   if (TEST_MODE) {
     console.log(`⚠️ TEST MODE: Processing only ${TEST_CATEGORY} category`);
@@ -754,7 +754,7 @@ async function importAccessories() {
     
     for (const product of accessoriesProducts) {
       const categoryType = getCategoryType(product);
-      // Обработвай само carp_fishing продукти
+      // Обработвай само other_fishing продукти
       if (categoryType === 'boxes_and_bags') {
         categorizedProducts[categoryType].push(product);
       }
