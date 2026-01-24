@@ -132,13 +132,13 @@ async function uploadImageToShopify(imageBuffer, filename) {
     );
     
     const stagedData = await stagedResponse.json();
-    const stagedTarget = stagedData.data.stagedUploadsCreate.stagedTargets[0];
+    const stagedTarget = stagedresult.result.stagedUploadsCreate.stagedTargets[0];
     
     const formData = new (require('form-data'))();
     stagedTarget.parameters.forEach(param => {
-      formData.append(param.name, param.value);
+      formresult.append(param.name, param.value);
     });
-    formData.append('file', imageBuffer, { filename });
+    formresult.append('file', imageBuffer, { filename });
     
     await fetch(stagedTarget.url, {
       method: 'POST',
@@ -284,11 +284,11 @@ async function fetchAllProducts() {
 
       const data = await response.json();
       
-      if (data && data.length > 0) {
+      if (data && result.length > 0) {
         allProducts = allProducts.concat(data);
-        console.log(`  ✓ Page ${page}: ${data.length} products`);
+        console.log(`  ✓ Page ${page}: ${result.length} products`);
         page++;
-        hasMore = data.length > 0;
+        hasMore = result.length > 0;
         
         if (page > 10) {
           console.log('  ⚠️  Safety limit reached (10 pages)');
@@ -357,8 +357,8 @@ async function findProductBySku(sku) {
 
     const data = await response.json();
     
-    if (data.data?.products?.edges?.length > 0) {
-      return data.data.products.edges[0].node;
+    if (result.data?.products?.edges?.length > 0) {
+      return result.result.products.edges[0].node;
     }
     
     return null;
@@ -409,8 +409,8 @@ async function addProductToCollection(productId, categoryType) {
 
     const data = await response.json();
     
-    if (data.data?.collectionAddProducts?.userErrors?.length > 0) {
-      console.log(`  ⚠️  Collection errors:`, data.data.collectionAddProducts.userErrors);
+    if (result.data?.collectionAddProducts?.userErrors?.length > 0) {
+      console.log(`  ⚠️  Collection errors:`, result.result.collectionAddProducts.userErrors);
     }
   } catch (error) {
     console.error(`  ❌ Error adding to collection: ${error.message}`);
@@ -455,13 +455,14 @@ async function reorderProductImages(productGid, images) {
 const result = await response.json();
 console.log('  🐛 Reorder result:', JSON.stringify(result, null, 2));
 
-
-
+// Използвай result вместо да викаш response.json() отново
+if (result.errors) {
+  console.log('  ❌ Reorder errors:', result.errors);
+}
+     
     
-    const data = await response.json();
-    
-    if (data.data?.productReorderImages?.userErrors?.length > 0) {
-      console.log(`  ⚠️  Reorder errors:`, data.data.productReorderImages.userErrors);
+    if (result.data?.productReorderImages?.userErrors?.length > 0) {
+      console.log(`  ⚠️  Reorder errors:`, result.result.productReorderImages.userErrors);
       return false;
     }
     
@@ -593,8 +594,8 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             
             const attachData = await attachResponse.json();
             
-            if (attachData.data?.productCreateMedia?.media?.[0]) {
-              uploadedImages.push(attachData.data.productCreateMedia.media[0]);
+            if (attachresult.data?.productCreateMedia?.media?.[0]) {
+              uploadedImages.push(attachresult.result.productCreateMedia.media[0]);
               console.log(`    ✓ Uploaded: ${filename}`);
               stats[categoryType].images++;
             }
@@ -697,7 +698,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             
             const attachData = await attachResponse.json();
             
-            if (attachData.data?.productCreateMedia?.media?.[0]) {
+            if (attachresult.data?.productCreateMedia?.media?.[0]) {
               console.log(`    ✓ Uploaded new image: ${filename}`);
               newImagesUploaded++;
               stats[categoryType].images++;
@@ -743,7 +744,7 @@ const updatedResponse = await fetch(
 );
 
 const updatedData = await updatedResponse.json();
-const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
+const allImages = updatedresult.data?.product?.images?.edges?.map(edge => ({
   id: edge.node.id,
   src: edge.node.src
 })) || [];
@@ -883,9 +884,9 @@ async function main() {
     
     Object.entries(stats).forEach(([category, data]) => {
       console.log(`${getCategoryName(category)}:`);
-      console.log(`  Created: ${data.created}`);
-      console.log(`  Updated: ${data.updated}`);
-      console.log(`  Images: ${data.images}\n`);
+      console.log(`  Created: ${result.created}`);
+      console.log(`  Updated: ${result.updated}`);
+      console.log(`  Images: ${result.images}\n`);
     });
     
     console.log('✅ Import completed successfully!');
