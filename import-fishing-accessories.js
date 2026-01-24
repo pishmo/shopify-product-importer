@@ -452,7 +452,7 @@ async function reorderProductImages(productGid, images) {
       }
     );
 
-const result = await response.json();
+const data = await response.json();
 console.log('  🐛 Reorder result:', JSON.stringify(result, null, 2));
 
 // Използвай result вместо да викаш response.json() отново
