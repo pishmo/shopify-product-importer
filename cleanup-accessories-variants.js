@@ -113,45 +113,32 @@ function cleanVariantTitle(title, sku) {
 }
 
 async function updateVariant(variantId, newTitle) {
-  const mutation = `
-    mutation {
-      productVariantUpdate(input: {
-        id: "${variantId}"
-        title: "${newTitle.replace(/"/g, '\\"')}"
-      }) {
-        productVariant {
-          id
-          title
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  `;
-
+  const numericId = variantId.split('/').pop();
+  
   const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${numericId}.json`,
     {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ query: mutation })
+      body: JSON.stringify({
+        variant: {
+          id: numericId,
+          title: newTitle
+        }
+      })
     }
   );
 
   const result = await response.json();
   
-  // Провери за грешки
-  if (!result.data) {
-    console.log(`   ❌ GraphQL Error: ${JSON.stringify(result.errors)}`);
-    return { userErrors: [{ message: 'GraphQL error' }] };
+  if (!response.ok) {
+    return { userErrors: [{ message: result.errors || 'Update failed' }] };
   }
   
-  return result.data.productVariantUpdate;
+  return { userErrors: [] };
 }
 
 
