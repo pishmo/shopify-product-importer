@@ -451,6 +451,12 @@ async function reorderProductImages(productGid, images) {
       }
     );
 
+const result = await response.json();
+console.log('  🐛 Reorder result:', JSON.stringify(result, null, 2));
+
+
+
+    
     const data = await response.json();
     
     if (data.data?.productReorderImages?.userErrors?.length > 0) {
