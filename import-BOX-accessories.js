@@ -21,7 +21,7 @@ const ACCESSORIES_PARENT_ID = '11';
 // Shopify collection IDs
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
   
-  carp_fishing: 'gid://shopify/Collection/739661152638'
+   boxes_and_bags: 'gid://shopify/Collection/739661316478',
  
 };
 
