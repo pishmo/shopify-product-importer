@@ -36,9 +36,6 @@ const stats = {
   chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 }
 };
 
-// TEST MODE
-const TEST_MODE = false;
-const TEST_CATEGORY = 'knives';
 
 
 
