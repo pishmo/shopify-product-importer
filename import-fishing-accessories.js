@@ -889,15 +889,28 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         
         if (ogImage) {
           const ogFilename = ogImage.split('/').pop();
+          const ogBase = getImageFilename(ogFilename).split('.')[0];
+
           
-          const ogIndex = allImages.findIndex(img => {
-            const shopifyFilename = img.src.split('/').pop().split('?')[0];
-            const ogFilenameClean = ogFilename.split('?')[0];
-            const matches = shopifyFilename === ogFilenameClean || 
-                            shopifyFilename.includes(ogFilenameClean) ||
-                            ogFilenameClean.includes(shopifyFilename);
-            return matches;
-          });
+
+const ogFilename = ogImage.split('/').pop();
+const ogBase = getImageFilename(ogFilename).split('.')[0];
+
+console.log(`   🔍 OG filename: ${ogFilename}`);
+console.log(`   🔍 OG base: ${ogBase}`);
+console.log(`   🔍 Comparing with ${allImages.length} images:`);
+
+const ogIndex = allImages.findIndex(img => {
+  const shopifyFilename = img.src.split('/').pop();
+  const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
+  console.log(`   🔍   Shopify: ${shopifyFilename} -> base: ${shopifyBase}`);
+  return shopifyBase === ogBase;
+});
+
+console.log(`   🔍 OG index result: ${ogIndex}`);
+
+
+
           
           if (ogIndex > 0) {
             const [ogImg] = allImages.splice(ogIndex, 1);
