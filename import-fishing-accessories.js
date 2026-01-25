@@ -55,17 +55,16 @@ function getImageFilename(src) {
   const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
   let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
   
-  // Премахва Filstar hex hash-ове (32+ char hex strings)
-  const parts = cleanFilename.split('_');
-  if (parts.length > 1) {
-    const lastPart = parts[parts.length - 1].split('.')[0];
-    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
-      parts.pop();
-      const extension = cleanFilename.split('.').pop();
-      cleanFilename = parts.join('_') + '.' + extension;
-    }
-  }
-  
+ // Премахва Filstar hex hash-ове (32+ char hex strings)
+const parts = cleanFilename.split('_');
+const cleanParts = parts.filter(part => {
+  const partWithoutExt = part.split('.')[0];
+  const isHex = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
+  return !isHex;
+});
+const extension = cleanFilename.split('.').pop();
+cleanFilename = cleanParts.join('_') + '.' + extension;
+
   cleanFilename = cleanFilename.replace(/^_+/, '');
   return cleanFilename;
 }
