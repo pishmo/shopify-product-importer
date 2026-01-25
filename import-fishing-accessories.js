@@ -426,14 +426,14 @@ async function addProductToCollection(productId, categoryType) {
 // Функция за пренареждане на изображенията
 async function reorderProductImages(productGid, images) {
   try {
-    const moves = images.map((img, index) => ({
+    const reorderedImages = images.map((img, index) => ({
       id: img.id,
-      newPosition: String(index)
+      position: index + 1
     }));
 
     const mutation = `
-      mutation productReorderImages($id: ID!, $moves: [MoveInput!]!) {
-        productReorderImages(id: $id, moves: $moves) {
+      mutation productUpdate($input: ProductInput!) {
+        productUpdate(input: $input) {
           product {
             id
           }
@@ -456,8 +456,10 @@ async function reorderProductImages(productGid, images) {
         body: JSON.stringify({ 
           query: mutation,
           variables: {
-            id: productGid,
-            moves: moves
+            input: {
+              id: productGid,
+              images: reorderedImages
+            }
           }
         })
       }
@@ -467,10 +469,11 @@ async function reorderProductImages(productGid, images) {
     
     if (data.errors) {
       console.log(`  🐛 Reorder errors:`, JSON.stringify(data.errors, null, 2));
+      return false;
     }
     
-    if (data.data?.productReorderImages?.userErrors?.length > 0) {
-      console.log(`  ⚠️  Reorder errors:`, data.data.productReorderImages.userErrors);
+    if (data.data?.productUpdate?.userErrors?.length > 0) {
+      console.log(`  ⚠️  Reorder errors:`, data.data.productUpdate.userErrors);
       return false;
     }
     
