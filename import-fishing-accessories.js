@@ -719,14 +719,15 @@ async function createShopifyProduct(filstarProduct, categoryType) {
           if (ogImage) {
             const ogFilename = ogImage.split('/').pop();
             
-            const ogIndex = allImages.findIndex(img => {
-              const shopifyFilename = img.src.split('/').pop().split('?')[0];
-              const ogFilenameClean = ogFilename.split('?')[0];
-              const matches = shopifyFilename === ogFilenameClean || 
-                              shopifyFilename.includes(ogFilenameClean) ||
-                              ogFilenameClean.includes(shopifyFilename);
-              return matches;
-            });
+  const ogIndex = allImages.findIndex(img => {
+  const shopifyFilename = img.src.split('/').pop().split('?')[0];
+  const ogFilenameClean = ogFilename.split('?')[0];
+  const matches = shopifyFilename === ogFilenameClean || 
+                  shopifyFilename.includes(ogFilenameClean) ||
+                  ogFilenameClean.includes(shopifyFilename);
+  return matches;
+});
+
             
             if (ogIndex > 0) {
               const [ogImg] = allImages.splice(ogIndex, 1);
