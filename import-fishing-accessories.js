@@ -933,15 +933,19 @@ async function main() {
     console.log('📦 Fetching all Shopify products...');
     const shopifyProducts = await fetchAllShopifyProducts();
     
-    // Създай Map по SKU за бърз lookup
-    const shopifyProductsBySku = new Map();
-    shopifyProducts.forEach(product => {
-      product.variants.forEach(variant => {
-        if (variant.sku) {
-          shopifyProductsBySku.set(variant.sku, product);
-        }
-      });
+// Създай Map по SKU за бърз lookup
+const shopifyProductsBySku = new Map();
+shopifyProducts.forEach(product => {
+  if (product.variants && Array.isArray(product.variants)) {
+    product.variants.forEach(variant => {
+      if (variant.sku) {
+        shopifyProductsBySku.set(variant.sku, product);
+      }
     });
+  }
+});
+
+    
     console.log(`✅ Loaded ${shopifyProductsBySku.size} SKUs from Shopify\n`);
     
     // Fetch всички продукти от Filstar
