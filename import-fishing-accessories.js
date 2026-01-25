@@ -491,6 +491,7 @@ async function reorderProductImages(productGid, images) {
 
 
 // Функция за създаване на нов продукт
+// Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
   
@@ -622,6 +623,74 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
       
       console.log(`  ✅ Uploaded ${uploadedImages.length} images`);
+      
+      // Reorder images - премести OG image на първо място
+      if (uploadedImages.length > 0) {
+        const updatedProductQuery = `
+          {
+            product(id: \"${productGid}\") {
+              images(first: 50) {
+                edges {
+                  node {
+                    id
+                    src
+                  }
+                }
+              }
+            }
+          }
+        `;
+        
+        const updatedResponse = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: updatedProductQuery })
+          }
+        );
+        
+        const updatedData = await updatedResponse.json();
+        const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
+          id: edge.node.id,
+          src: edge.node.src
+        })) || [];
+        
+        if (allImages.length > 0) {
+          console.log(`  🔄 Reordering images...`);
+          
+          const ogImage = await scrapeOgImage(filstarProduct.slug);
+          
+          if (ogImage) {
+            const ogFilename = ogImage.split('/').pop();
+            
+            const ogIndex = allImages.findIndex(img => {
+              const shopifyFilename = img.src.split('/').pop().split('?')[0];
+              const ogFilenameClean = ogFilename.split('?')[0];
+              const matches = shopifyFilename === ogFilenameClean || 
+                              shopifyFilename.includes(ogFilenameClean) ||
+                              ogFilenameClean.includes(shopifyFilename);
+              return matches;
+            });
+            
+            if (ogIndex > 0) {
+              const [ogImg] = allImages.splice(ogIndex, 1);
+              allImages.unshift(ogImg);
+              console.log(`  ✅ Moved OG image to first position`);
+              await reorderProductImages(productGid, allImages);
+            } else if (ogIndex === 0) {
+              console.log(`  ℹ️  OG image already first`);
+            } else {
+              console.log(`  ⚠️  OG image not found - keeping current order`);
+            }
+          } else {
+            console.log(`  ⚠️  No OG image found from scraping`);
+          }
+        }
+      }
     }
 
     stats[categoryType].created++;
@@ -632,6 +701,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     return null;
   }
 }
+
 
 // Функция за обновяване на съществуващ продукт
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
