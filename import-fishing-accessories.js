@@ -69,23 +69,38 @@ cleanFilename = cleanParts.join('_') + '.' + extension;
   return cleanFilename;
 }
 
-// Функция за проверка дали снимка съществува
+
+
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
     return false;
   }
   
   const newFilename = getImageFilename(newImageUrl);
+  console.log(`   🔍 DEBUG: New image from Filstar: ${newImageUrl}`);
+  console.log(`   🔍 DEBUG: Clean new filename: ${newFilename}`);
+  
   if (!newFilename) {
     return false;
   }
   
-  return existingImages.some(img => {
+  const found = existingImages.some(img => {
     const imgSrc = img.src || img.url || img;
     const existingFilename = getImageFilename(imgSrc);
-    return existingFilename && existingFilename === newFilename;
+    console.log(`   🔍 DEBUG: Comparing with existing: ${imgSrc} -> ${existingFilename}`);
+    const match = existingFilename && existingFilename === newFilename;
+    if (match) console.log(`   ✅ DEBUG: MATCH FOUND!`);
+    return match;
   });
+  
+  console.log(`   🔍 DEBUG: Result: ${found ? 'EXISTS' : 'NEW IMAGE'}\n`);
+  return found;
 }
+
+
+
+
+
 
 // Функция за извличане на SKU от filename
 function extractSkuFromImageFilename(filename) {
