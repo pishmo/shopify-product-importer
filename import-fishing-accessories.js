@@ -902,7 +902,16 @@ async function main() {
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
 
+// филтър за 1 ску
+    
+// Филтър за тест на 1 продукт
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => v.sku === '963717')
+);
+console.log(`🧪 Filtered to SKU 963717: ${accessoryProducts.length} products\n`);
 
+// край на филтъра за 1 ску
+    
     
     // Групирай по категория
     const productsByCategory = {
