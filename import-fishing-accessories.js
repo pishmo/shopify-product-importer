@@ -341,62 +341,7 @@ async function fetchAllProducts() {
 }
 
 // Функция за намиране на продукт в Shopify по SKU
-async function findProductBySku(sku) {
-  try {
-    const query = `
-      {
-        products(first: 1, query: \"sku:${sku}\") {
-          edges {
-            node {
-              id
-              title
-              handle
-              images(first: 50) {
-                edges {
-                  node {
-                    id
-                    src
-                  }
-                }
-              }
-              variants(first: 100) {
-                edges {
-                  node {
-                    id
-                    sku
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
 
-    const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query })
-      }
-    );
-
-    const data = await response.json();
-    
-    if (data.data?.products?.edges?.length > 0) {
-      return data.data.products.edges[0].node;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error(`  ❌ Error finding product by SKU: ${error.message}`);
-    return null;
-  }
-}
 
 // Функция за добавяне на продукт в колекция
 async function addProductToCollection(productId, categoryType) {
