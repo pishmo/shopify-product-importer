@@ -787,7 +787,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
         
-        if (existingFilenames.includes(filename)) {
+       if (imageExists(existingImages, imageUrl)) {
           console.log(`      ⏭️  Image already exists, skipping: ${filename}`);
           continue;
         }
