@@ -930,7 +930,7 @@ console.log(`   🔍 OG index result: ${ogIndex}`);
 async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Други - Категория Id - (45)');
+  console.log('  - Аксесоари Други - Категория Id - (68)');
   
   
   try {
