@@ -426,16 +426,23 @@ async function addProductToCollection(productId, categoryType) {
 // Функция за пренареждане на изображенията
 async function reorderProductImages(productGid, images) {
   try {
-    const mutation = `
-      const mutation = `
-  mutation productReorderImages($id: ID!, $moves: [MoveInput!]!) {
-    productReorderImages(id: $id, moves: $moves) {
-      product { id }
-      userErrors { field message }
-    }
-  }
-`;
+    const moves = images.map((img, index) => ({
+      id: img.id,
+      newPosition: String(index)
+    }));
 
+    const mutation = `
+      mutation productReorderImages($id: ID!, $moves: [MoveInput!]!) {
+        productReorderImages(id: $id, moves: $moves) {
+          product {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
     `;
 
     const response = await fetch(
@@ -446,18 +453,21 @@ async function reorderProductImages(productGid, images) {
           'X-Shopify-Access-Token': ACCESS_TOKEN,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ query: mutation })
+        body: JSON.stringify({ 
+          query: mutation,
+          variables: {
+            id: productGid,
+            moves: moves
+          }
+        })
       }
     );
 
     const data = await response.json();
-
-// дебъг, после да се изтрие
- if (data.errors) {
-  console.log(`  🐛 Reorder errors:`, JSON.stringify(data.errors, null, 2));
-}
-
     
+    if (data.errors) {
+      console.log(`  🐛 Reorder errors:`, JSON.stringify(data.errors, null, 2));
+    }
     
     if (data.data?.productReorderImages?.userErrors?.length > 0) {
       console.log(`  ⚠️  Reorder errors:`, data.data.productReorderImages.userErrors);
@@ -471,6 +481,7 @@ async function reorderProductImages(productGid, images) {
     return false;
   }
 }
+
 
 // Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
