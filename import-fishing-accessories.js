@@ -734,23 +734,8 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
           }
         `;
         
-        const updatedResponse = await fetch(
-          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ query: updatedProductQuery })
-          }
-        );
-        
-        const updatedData = await updatedResponse.json();
-        const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
-          id: edge.node.id,
-          src: edge.node.src
-        })) || [];
+      
+         
      
       } 
       
@@ -762,9 +747,53 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         console.log(`  ℹ️  No new images to upload`);
       }
 
+
+
+  const updatedProductQuery = `
+          {
+            product(id: \"${productGid}\") {
+              images(first: 50) {
+                edges {
+                  node {
+                    id
+                    src
+                  }
+                }
+              }
+            }
+          }
+        `;
+
+
+      
+
+      
+  const updatedResponse = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: updatedProductQuery })
+          }
+        );
+        
+
+ 
+          const updatedData = await updatedResponse.json();
+          const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
+          id: edge.node.id,
+          src: edge.node.src
+        })) || [];
+
+
+      
+      
      // да се върне после в иф-а 
     if (allImages.length > 0) {
-          console.log(`  🔄 Reordering images...`);
+     console.log(`  🔄 Reordering images...`);
 
 
 // Scrape OG image от Filstar
