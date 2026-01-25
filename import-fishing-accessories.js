@@ -143,39 +143,23 @@ async function uploadImageToShopify(imageBuffer, filename) {
 
 
 async function scrapeOgImage(productSlug) {
-  if (!productSlug) {
-    console.log('   🐛 DEBUG: No product slug provided');
-    return null;
-  }
+  if (!productSlug) return null;
   
   try {
     const url = `${FILSTAR_BASE_URL}/${productSlug}`;
-    console.log(`   🐛 DEBUG: Scraping OG image from: ${url}`);
-    
     const response = await fetch(url);
-    if (!response.ok) {
-      console.log(`   🐛 DEBUG: Failed to fetch page: ${response.status}`);
-      return null;
-    }
+    if (!response.ok) return null;
     
     const html = await response.text();
-    console.log(`   🐛 DEBUG: HTML length: ${html.length} chars`);
-    console.log(`   🐛 DEBUG: Searching for og:image meta tag...`);
-    
     const match = html.match(/<meta property="og:image" content="([^"]+)"/);
     
     if (match && match[1]) {
-      const fullUrl = match[1];
-      const filename = fullUrl.split('/').pop();
-      console.log(`   🐛 DEBUG: OG image full URL: ${fullUrl}`);
-      console.log(`   🐛 DEBUG: OG image filename: ${filename}`);
-      return fullUrl;
-    } else {
-      console.log('   🐛 DEBUG: No OG image meta tag found in HTML');
-      return null;
+      return match[1];
     }
+    
+    return null;
   } catch (error) {
-    console.error(`   🐛 DEBUG: Error scraping OG image: ${error.message}`);
+    console.error(`   ❌ Error scraping OG image: ${error.message}`);
     return null;
   }
 }
