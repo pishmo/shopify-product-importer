@@ -704,6 +704,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
 
 // Функция за обновяване на съществуващ продукт
+// Функция за обновяване на съществуващ продукт
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\n🔄 Updating: ${filstarProduct.name}`);
   
@@ -722,17 +723,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       return filename;
     });
     
-    console.log(`   🐛 DEBUG: Existing images in Shopify:`);
-    existingFilenames.forEach((fn, idx) => console.log(`      [${idx}] ${fn}`));
-    
-    // 🐛 DEBUG: Изображения от Filstar
     if (filstarProduct.images && filstarProduct.images.length > 0) {
-      console.log(`   🐛 DEBUG: Filstar images array (API order):`);
-      filstarProduct.images.forEach((img, idx) => {
-        const fn = img.split('/').pop();
-        console.log(`      [${idx}] ${fn}`);
-      });
-      
       console.log(`   🖼️  Processing ${filstarProduct.images.length} images from Filstar...`);
       
       let newImagesUploaded = 0;
@@ -807,7 +798,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         console.log(`   ℹ️  No new images to upload`);
       }
       
-      // 🐛 DEBUG: Пренареждане на изображения
       const updatedProductQuery = `
         {
           product(id: \"${productGid}\") {
@@ -843,22 +833,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       
       if (allImages.length > 0) {
         console.log(`   🔄 Reordering images...`);
-        console.log(`   🐛 DEBUG: Current Shopify images (before reorder):`);
-        allImages.forEach((img, idx) => {
-          const filename = img.src.split('/').pop().split('?')[0];
-          console.log(`      [${idx}] ${filename}`);
-        });
         
         const ogImage = await scrapeOgImage(filstarProduct.slug);
         
         if (ogImage) {
           const ogFilename = ogImage.split('/').pop();
-          console.log(`   🐛 DEBUG: Full OG URL: ${ogImage}`);
-          console.log(`   🐛 DEBUG: Extracted OG filename: ${ogFilename}`);
-          console.log(`   🐛 DEBUG: Filstar images order from API:`);
-          filstarProduct.images.forEach((img, i) => {
-            console.log(`      [${i}] ${img.split('/').pop()}`);
-          });
           
           const ogIndex = allImages.findIndex(img => {
             const shopifyFilename = img.src.split('/').pop().split('?')[0];
@@ -866,11 +845,8 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             const matches = shopifyFilename === ogFilenameClean || 
                             shopifyFilename.includes(ogFilenameClean) ||
                             ogFilenameClean.includes(shopifyFilename);
-            console.log(`      🐛 Compare: "${shopifyFilename}" vs "${ogFilenameClean}" = ${matches}`);
             return matches;
           });
-          
-          console.log(`   🐛 DEBUG: OG image found at index: ${ogIndex}`);
           
           if (ogIndex > 0) {
             const [ogImg] = allImages.splice(ogIndex, 1);
@@ -895,7 +871,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     return false;
   }
 }
-
 
 
 
