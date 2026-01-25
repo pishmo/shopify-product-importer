@@ -459,6 +459,13 @@ async function reorderProductImages(productGid, images) {
     );
 
     const data = await response.json();
+
+// дебъг, после да се изтрие
+ if (data.errors) {
+  console.log(`  🐛 Reorder errors:`, JSON.stringify(data.errors, null, 2));
+}
+
+    
     
     if (data.data?.productReorderImages?.userErrors?.length > 0) {
       console.log(`  ⚠️  Reorder errors:`, data.data.productReorderImages.userErrors);
