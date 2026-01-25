@@ -44,6 +44,62 @@ const TEST_CATEGORY = 'knives';
 
 // 2 част
 
+// Функция за извличане на чист filename от URL
+function getImageFilename(src) {
+  if (!src || typeof src !== 'string') return null;
+  
+  const urlParts = src.split('/').pop();
+  const withoutQuery = urlParts.split('?')[0];
+  
+  // Премахва Shopify UUID
+  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
+  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
+  
+  // Премахва Filstar hex hash-ове (32+ char hex strings)
+  const parts = cleanFilename.split('_');
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1].split('.')[0];
+    if (lastPart.length >= 32 && /^[a-f0-9]+$/i.test(lastPart)) {
+      parts.pop();
+      const extension = cleanFilename.split('.').pop();
+      cleanFilename = parts.join('_') + '.' + extension;
+    }
+  }
+  
+  cleanFilename = cleanFilename.replace(/^_+/, '');
+  return cleanFilename;
+}
+
+// Функция за проверка дали снимка съществува
+function imageExists(existingImages, newImageUrl) {
+  if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
+    return false;
+  }
+  
+  const newFilename = getImageFilename(newImageUrl);
+  if (!newFilename) {
+    return false;
+  }
+  
+  return existingImages.some(img => {
+    const imgSrc = img.src || img.url || img;
+    const existingFilename = getImageFilename(imgSrc);
+    return existingFilename && existingFilename === newFilename;
+  });
+}
+
+// Функция за извличане на SKU от filename
+function extractSkuFromImageFilename(filename) {
+  if (!filename || typeof filename !== 'string') return '999999';
+  
+  const match = filename.match(/^(\d+)/);
+  if (match && match[1]) return match[1];
+  
+  const altMatch = filename.match(/[-_](\d{6,})/);
+  if (altMatch && altMatch[1]) return altMatch[1];
+  
+  return '999999';
+}
 
 
 
