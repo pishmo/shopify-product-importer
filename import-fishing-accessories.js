@@ -937,7 +937,7 @@ console.log(`   🔍 OG index result: ${ogIndex}`);
 
 
 // MAIN функция
-// MAIN функция
+
 async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('📋 Categories to import:');
@@ -988,9 +988,18 @@ async function main() {
       console.log(`📂 Processing category: ${getCategoryName(categoryType)}`);
       console.log(`${'='.repeat(60)}\n`);
       
-      for (const product of products) {
+      const totalInCategory = products.length;
+      
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        const productNumber = i + 1;
+        
+        console.log(`\n${'-'.repeat(60)}`);
+        console.log(`[${productNumber}/${totalInCategory}] Processing: ${product.name}`);
+        console.log(`${'-'.repeat(60)}`);
+        
         if (!product.variants || product.variants.length === 0) {
-          console.log(`⏭️  Skipping ${product.name} - no variants`);
+          console.log(`⏭️  Skipping - no variants`);
           continue;
         }
         
@@ -1028,8 +1037,6 @@ async function main() {
 }
 
 main();
-
-
 
 
 
