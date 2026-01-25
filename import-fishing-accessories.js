@@ -821,6 +821,8 @@ filstarProduct.images.forEach((img, i) => {
 if (ogImage) {
   const ogFilename = ogImage.split('/').pop();
   console.log(`  🎯 OG image: ${ogFilename}`);
+
+  
   const ogIndex = allImages.findIndex(img => img.src.includes(ogFilename));
   if (ogIndex > 0) {
     const [ogImg] = allImages.splice(ogIndex, 1);
