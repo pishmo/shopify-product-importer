@@ -209,7 +209,6 @@ async function scrapeOgImage(productSlug) {
   
   try {
     const url = `${FILSTAR_BASE_URL}/${productSlug}`;
-    
     const response = await fetch(url);
     if (!response.ok) {
       return null;
@@ -217,19 +216,18 @@ async function scrapeOgImage(productSlug) {
     
     const html = await response.text();
     
-    // Търси background-image в .img_product елемента
-    const match = html.match(/class="img_product"[^>]*style="background-image:\s*url\(&quot;([^&]+)&quot;\)/);
+    // Търси background-image URL в img_product елемента
+    const bgMatch = html.match(/background-image:\s*url\(['"&quot;]*([^'"&)]+)['"&quot;]*\)/);
     
-    if (match && match[1]) {
-      const fullUrl = match[1];
-      console.log(`   ✅ Found main image: ${fullUrl}`);
-      return fullUrl;
-    } else {
-      console.log('   ⚠️  Main image not found in HTML');
-      return null;
+    if (bgMatch && bgMatch[1]) {
+      console.log(`   ✅ Found main image: ${bgMatch[1]}`);
+      return bgMatch[1];
     }
+    
+    console.log('   ⚠️  Main image not found');
+    return null;
   } catch (error) {
-    console.error(`   ❌ Error scraping main image: ${error.message}`);
+    console.error(`   ❌ Error: ${error.message}`);
     return null;
   }
 }
