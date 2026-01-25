@@ -812,7 +812,11 @@ async function main() {
     const allProducts = await fetchAllProducts();
     
     // Филтрирай само аксесоарите от 4-те категории
-    const accessoryProducts = allProducts.filter(product => {
+
+
+   
+    let accessoryProducts = allProducts.filter(product => {
+
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
