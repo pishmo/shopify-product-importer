@@ -744,14 +744,25 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
           id: edge.node.id,
           src: edge.node.src
         })) || [];
-        
-        if (allImages.length > 0) {
+     
+      } 
+      
+      
+      
+      
+      
+      else {
+        console.log(`  ℹ️  No new images to upload`);
+      }
+
+     // да се върне после в иф-а 
+    if (allImages.length > 0) {
           console.log(`  🔄 Reordering images...`);
           await reorderProductImages(productGid, allImages);
         }
-      } else {
-        console.log(`  ℹ️  No new images to upload`);
-      }
+
+
+      
     }
     
     stats[categoryType].updated++;
