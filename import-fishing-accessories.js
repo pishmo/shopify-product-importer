@@ -543,7 +543,7 @@ async function reorderProductImages(productGid, images) {
 
 
 // Функция за създаване на нов продукт
-// Функция за създаване на нов продукт
+
 async function createShopifyProduct(filstarProduct, categoryType) {
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
   
@@ -719,13 +719,13 @@ async function createShopifyProduct(filstarProduct, categoryType) {
           if (ogImage) {
             const ogFilename = ogImage.split('/').pop();
             
-  const ogIndex = allImages.findIndex(img => {
-  const shopifyFilename = img.src.split('/').pop().split('?')[0];
-  const ogFilenameClean = ogFilename.split('?')[0];
-  const matches = shopifyFilename === ogFilenameClean || 
-                  shopifyFilename.includes(ogFilenameClean) ||
-                  ogFilenameClean.includes(shopifyFilename);
-  return matches;
+const ogFilename = ogImage.split('/').pop();
+const ogBase = getImageFilename(ogFilename).split('.')[0];
+
+const ogIndex = allImages.findIndex(img => {
+  const shopifyFilename = img.src.split('/').pop();
+  const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
+  return shopifyBase === ogBase;
 });
 
             
