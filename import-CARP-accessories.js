@@ -12,10 +12,11 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 
 
+
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-   other: ['68']
+  carp_fishing: ['37'] 
 };
 
 const ACCESSORIES_PARENT_ID = '11';
@@ -23,8 +24,15 @@ const ACCESSORIES_PARENT_ID = '11';
 // Shopify collection IDs
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
   
-   other: 'gid://shopify/Collection/739661447550'
+  carp_fishing: 'gid://shopify/Collection/739661152638'
  
+};
+
+// Статистика
+const stats = {
+  
+  carp_fishing: { created: 0, updated: 0, images: 0 }
+  
 };
 
 // Статистика
