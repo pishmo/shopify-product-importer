@@ -156,14 +156,6 @@ async function scrapeOgImage(productSlug) {
   }
 }
 
-function formatVariantName(attributes, sku) {
-
-
-
-
-
-
-
 
 
 // ПОПРАВЕНА функция за форматиране на име на вариант
