@@ -327,6 +327,85 @@ async function fetchAllProducts() {
 // Функция за намиране на продукт в Shopify по SKU
 
 
+async function findProductBySku(sku) {
+  try {
+    let hasNextPage = true;
+    let cursor = null;
+    
+    while (hasNextPage) {
+      const query = `
+        {
+          products(first: 250, query: "sku:${sku}"${cursor ? `, after: "${cursor}"` : ''}) {
+            edges {
+              cursor
+              node {
+                id
+                title
+                handle
+                images(first: 50) {
+                  edges {
+                    node {
+                      id
+                      src
+                    }
+                  }
+                }
+                variants(first: 100) {
+                  edges {
+                    node {
+                      id
+                      sku
+                    }
+                  }
+                }
+              }
+            }
+            pageInfo {
+              hasNextPage
+            }
+          }
+        }
+      `;
+      
+      const response = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query })
+        }
+      );
+      
+      const data = await response.json();
+      
+      if (data.data?.products?.edges?.length > 0) {
+        return data.data.products.edges[0].node;
+      }
+      
+      hasNextPage = data.data?.products?.pageInfo?.hasNextPage || false;
+      if (hasNextPage && data.data?.products?.edges?.length > 0) {
+        cursor = data.data.products.edges[data.data.products.edges.length - 1].cursor;
+      } else {
+        hasNextPage = false;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`   ❌ Error finding product by SKU: ${error.message}`);
+    return null;
+  }
+}
+
+
+
+
+
+
+
 // Функция за добавяне на продукт в колекция
 async function addProductToCollection(productId, categoryType) {
   const collectionId = SHOPIFY_ACCESSORIES_COLLECTIONS[categoryType];
