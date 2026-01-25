@@ -141,6 +141,31 @@ async function uploadImageToShopify(imageBuffer, filename) {
   }
 }
 
+
+async function scrapeOgImage(productSlug) {
+  if (!productSlug) return null;
+  try {
+    const url = `${FILSTAR_BASE_URL}/${productSlug}`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const html = await response.text();
+    const match = html.match(/<meta property="og:image" content="([^"]+)"/);
+    return match ? match[1] : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function formatVariantName(attributes, sku) {
+
+
+
+
+
+
+
+
+
 // ПОПРАВЕНА функция за форматиране на име на вариант
 function formatVariantName(attributes, sku) {
   if (!attributes || attributes.length === 0) {
