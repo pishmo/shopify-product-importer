@@ -888,11 +888,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         const ogImage = await scrapeOgImage(filstarProduct.slug);
         
         if (ogImage) {
-          const ogFilename = ogImage.split('/').pop();
-          const ogBase = getImageFilename(ogFilename).split('.')[0];
-
-          
-
+                   
 const ogFilename = ogImage.split('/').pop();
 const ogBase = getImageFilename(ogFilename).split('.')[0];
 
