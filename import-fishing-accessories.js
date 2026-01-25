@@ -929,6 +929,21 @@ async function main() {
   console.log('  - Столове и палатки (63)\n');
   
   try {
+    // Fetch всички Shopify продукти веднъж в началото
+    console.log('📦 Fetching all Shopify products...');
+    const shopifyProducts = await fetchAllShopifyProducts();
+    
+    // Създай Map по SKU за бърз lookup
+    const shopifyProductsBySku = new Map();
+    shopifyProducts.forEach(product => {
+      product.variants.forEach(variant => {
+        if (variant.sku) {
+          shopifyProductsBySku.set(variant.sku, product);
+        }
+      });
+    });
+    console.log(`✅ Loaded ${shopifyProductsBySku.size} SKUs from Shopify\n`);
+    
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
     
@@ -979,7 +994,7 @@ async function main() {
         }
         
         const firstSku = product.variants[0].sku;
-        const existingProduct = await findProductBySku(firstSku);
+        const existingProduct = shopifyProductsBySku.get(firstSku);
         
         if (existingProduct) {
           await updateShopifyProduct(existingProduct, product, categoryType);
@@ -1010,6 +1025,9 @@ async function main() {
     process.exit(1);
   }
 }
+
+main();
+
 
 main();
 
