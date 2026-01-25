@@ -758,6 +758,23 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
      // да се върне после в иф-а 
     if (allImages.length > 0) {
           console.log(`  🔄 Reordering images...`);
+
+
+// Scrape OG image от Filstar
+const ogImage = await scrapeOgImage(filstarProduct.slug);
+if (ogImage) {
+  const ogFilename = ogImage.split('/').pop();
+  console.log(`  🎯 OG image: ${ogFilename}`);
+  const ogIndex = allImages.findIndex(img => img.src.includes(ogFilename));
+  if (ogIndex > 0) {
+    const [ogImg] = allImages.splice(ogIndex, 1);
+    allImages.unshift(ogImg);
+    console.log(`  ✅ Moved OG to first`);
+  }
+}
+
+
+      
           await reorderProductImages(productGid, allImages);
         }
 
