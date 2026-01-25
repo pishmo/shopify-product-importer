@@ -937,6 +937,7 @@ console.log(`   🔍 OG index result: ${ogIndex}`);
 
 
 // MAIN функция
+// MAIN функция
 async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('📋 Categories to import:');
@@ -950,29 +951,13 @@ async function main() {
     const allProducts = await fetchAllProducts();
     
     // Филтрирай само аксесоарите от 4-те категории
-
-
-   
-    let accessoryProducts = allProducts.filter(product => {
-
+    const accessoryProducts = allProducts.filter(product => {
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
-
-// филтър за 1 ску
-    
-// Филтър за тест на 1 продукт
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => v.sku === '963717')
-);
-console.log(`🧪 Filtered to SKU 963717: ${accessoryProducts.length} products\n`);
-
-// край на филтъра за 1 ску
-    
-    
     // Групирай по категория
     const productsByCategory = {
       pike_and_catfish: [],
@@ -995,13 +980,8 @@ console.log(`🧪 Filtered to SKU 963717: ${accessoryProducts.length} products\n
     });
     console.log('');
     
-    // TEST MODE проверка
-    const categoriesToProcess = TEST_MODE 
-      ? { [TEST_CATEGORY]: productsByCategory[TEST_CATEGORY] }
-      : productsByCategory;
-    
     // Обработи всяка категория
-    for (const [categoryType, products] of Object.entries(categoriesToProcess)) {
+    for (const [categoryType, products] of Object.entries(productsByCategory)) {
       if (products.length === 0) continue;
       
       console.log(`\n${'='.repeat(60)}`);
@@ -1048,6 +1028,8 @@ console.log(`🧪 Filtered to SKU 963717: ${accessoryProducts.length} products\n
 }
 
 main();
+
+
 
 
 
