@@ -150,6 +150,11 @@ async function scrapeOgImage(productSlug) {
     if (!response.ok) return null;
     const html = await response.text();
     const match = html.match(/<meta property="og:image" content="([^"]+)"/);
+
+    // дебъг
+    console.log(`   🐛 DEBUG: HTML length: ${html.length} chars`);
+    console.log(`   🐛 DEBUG: Searching for og:image meta tag...`);
+
     return match ? match[1] : null;
   } catch (error) {
     return null;
