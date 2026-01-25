@@ -47,88 +47,6 @@ const TEST_CATEGORY = 'knives';
 
 
 
-async function fetchAllShopifyProducts() {
-  console.log('📦 Fetching all products from Shopify...\n');
-  
-  let allProducts = [];
-  let hasNextPage = true;
-  let cursor = null;
-  
-  while (hasNextPage) {
-    const query = `
-      {
-        products(first: 250${cursor ? `, after: "${cursor}"` : ''}) {
-          edges {
-            cursor
-            node {
-              id
-              title
-              handle
-              images(first: 50) {
-                edges {
-                  node {
-                    id
-                    src
-                  }
-                }
-              }
-              variants(first: 100) {
-                edges {
-                  node {
-                    id
-                    sku
-                  }
-                }
-              }
-            }
-          }
-          pageInfo {
-            hasNextPage
-          }
-        }
-      }
-    `;
-    
-    const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query })
-      }
-    );
-    
-    const data = await response.json();
-    
-    if (data.data?.products?.edges) {
-      allProducts = allProducts.concat(data.data.products.edges.map(e => e.node));
-      console.log(`   ✓ Fetched ${data.data.products.edges.length} products (total: ${allProducts.length})`);
-    }
-    
-    hasNextPage = data.data?.products?.pageInfo?.hasNextPage || false;
-    if (hasNextPage && data.data?.products?.edges?.length > 0) {
-      cursor = data.data.products.edges[data.data.products.edges.length - 1].cursor;
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-  
-  console.log(`\n✅ Total Shopify products: ${allProducts.length}\n`);
-  return allProducts;
-}
-
-
-
-
-
-
-
-
-
-
 // Функция за нормализация на изображения
 async function normalizeImage(imageUrl, sku) {
   try {
@@ -225,23 +143,39 @@ async function uploadImageToShopify(imageBuffer, filename) {
 
 
 async function scrapeOgImage(productSlug) {
-  if (!productSlug) return null;
+  if (!productSlug) {
+    console.log('   🐛 DEBUG: No product slug provided');
+    return null;
+  }
   
   try {
     const url = `${FILSTAR_BASE_URL}/${productSlug}`;
+    console.log(`   🐛 DEBUG: Scraping OG image from: ${url}`);
+    
     const response = await fetch(url);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.log(`   🐛 DEBUG: Failed to fetch page: ${response.status}`);
+      return null;
+    }
     
     const html = await response.text();
+    console.log(`   🐛 DEBUG: HTML length: ${html.length} chars`);
+    console.log(`   🐛 DEBUG: Searching for og:image meta tag...`);
+    
     const match = html.match(/<meta property="og:image" content="([^"]+)"/);
     
     if (match && match[1]) {
-      return match[1];
+      const fullUrl = match[1];
+      const filename = fullUrl.split('/').pop();
+      console.log(`   🐛 DEBUG: OG image full URL: ${fullUrl}`);
+      console.log(`   🐛 DEBUG: OG image filename: ${filename}`);
+      return fullUrl;
+    } else {
+      console.log('   🐛 DEBUG: No OG image meta tag found in HTML');
+      return null;
     }
-    
-    return null;
   } catch (error) {
-    console.error(`   ❌ Error scraping OG image: ${error.message}`);
+    console.error(`   🐛 DEBUG: Error scraping OG image: ${error.message}`);
     return null;
   }
 }
@@ -407,86 +341,62 @@ async function fetchAllProducts() {
 }
 
 // Функция за намиране на продукт в Shopify по SKU
-
-
 async function findProductBySku(sku) {
   try {
-    let hasNextPage = true;
-    let cursor = null;
-    
-    while (hasNextPage) {
-      const query = `
-        {
-          products(first: 250, query: "sku:${sku}"${cursor ? `, after: "${cursor}"` : ''}) {
-            edges {
-              cursor
-              node {
-                id
-                title
-                handle
-                images(first: 50) {
-                  edges {
-                    node {
-                      id
-                      src
-                    }
+    const query = `
+      {
+        products(first: 1, query: \"sku:${sku}\") {
+          edges {
+            node {
+              id
+              title
+              handle
+              images(first: 50) {
+                edges {
+                  node {
+                    id
+                    src
                   }
                 }
-                variants(first: 100) {
-                  edges {
-                    node {
-                      id
-                      sku
-                    }
+              }
+              variants(first: 100) {
+                edges {
+                  node {
+                    id
+                    sku
                   }
                 }
               }
             }
-            pageInfo {
-              hasNextPage
-            }
           }
         }
-      `;
-      
-      const response = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query })
-        }
-      );
-      
-      const data = await response.json();
-      
-      if (data.data?.products?.edges?.length > 0) {
-        return data.data.products.edges[0].node;
       }
-      
-      hasNextPage = data.data?.products?.pageInfo?.hasNextPage || false;
-      if (hasNextPage && data.data?.products?.edges?.length > 0) {
-        cursor = data.data.products.edges[data.data.products.edges.length - 1].cursor;
-      } else {
-        hasNextPage = false;
+    `;
+
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query })
       }
+    );
+
+    const data = await response.json();
+    
+    if (data.data?.products?.edges?.length > 0) {
+      return data.data.products.edges[0].node;
     }
     
     return null;
   } catch (error) {
-    console.error(`   ❌ Error finding product by SKU: ${error.message}`);
+    console.error(`  ❌ Error finding product by SKU: ${error.message}`);
     return null;
   }
 }
-
-
-
-
-
-
 
 // Функция за добавяне на продукт в колекция
 async function addProductToCollection(productId, categoryType) {
@@ -742,12 +652,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       return filename;
     });
     
-   
+    console.log(`   🐛 DEBUG: Existing images in Shopify:`);
     existingFilenames.forEach((fn, idx) => console.log(`      [${idx}] ${fn}`));
     
     // 🐛 DEBUG: Изображения от Filstar
     if (filstarProduct.images && filstarProduct.images.length > 0) {
-    
+      console.log(`   🐛 DEBUG: Filstar images array (API order):`);
       filstarProduct.images.forEach((img, idx) => {
         const fn = img.split('/').pop();
         console.log(`      [${idx}] ${fn}`);
@@ -863,7 +773,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       
       if (allImages.length > 0) {
         console.log(`   🔄 Reordering images...`);
-       
+        console.log(`   🐛 DEBUG: Current Shopify images (before reorder):`);
         allImages.forEach((img, idx) => {
           const filename = img.src.split('/').pop().split('?')[0];
           console.log(`      [${idx}] ${filename}`);
@@ -873,7 +783,9 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         
         if (ogImage) {
           const ogFilename = ogImage.split('/').pop();
-         
+          console.log(`   🐛 DEBUG: Full OG URL: ${ogImage}`);
+          console.log(`   🐛 DEBUG: Extracted OG filename: ${ogFilename}`);
+          console.log(`   🐛 DEBUG: Filstar images order from API:`);
           filstarProduct.images.forEach((img, i) => {
             console.log(`      [${i}] ${img.split('/').pop()}`);
           });
@@ -884,11 +796,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             const matches = shopifyFilename === ogFilenameClean || 
                             shopifyFilename.includes(ogFilenameClean) ||
                             ogFilenameClean.includes(shopifyFilename);
-          
+            console.log(`      🐛 Compare: "${shopifyFilename}" vs "${ogFilenameClean}" = ${matches}`);
             return matches;
           });
           
-        
+          console.log(`   🐛 DEBUG: OG image found at index: ${ogIndex}`);
           
           if (ogIndex > 0) {
             const [ogImg] = allImages.splice(ogIndex, 1);
@@ -929,35 +841,29 @@ async function main() {
   console.log('  - Столове и палатки (63)\n');
   
   try {
-    // Fetch всички Shopify продукти веднъж в началото
-    console.log('📦 Fetching all Shopify products...');
-    const shopifyProducts = await fetchAllShopifyProducts();
-    
-// Създай Map по SKU за бърз lookup
-const shopifyProductsBySku = new Map();
-shopifyProducts.forEach(product => {
-  if (product.variants && Array.isArray(product.variants)) {
-    product.variants.forEach(variant => {
-      if (variant.sku) {
-        shopifyProductsBySku.set(variant.sku, product);
-      }
-    });
-  }
-});
-
-    
-    console.log(`✅ Loaded ${shopifyProductsBySku.size} SKUs from Shopify\n`);
-    
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
     
     // Филтрирай само аксесоарите от 4-те категории
+
+
+   
     let accessoryProducts = allProducts.filter(product => {
+
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
+
+
+// Филтър за тест на 1 продукт
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => v.sku === '962894')
+);
+console.log(`🧪 Filtered to SKU 961680: ${accessoryProducts.length} products\n`);
+
+    
     
     // Групирай по категория
     const productsByCategory = {
@@ -981,7 +887,10 @@ shopifyProducts.forEach(product => {
     });
     console.log('');
     
-    const categoriesToProcess = productsByCategory;
+    // TEST MODE проверка
+    const categoriesToProcess = TEST_MODE 
+      ? { [TEST_CATEGORY]: productsByCategory[TEST_CATEGORY] }
+      : productsByCategory;
     
     // Обработи всяка категория
     for (const [categoryType, products] of Object.entries(categoriesToProcess)) {
@@ -998,7 +907,7 @@ shopifyProducts.forEach(product => {
         }
         
         const firstSku = product.variants[0].sku;
-        const existingProduct = shopifyProductsBySku.get(firstSku);
+        const existingProduct = await findProductBySku(firstSku);
         
         if (existingProduct) {
           await updateShopifyProduct(existingProduct, product, categoryType);
@@ -1031,10 +940,6 @@ shopifyProducts.forEach(product => {
 }
 
 main();
-
-
-
-
 
 
 
