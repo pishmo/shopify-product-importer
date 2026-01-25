@@ -931,25 +931,14 @@ async function main() {
   try {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
-
-    const cachedShopifyProducts = await fetchAllShopifyProducts();
-
-
-
-
     
     // Филтрирай само аксесоарите от 4-те категории
-
-
-   
     let accessoryProducts = allProducts.filter(product => {
-
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
-    
     
     // Групирай по категория
     const productsByCategory = {
@@ -973,8 +962,7 @@ async function main() {
     });
     console.log('');
     
- const categoriesToProcess = productsByCategory;
-
+    const categoriesToProcess = productsByCategory;
     
     // Обработи всяка категория
     for (const [categoryType, products] of Object.entries(categoriesToProcess)) {
@@ -1022,6 +1010,9 @@ async function main() {
     process.exit(1);
   }
 }
+
+main();
+
 
 main();
 
