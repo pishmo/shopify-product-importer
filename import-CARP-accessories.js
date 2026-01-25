@@ -35,12 +35,7 @@ const stats = {
   
 };
 
-// Статистика
-const stats = {
-  
- 
-   other: { created: 0, updated: 0, images: 0 }
-};
+
 
 // 2 част
 
