@@ -760,7 +760,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
 
 // Функция за обновяване на съществуващ продукт
-// Функция за обновяване на съществуващ продукт
+
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\n🔄 Updating: ${filstarProduct.name}`);
   
@@ -774,9 +774,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     })) || [];
     
     const existingFilenames = existingImages.map(img => {
-      const url = img.src;
-      const filename = url.split('/').pop().split('?')[0];
-      return filename;
+      return getImageFilename(img.src);
     });
     
     if (filstarProduct.images && filstarProduct.images.length > 0) {
