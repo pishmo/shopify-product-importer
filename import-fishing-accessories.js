@@ -931,6 +931,12 @@ async function main() {
   try {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
+
+    const cachedShopifyProducts = await fetchAllShopifyProducts();
+
+
+
+
     
     // Филтрирай само аксесоарите от 4-те категории
 
