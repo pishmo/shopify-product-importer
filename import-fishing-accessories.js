@@ -766,6 +766,15 @@ async function main() {
     });
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
+
+
+// Филтър за тест на 1 продукт
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => v.sku === '962894')
+);
+console.log(`🧪 Filtered to SKU 961680: ${accessoryProducts.length} products\n`);
+
+    
     
     // Групирай по категория
     const productsByCategory = {
