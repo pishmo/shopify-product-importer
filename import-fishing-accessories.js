@@ -716,12 +716,9 @@ async function createShopifyProduct(filstarProduct, categoryType) {
           
           const ogImage = await scrapeOgImage(filstarProduct.slug);
           
-          if (ogImage) {
-            const ogFilename = ogImage.split('/').pop();
-            
+          if (ogImage) {                       
 const ogFilename = ogImage.split('/').pop();
 const ogBase = getImageFilename(ogFilename).split('.')[0];
-
 const ogIndex = allImages.findIndex(img => {
   const shopifyFilename = img.src.split('/').pop();
   const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
