@@ -930,10 +930,8 @@ console.log(`   🔍 OG index result: ${ogIndex}`);
 async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари щука и сом - Категория Id - (45)');
-  console.log('  - Аксесоари щека и мач - Категория Id - (50)');
-  console.log('  - Ножове - Категория Id - (59)'); 
-  console.log('  - Столове и палатки - Категория Id - (63)\n');
+  console.log('  - Аксесоари Други - Категория Id - (45)');
+  
   
   try {
     // Fetch всички продукти от Filstar
