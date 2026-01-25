@@ -70,34 +70,25 @@ cleanFilename = cleanParts.join('_') + '.' + extension;
 }
 
 
-
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
     return false;
   }
   
   const newFilename = getImageFilename(newImageUrl);
-  console.log(`   🔍 DEBUG: New image from Filstar: ${newImageUrl}`);
-  console.log(`   🔍 DEBUG: Clean new filename: ${newFilename}`);
-  
   if (!newFilename) {
     return false;
   }
   
-  const found = existingImages.some(img => {
+  const newBase = newFilename.split('.')[0];
+  
+  return existingImages.some(img => {
     const imgSrc = img.src || img.url || img;
     const existingFilename = getImageFilename(imgSrc);
-    console.log(`   🔍 DEBUG: Comparing with existing: ${imgSrc} -> ${existingFilename}`);
-    const match = existingFilename && existingFilename === newFilename;
-    if (match) console.log(`   ✅ DEBUG: MATCH FOUND!`);
-    return match;
+    const existingBase = existingFilename ? existingFilename.split('.')[0] : null;
+    return existingBase && existingBase === newBase;
   });
-  
-  console.log(`   🔍 DEBUG: Result: ${found ? 'EXISTS' : 'NEW IMAGE'}\n`);
-  return found;
 }
-
-
 
 
 
