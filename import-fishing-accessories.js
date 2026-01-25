@@ -223,7 +223,8 @@ async function scrapeOgImage(productSlug) {
     console.log(`   🐛 DEBUG: HTML length: ${html.length} chars`);
     console.log(`   🐛 DEBUG: Searching for og:image meta tag...`);
     
-    const match = html.match(/<meta property="og:image" content="([^"]+)"/);
+   const match = html.match(/<meta property="og:image" content="([^"]+)"/);
+
     
     if (match && match[1]) {
       const fullUrl = match[1];
