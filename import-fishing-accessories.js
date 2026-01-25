@@ -427,23 +427,15 @@ async function addProductToCollection(productId, categoryType) {
 async function reorderProductImages(productGid, images) {
   try {
     const mutation = `
-      mutation {
-        productReorderImages(
-          id: \"${productGid}\",
-          moves: [${images.map((img, index) => `{
-            id: \"${img.id}\",
-            newPosition: \"${index}\"
-          }`).join(', ')}]
-        ) {
-          product {
-            id
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
+      const mutation = `
+  mutation productReorderImages($id: ID!, $moves: [MoveInput!]!) {
+    productReorderImages(id: $id, moves: $moves) {
+      product { id }
+      userErrors { field message }
+    }
+  }
+`;
+
     `;
 
     const response = await fetch(
