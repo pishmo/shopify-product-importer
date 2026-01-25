@@ -426,54 +426,33 @@ async function addProductToCollection(productId, categoryType) {
 // Функция за пренареждане на изображенията
 async function reorderProductImages(productGid, images) {
   try {
+    const productId = productGid.replace('gid://shopify/Product/', '');
+    
     const reorderedImages = images.map((img, index) => ({
-      id: img.id,
+      id: img.id.replace('gid://shopify/ProductImage/', ''),
       position: index + 1
     }));
 
-    const mutation = `
-      mutation productUpdate($input: ProductInput!) {
-        productUpdate(input: $input) {
-          product {
-            id
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `;
-
     const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
       {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'X-Shopify-Access-Token': ACCESS_TOKEN,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
-          query: mutation,
-          variables: {
-            input: {
-              id: productGid,
-              images: reorderedImages
-            }
+        body: JSON.stringify({
+          product: {
+            id: productId,
+            images: reorderedImages
           }
         })
       }
     );
 
-    const data = await response.json();
-    
-    if (data.errors) {
-      console.log(`  🐛 Reorder errors:`, JSON.stringify(data.errors, null, 2));
-      return false;
-    }
-    
-    if (data.data?.productUpdate?.userErrors?.length > 0) {
-      console.log(`  ⚠️  Reorder errors:`, data.data.productUpdate.userErrors);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log(`  🐛 Reorder error: ${response.status} - ${errorText}`);
       return false;
     }
     
@@ -484,6 +463,7 @@ async function reorderProductImages(productGid, images) {
     return false;
   }
 }
+
 
 
 // Функция за създаване на нов продукт
