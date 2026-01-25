@@ -47,6 +47,88 @@ const TEST_CATEGORY = 'knives';
 
 
 
+async function fetchAllShopifyProducts() {
+  console.log('📦 Fetching all products from Shopify...\n');
+  
+  let allProducts = [];
+  let hasNextPage = true;
+  let cursor = null;
+  
+  while (hasNextPage) {
+    const query = `
+      {
+        products(first: 250${cursor ? `, after: "${cursor}"` : ''}) {
+          edges {
+            cursor
+            node {
+              id
+              title
+              handle
+              images(first: 50) {
+                edges {
+                  node {
+                    id
+                    src
+                  }
+                }
+              }
+              variants(first: 100) {
+                edges {
+                  node {
+                    id
+                    sku
+                  }
+                }
+              }
+            }
+          }
+          pageInfo {
+            hasNextPage
+          }
+        }
+      }
+    `;
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query })
+      }
+    );
+    
+    const data = await response.json();
+    
+    if (data.data?.products?.edges) {
+      allProducts = allProducts.concat(data.data.products.edges.map(e => e.node));
+      console.log(`   ✓ Fetched ${data.data.products.edges.length} products (total: ${allProducts.length})`);
+    }
+    
+    hasNextPage = data.data?.products?.pageInfo?.hasNextPage || false;
+    if (hasNextPage && data.data?.products?.edges?.length > 0) {
+      cursor = data.data.products.edges[data.data.products.edges.length - 1].cursor;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
+  console.log(`\n✅ Total Shopify products: ${allProducts.length}\n`);
+  return allProducts;
+}
+
+
+
+
+
+
+
+
+
+
 // Функция за нормализация на изображения
 async function normalizeImage(imageUrl, sku) {
   try {
