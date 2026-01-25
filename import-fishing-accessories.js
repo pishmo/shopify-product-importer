@@ -808,6 +808,16 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 // Scrape OG image от Filstar
 const ogImage = await scrapeOgImage(filstarProduct.slug);
+
+console.log(`   🐛 DEBUG: Full OG URL: ${ogImage}`);
+console.log(`   🐛 DEBUG: Extracted filename: ${ogFilename}`);
+console.log(`   🐛 DEBUG: Filstar images order from API:`);
+filstarProduct.images.forEach((img, i) => {
+  console.log(`      [${i}] ${img.split('/').pop()}`);
+});
+
+
+      
 if (ogImage) {
   const ogFilename = ogImage.split('/').pop();
   console.log(`  🎯 OG image: ${ogFilename}`);
