@@ -559,9 +559,14 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const productType = getCategoryName(categoryType);
     
     // Подготви варианти с поправено форматиране
-      const variants = filstarProduct.variants.map(variant => {
+    const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant.attributes, variant.sku);
 
+      // ✨ DEBUGGING
+      console.log(`   🔍 Variant SKU: ${variant.sku}`);
+      console.log(`   🔍 Attributes:`, variant.attributes);     
+      console.log(`   🔍 Formatted name: ${variantName}`);
+      // край на дебъга, да се изтрие
         
       return {
         option1: variantName,
@@ -617,12 +622,9 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     await addProductToCollection(productGid, categoryType);
 
     // Качи и нормализирай изображения
-
     const uploadedImages = [];
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Processing ${filstarProduct.images.length} images...`);
-      
-      
       
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
@@ -683,77 +685,82 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
       
       console.log(`  ✅ Uploaded ${uploadedImages.length} images`);
-      
-      // Reorder images - премести OG image на първо място
-      if (uploadedImages.length > 0) {
-        const updatedProductQuery = `
-          {
-            product(id: \"${productGid}\") {
-              images(first: 50) {
-                edges {
-                  node {
-                    id
-                    src
-                  }
-                }
+    }
+    
+    // REORDERING - ВИНАГИ (извън if блока за images)
+    console.log(`  🔄 Reordering images...`);
+    
+    const updatedProductQuery = `
+      {
+        product(id: \"${productGid}\") {
+          images(first: 50) {
+            edges {
+              node {
+                id
+                src
               }
             }
           }
-        `;
-        
-        const updatedResponse = await fetch(
-          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ query: updatedProductQuery })
-          }
-        );
-        
-        const updatedData = await updatedResponse.json();
-        const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
-          id: edge.node.id,
-          src: edge.node.src
-        })) || [];
-        
-        if (allImages.length > 0) {
-          console.log(`  🔄 Reordering images...`);
-          
-          const ogImage = await scrapeOgImage(filstarProduct.slug);
-          
-          if (ogImage) {                       
-const ogFilename = ogImage.split('/').pop();
-const ogBase = getImageFilename(ogFilename).split('.')[0];
-const ogIndex = allImages.findIndex(img => {
-  const shopifyFilename = img.src.split('/').pop();
-  const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
-  return shopifyBase === ogBase;
-});
-
-            
-            if (ogIndex > 0) {
-              const [ogImg] = allImages.splice(ogIndex, 1);
-              allImages.unshift(ogImg);
-              console.log(`  ✅ Moved OG image to first position`);
-              await reorderProductImages(productGid, allImages);
-            } else if (ogIndex === 0) {
-              console.log(`  ℹ️  OG image already first`);
-            } else {
-              console.log(`  ⚠️  OG image not found - keeping current order`);
-            }
-          } else {
-            console.log(`  ⚠️  No OG image found from scraping`);
-          }
         }
       }
+    `;
+    
+    const updatedResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: updatedProductQuery })
+      }
+    );
+    
+    const updatedData = await updatedResponse.json();
+    const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
+      id: edge.node.id,
+      src: edge.node.src
+    })) || [];
+    
+    if (allImages.length > 0) {
+      const ogImage = await scrapeOgImage(filstarProduct.slug);
+      
+      if (ogImage) {
+        console.log(`    🌐 Fetching main image from: ${FILSTAR_BASE_URL}/${filstarProduct.slug}`);
+        console.log(`    ✓ Found OG image: ${ogImage.split('/').pop()}`);
+        
+        const ogFilename = ogImage.split('/').pop();
+        const ogBase = getImageFilename(ogFilename).split('.')[0];
+        const ogIndex = allImages.findIndex(img => {
+          const shopifyFilename = img.src.split('/').pop();
+          const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
+          return shopifyBase === ogBase;
+        });
+        
+        if (ogIndex > 0) {
+          const [ogImg] = allImages.splice(ogIndex, 1);
+          allImages.unshift(ogImg);
+          console.log(`    📋 Final order (${allImages.length} images):`);
+          allImages.forEach((img, i) => {
+            console.log(`      ${i + 1}. ${getImageFilename(img.src.split('/').pop())}`);
+          });
+          await reorderProductImages(productGid, allImages);
+        } else if (ogIndex === 0) {
+          console.log(`    ℹ️  OG image already first`);
+        } else {
+          console.log(`    ⚠️  OG image not found in uploaded images`);
+        }
+      } else {
+        console.log(`    ⚠️  Could not fetch OG image from Filstar`);
+      }
+    } else {
+      console.log(`    ℹ️  No images to reorder`);
     }
-
+    
     stats[categoryType].created++;
-    return result.product;
-
+    return productGid;
+    
   } catch (error) {
     console.error(`  ❌ Error creating product: ${error.message}`);
     return null;
