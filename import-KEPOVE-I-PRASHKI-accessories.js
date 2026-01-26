@@ -681,6 +681,16 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       
       console.log(`  ✅ Uploaded ${uploadedImages.length} images`);
     }
+
+
+
+if (uploadedImages.length > 0) {
+  console.log(`  ⏳ Waiting for Shopify to process images...`);
+  await new Promise(resolve => setTimeout(resolve, 2000)); // 2 секунди
+}
+
+
+
     
     // REORDERING - ВИНАГИ (извън if блока за images)
     console.log(`  🔄 Reordering images...`);
