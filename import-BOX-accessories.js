@@ -962,7 +962,7 @@ async function main() {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
     
-    // Филтрирай само аксесоарите от 4-те категории
+    // Филтрирай само аксесоарите от BOX
     const accessoryProducts = allProducts.filter(product => {
       const categoryType = getCategoryType(product);
       return categoryType !== null;
