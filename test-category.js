@@ -88,8 +88,8 @@ variants: product.variants.map(v => ({
     attributes: v.attributes
 
 
-        
-      });
+    }))
+});
     } else {
       console.log(`   ❌ Not found\n`);
     }
