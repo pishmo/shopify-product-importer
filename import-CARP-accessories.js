@@ -267,9 +267,15 @@ function formatVariantName(attributes, sku) {
   }
   
   // Търси "МОДЕЛ" атрибут
-  const modelAttr = filtered.find(attr => attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
-  const otherAttrs = filtered.filter(attr => !attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
+ const modelAttr = filtered.find(attr => {
+  const attrName = attr.attribute_name?.toLowerCase() || '';
+  return attrName.includes('модел');
+});
 
+const otherAttrs = filtered.filter(attr => {
+  const attrName = attr.attribute_name?.toLowerCase() || '';
+  return !attrName.includes('модел');
+});
 
   
   const parts = [];
