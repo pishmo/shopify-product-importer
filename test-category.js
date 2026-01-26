@@ -9,7 +9,7 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 const TEST_SKUS = [
   '960627', // живарници и кепчета
-  '962747'  // прашки
+  '962744'  // прашки
   
 ];
 
