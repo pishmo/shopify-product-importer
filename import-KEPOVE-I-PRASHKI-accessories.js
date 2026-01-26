@@ -565,10 +565,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
  // ✨ DEBUGGING
   console.log(`   🔍 Variant SKU: ${variant.sku}`);
-  console.log(`   🔍 Attributes:`, variant.attributes);
-  
-  const variantName = formatVariantName(variant.attributes, variant.sku);
-  
+  console.log(`   🔍 Attributes:`, variant.attributes);     
   console.log(`   🔍 Formatted name: ${variantName}`);
 // край на дебъга , да се изтрие
         
