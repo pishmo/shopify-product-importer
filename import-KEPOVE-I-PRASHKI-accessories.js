@@ -994,14 +994,9 @@ async function main() {
       if (categoryType) {
         productsByCategory[categoryType].push(product);
 
-// ✨ DEBUGGING - покажи първия продукт от всяка категория
-    if (productsByCategory[categoryType].length === 1) {
-      console.log(`\n📋 SAMPLE ${categoryType} PRODUCT:`);
-      console.log(JSON.stringify(product, null, 2));
-// да се изтрие
 
     }
-      }
+    }
     });
 
 
