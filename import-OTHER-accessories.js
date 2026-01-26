@@ -40,58 +40,6 @@ const stats = {
 
 
 
-// Глобална променлива за кеширане на категории
-let cachedCategoryNames = [];
-
-function formatVariantName(attributes, sku, product = null) {
-  // Ако е подаден product при първото извикване, кешираме категориите
-  if (product && product.categories) {
-    cachedCategoryNames = product.categories.map(c => c.name);
-  }
-  
-  if (!attributes || attributes.length === 0) {
-    return sku || 'Стандартен';
-  }
-  
-  // Филтрирай атрибути чието име съвпада с категория
-  const filtered = attributes.filter(attr => {
-    const name = attr.attribute_name || '';
-    return !cachedCategoryNames.includes(name);
-  });
-  
-  if (filtered.length === 0) {
-    return sku || 'Стандартен';
-  }
-  
-  // Търси "МОДЕЛ" атрибут
-  const modelAttr = filtered.find(attr => {
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return attrName.includes('модел');
-  });
-
-  const otherAttrs = filtered.filter(attr => {
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return !attrName.includes('модел');
-  });
-  
-  const parts = [];
-  if (modelAttr) {
-    parts.push(`${modelAttr.attribute_name} ${modelAttr.value}`);
-  }
-  otherAttrs.forEach(attr => {
-    parts.push(`${attr.attribute_name} ${attr.value}`);
-  });
-  
-  let result = parts.join(' / ');
-  result = result.replace(/^\/+|\/+$/g, '').trim();
-  
-  if (!result || result === '') {
-    return sku || 'Стандартен';
-  }
-  
-  return result;
-}
-
 
 
 
