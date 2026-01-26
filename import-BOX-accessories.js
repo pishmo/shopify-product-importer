@@ -11,7 +11,7 @@ const API_VERSION = '2025-01';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 
-/ Filstar category IDs за аксесоари
+// Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
    boxes_and_bags: ['61']
