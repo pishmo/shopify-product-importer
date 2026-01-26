@@ -70,6 +70,12 @@ const product = allProducts.find(p =>
     if (product) {
       console.log(`   ✅ Found: ${product.name}`);
       console.log(`   🏷️  Categories:`, product.categories);
+      console.log(' 🔧 Variants:');
+  product.variants.forEach((v, i) => {
+  console.log(`   [${i+1}] SKU: ${v.sku}`);
+  console.log(`       Attributes:`, v.attributes);
+});
+
       console.log('');
       
       results.push({
