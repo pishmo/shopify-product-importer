@@ -12,12 +12,6 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 
 
-// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
-const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  ceps: ['17'],
-  prashki: ['26'],
-  
-};
 
 
 // Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
