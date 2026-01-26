@@ -616,10 +616,12 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     await addProductToCollection(productGid, categoryType);
 
     // Качи и нормализирай изображения
+
+    const uploadedImages = [];
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Processing ${filstarProduct.images.length} images...`);
       
-      const uploadedImages = [];
+      
       
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
