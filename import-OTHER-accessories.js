@@ -323,8 +323,7 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    ceps: 'Живарници и кепове',
-   prashki: 'Прашки',
+    other: 'Други аксесоари',
    
   };
   
