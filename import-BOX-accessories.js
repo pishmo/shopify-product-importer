@@ -11,34 +11,27 @@ const API_VERSION = '2025-01';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 
-
-// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
+/ Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  ceps: ['17'],
-  prashki: ['26'],
   
+   boxes_and_bags: ['61']
 };
 
+const ACCESSORIES_PARENT_ID = '11';
 
-
-// Shopify collection IDs - САМО 2 КАТЕГОРИИ
+// Shopify collection IDs
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
-
   
-  ceps: 'gid://shopify/Collection/739661087102',
-  prashki: 'gid://shopify/Collection/739661119870',
-  
-};
-
-// Статистика - САМО 4 КАТЕГОРИИ
-const stats = {
-  ceps: { created: 0, updated: 0, images: 0 },
-  prashki: { created: 0, updated: 0, images: 0 }
+   boxes_and_bags: 'gid://shopify/Collection/739661316478'
  
 };
 
-
-
+// Статистика
+const stats = {
+  
+  boxes_and_bags: { created: 0, updated: 0, images: 0 }
+  
+};
 
 // 2 част
 
