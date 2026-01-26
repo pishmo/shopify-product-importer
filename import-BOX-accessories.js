@@ -313,18 +313,24 @@ function getCategoryType(product) {
   return null;
 }
 
+
+
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
+    nets_and_caps: 'Живарници и кепчета',
+    slingshots: 'Прашки',
+    carp_fishing: 'Аксесоари шарански риболов',
     pike_and_catfish: 'Аксесоари щука и сом',
     pole_and_match: 'Аксесоари щека и мач',
     knives: 'Ножове',
-    chairs_umbrellas_tents: 'Столове и палатки'
+    boxes_and_bags: 'Кутии и калъфи',
+    chairs_umbrellas_tents: 'Столове и палатки',
+    other: 'Други аксесоари'
   };
   
   return names[categoryType] || 'Аксесоари';
 }
-
 
 
 
