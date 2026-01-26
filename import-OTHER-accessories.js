@@ -1,4 +1,4 @@
-// import-fishing-accessories.js - Импорт на аксесоари от Filstar API
+// import-fishing-accessories.js - Импорт на аксесоари Кепове и прашки от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -33,6 +33,8 @@ const stats = {
  
    other: { created: 0, updated: 0, images: 0 }
 };
+
+
 
 // 2 част
 
@@ -264,8 +266,16 @@ function formatVariantName(attributes, sku) {
   }
   
   // Търси "МОДЕЛ" атрибут
-  const modelAttr = filtered.find(attr => attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
-  const otherAttrs = filtered.filter(attr => !attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
+ const modelAttr = filtered.find(attr => {
+  const attrName = attr.attribute_name?.toLowerCase() || '';
+  return attrName.includes('модел');
+});
+
+const otherAttrs = filtered.filter(attr => {
+  const attrName = attr.attribute_name?.toLowerCase() || '';
+  return !attrName.includes('модел');
+});
+
   
   const parts = [];
   if (modelAttr) {
@@ -313,7 +323,8 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    other: 'Други аксесоари',
+    ceps: 'Живарници и кепове',
+   prashki: 'Прашки',
    
   };
   
@@ -533,7 +544,6 @@ async function reorderProductImages(productGid, images) {
 
 
 // Функция за създаване на нов продукт
-
 async function createShopifyProduct(filstarProduct, categoryType) {
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
   
@@ -546,7 +556,8 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     // Подготви варианти с поправено форматиране
     const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant.attributes, variant.sku);
-      
+
+    
       return {
         option1: variantName,
         price: variant.price?.toString() || '0',
@@ -601,10 +612,9 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     await addProductToCollection(productGid, categoryType);
 
     // Качи и нормализирай изображения
+    const uploadedImages = [];
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Processing ${filstarProduct.images.length} images...`);
-      
-      const uploadedImages = [];
       
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
@@ -665,77 +675,96 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
       
       console.log(`  ✅ Uploaded ${uploadedImages.length} images`);
+    }
+    
+    // REORDERING с retry логика
+    console.log(`  🔄 Reordering images...`);
+    
+    let allImages = [];
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Reorder images - премести OG image на първо място
-      if (uploadedImages.length > 0) {
-        const updatedProductQuery = `
-          {
-            product(id: \"${productGid}\") {
-              images(first: 50) {
-                edges {
-                  node {
-                    id
-                    src
-                  }
+      const updatedProductQuery = `
+        {
+          product(id: \"${productGid}\") {
+            images(first: 50) {
+              edges {
+                node {
+                  id
+                  src
                 }
               }
             }
           }
-        `;
-        
-        const updatedResponse = await fetch(
-          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ query: updatedProductQuery })
-          }
-        );
-        
-        const updatedData = await updatedResponse.json();
-        const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
-          id: edge.node.id,
-          src: edge.node.src
-        })) || [];
-        
-        if (allImages.length > 0) {
-          console.log(`  🔄 Reordering images...`);
-          
-          const ogImage = await scrapeOgImage(filstarProduct.slug);
-          
-          if (ogImage) {                       
-const ogFilename = ogImage.split('/').pop();
-const ogBase = getImageFilename(ogFilename).split('.')[0];
-const ogIndex = allImages.findIndex(img => {
-  const shopifyFilename = img.src.split('/').pop();
-  const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
-  return shopifyBase === ogBase;
-});
-
-            
-            if (ogIndex > 0) {
-              const [ogImg] = allImages.splice(ogIndex, 1);
-              allImages.unshift(ogImg);
-              console.log(`  ✅ Moved OG image to first position`);
-              await reorderProductImages(productGid, allImages);
-            } else if (ogIndex === 0) {
-              console.log(`  ℹ️  OG image already first`);
-            } else {
-              console.log(`  ⚠️  OG image not found - keeping current order`);
-            }
-          } else {
-            console.log(`  ⚠️  No OG image found from scraping`);
-          }
         }
+      `;
+      
+      const updatedResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query: updatedProductQuery })
+        }
+      );
+      
+      const updatedData = await updatedResponse.json();
+      allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
+        id: edge.node.id,
+        src: edge.node.src
+      })) || [];
+      
+      if (allImages.length > 0) {
+        console.log(`    ✓ Found ${allImages.length} images on attempt ${attempt}`);
+        break;
+      }
+      
+      if (attempt < 3) {
+        console.log(`    ⏳ Attempt ${attempt}/3 - no images yet, retrying...`);
       }
     }
-
+    
+    if (allImages.length > 0) {
+      const ogImage = await scrapeOgImage(filstarProduct.slug);
+      
+      if (ogImage) {
+        console.log(`    🌐 Fetching main image from: ${FILSTAR_BASE_URL}/${filstarProduct.slug}`);
+        console.log(`    ✓ Found OG image: ${ogImage.split('/').pop()}`);
+        
+        const ogFilename = ogImage.split('/').pop();
+        const ogBase = getImageFilename(ogFilename).split('.')[0];
+        const ogIndex = allImages.findIndex(img => {
+          const shopifyFilename = img.src.split('/').pop();
+          const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
+          return shopifyBase === ogBase;
+        });
+        
+        if (ogIndex > 0) {
+          const [ogImg] = allImages.splice(ogIndex, 1);
+          allImages.unshift(ogImg);
+          console.log(`    📋 Final order (${allImages.length} images):`);
+          allImages.forEach((img, i) => {
+            console.log(`      ${i + 1}. ${getImageFilename(img.src.split('/').pop())}`);
+          });
+          await reorderProductImages(productGid, allImages);
+        } else if (ogIndex === 0) {
+          console.log(`    ℹ️  OG image already first`);
+        } else {
+          console.log(`    ⚠️  OG image not found in uploaded images`);
+        }
+      } else {
+        console.log(`    ⚠️  Could not fetch OG image from Filstar`);
+      }
+    } else {
+      console.log(`    ⚠️  No images found after 3 attempts`);
+    }
+    
     stats[categoryType].created++;
-    return result.product;
-
+    return productGid;
+    
   } catch (error) {
     console.error(`  ❌ Error creating product: ${error.message}`);
     return null;
@@ -760,11 +789,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     const existingFilenames = existingImages.map(img => {
       return getImageFilename(img.src);
     });
-    
+      let newImagesUploaded = 0;
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`   🖼️  Processing ${filstarProduct.images.length} images from Filstar...`);
       
-      let newImagesUploaded = 0;
+    
       
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
@@ -929,7 +958,8 @@ async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('📋 Categories to import:');
   console.log('  - Аксесоари Други - Категория Id - (68)');
-  
+ 
+ 
   
   try {
     // Fetch всички продукти от Filstar
@@ -945,7 +975,7 @@ async function main() {
 
     // Групирай по категория
     const productsByCategory = {
-      other: []
+        other: []
      
     };
     
@@ -953,8 +983,13 @@ async function main() {
       const categoryType = getCategoryType(product);
       if (categoryType) {
         productsByCategory[categoryType].push(product);
-      }
+
+
+    
+    }
     });
+
+
     
     // Покажи разпределението
     console.log('📊 Products by category:');
