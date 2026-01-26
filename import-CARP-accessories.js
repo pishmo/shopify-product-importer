@@ -269,6 +269,8 @@ function formatVariantName(attributes, sku) {
   // Търси "МОДЕЛ" атрибут
   const modelAttr = filtered.find(attr => attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
   const otherAttrs = filtered.filter(attr => !attr.attribute_name?.toUpperCase().includes('МОДЕЛ'));
+
+
   
   const parts = [];
   if (modelAttr) {
