@@ -82,6 +82,13 @@ const product = allProducts.find(p =>
         sku: sku,
         name: product.name,
         categories: product.categories
+
+variants: product.variants.map(v => ({
+    sku: v.sku,
+    attributes: v.attributes
+
+
+        
       });
     } else {
       console.log(`   ❌ Not found\n`);
