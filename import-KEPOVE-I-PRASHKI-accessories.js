@@ -986,7 +986,7 @@ async function main() {
       console.log(JSON.stringify(product, null, 2));
 // да се изтрие
 
-        
+    }
       }
     });
 
