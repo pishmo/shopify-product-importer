@@ -777,11 +777,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     const existingFilenames = existingImages.map(img => {
       return getImageFilename(img.src);
     });
-    
+      let newImagesUploaded = 0;
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`   🖼️  Processing ${filstarProduct.images.length} images from Filstar...`);
       
-      let newImagesUploaded = 0;
+    
       
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
