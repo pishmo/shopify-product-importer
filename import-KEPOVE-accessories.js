@@ -21,22 +21,20 @@ const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
 
 
 
-// Shopify collection IDs - САМО 4 КАТЕГОРИИ
+// Shopify collection IDs - САМО 2 КАТЕГОРИИ
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
 
   
-  pike_and_catfish: 'gid://shopify/Collection/739661185406',
-  pole_and_match: 'gid://shopify/Collection/739661218174',
-  knives: 'gid://shopify/Collection/739661250942',
-  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782'
+  ceps: 'gid://shopify/Collection/739661087102',
+  prashki: 'gid://shopify/Collection/739661119870',
+  
 };
 
 // Статистика - САМО 4 КАТЕГОРИИ
 const stats = {
-  pike_and_catfish: { created: 0, updated: 0, images: 0 },
-  pole_and_match: { created: 0, updated: 0, images: 0 },
-  knives: { created: 0, updated: 0, images: 0 },
-  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 }
+  ceps: { created: 0, updated: 0, images: 0 },
+  prashki: { created: 0, updated: 0, images: 0 }
+ 
 };
 
 
