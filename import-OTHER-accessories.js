@@ -236,40 +236,23 @@ async function scrapeOgImage(productSlug) {
   }
 }
 
+// Глобална променлива за кеширане на категории
+let cachedCategoryNames = [];
 
-
-// ПОПРАВЕНА функция за форматиране на име на вариант
-function formatVariantName(attributes, sku) {
+function formatVariantName(attributes, sku, product = null) {
+  // Ако е подаден product при първото извикване, кешираме категориите
+  if (product && product.categories) {
+    cachedCategoryNames = product.categories.map(c => c.name);
+  }
+  
   if (!attributes || attributes.length === 0) {
     return sku || 'Стандартен';
   }
   
-  // Филтрирай атрибути започващи с "Аксесоари" или други категорийни имена
+  // Филтрирай атрибути чието име съвпада с категория
   const filtered = attributes.filter(attr => {
     const name = attr.attribute_name || '';
-    
-    // Премахни всички атрибути започващи с "Аксесоари"
-    if (name.startsWith('Аксесоари') || name.startsWith('АКСЕСОАРИ')) {
-      return false;
-    }
-    
-    // Премахни други категорийни имена
-    const excludeList = [
-      'ЖИВАРНИЦИ И КЕПЧЕТА',
-      'ПРАШКИ',
-      'НОЖОВЕ',
-      'КУТИИ, КОШЧЕТА И КАЛЪФИ',
-      'Раници, чанти, кошчета и кофи',
-      'СТОЛОВЕ И ПАЛАТКИ',
-      'ДРУГИ', 'Други',
-      'МУХАРСКИ РУБОЛОВ',
-      'ШАРАНСКИ РИБОЛОВ', 'Фидери',
-      'РИБОЛОВ С ЩЕКА И МАЧ', 
-      'ЩЕКА И МАЧ' ,           
-      'Аксесоари други', 'Инструменти','Колчета','глави и стойки'
-    ];
-    
-    return !excludeList.includes(name);
+    return !cachedCategoryNames.includes(name);
   });
   
   if (filtered.length === 0) {
@@ -277,16 +260,15 @@ function formatVariantName(attributes, sku) {
   }
   
   // Търси "МОДЕЛ" атрибут
- const modelAttr = filtered.find(attr => {
-  const attrName = attr.attribute_name?.toLowerCase() || '';
-  return attrName.includes('модел');
-});
+  const modelAttr = filtered.find(attr => {
+    const attrName = attr.attribute_name?.toLowerCase() || '';
+    return attrName.includes('модел');
+  });
 
-const otherAttrs = filtered.filter(attr => {
-  const attrName = attr.attribute_name?.toLowerCase() || '';
-  return !attrName.includes('модел');
-});
-
+  const otherAttrs = filtered.filter(attr => {
+    const attrName = attr.attribute_name?.toLowerCase() || '';
+    return !attrName.includes('модел');
+  });
   
   const parts = [];
   if (modelAttr) {
@@ -296,13 +278,9 @@ const otherAttrs = filtered.filter(attr => {
     parts.push(`${attr.attribute_name} ${attr.value}`);
   });
   
-  // Съедини частите
   let result = parts.join(' / ');
-  
-  // Премахни "/" от началото и края
   result = result.replace(/^\/+|\/+$/g, '').trim();
   
-  // Ако е празно след филтъра, използвай SKU
   if (!result || result === '') {
     return sku || 'Стандартен';
   }
