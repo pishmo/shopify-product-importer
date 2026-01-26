@@ -956,7 +956,7 @@ async function main() {
 
     // Групирай по категория
     const productsByCategory = {
-      carp_fishing: []
+      boxes_and_bags: []
      
     };
     
