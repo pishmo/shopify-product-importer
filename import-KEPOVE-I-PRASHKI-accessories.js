@@ -970,7 +970,7 @@ async function main() {
 
     // Групирай по категория
     const productsByCategory = {
-   //   ceps: [],
+      ceps: [],
       prashki: []
      
     };
