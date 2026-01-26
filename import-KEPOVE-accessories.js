@@ -953,10 +953,9 @@ async function main() {
 
     // Групирай по категория
     const productsByCategory = {
-      pike_and_catfish: [],
-      pole_and_match: [],
-      knives: [],
-      chairs_umbrellas_tents: []
+      ceps: [],
+      prashki: []
+     
     };
     
     accessoryProducts.forEach(product => {
