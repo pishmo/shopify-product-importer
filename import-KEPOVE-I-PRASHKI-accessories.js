@@ -559,9 +559,19 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const productType = getCategoryName(categoryType);
     
     // Подготви варианти с поправено форматиране
-    const variants = filstarProduct.variants.map(variant => {
+      const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant.attributes, variant.sku);
-      
+
+
+ // ✨ DEBUGGING
+  console.log(`   🔍 Variant SKU: ${variant.sku}`);
+  console.log(`   🔍 Attributes:`, variant.attributes);
+  
+  const variantName = formatVariantName(variant.attributes, variant.sku);
+  
+  console.log(`   🔍 Formatted name: ${variantName}`);
+// край на дебъга , да се изтрие
+        
       return {
         option1: variantName,
         price: variant.price?.toString() || '0',
