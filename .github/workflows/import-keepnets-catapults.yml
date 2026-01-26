@@ -1,0 +1,45 @@
+name: Import Keepnets and Catapults (Кепове и Прашки)
+
+on:
+  # Schedule (commented out - uncomment to enable)
+  # schedule:
+  #   - cron: '0 3 * * 1'  # Every Monday at 3:00 AM UTC (5:00 AM EET)
+  
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  import-keepnets-catapults:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          npm install node-fetch
+          npm install sharp
+          npm install cheerio
+      
+      - name: Run Keepnets and Catapults Import
+        env:
+          SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+          FILSTAR_API_TOKEN: ${{ secrets.FILSTAR_API_TOKEN }}
+        run: node import-KEPOVE-I-PRASHKI-accessories.js
+      
+      - name: Upload logs (if any)
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: import-logs-keepnets-catapults
+          path: |
+            *.log
+            logs/
+          retention-days: 7
