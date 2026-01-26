@@ -81,7 +81,7 @@ const product = allProducts.find(p =>
       results.push({
         sku: sku,
         name: product.name,
-        categories: product.categories
+        categories: product.categories,
 
 variants: product.variants.map(v => ({
     sku: v.sku,
