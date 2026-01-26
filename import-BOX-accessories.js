@@ -972,8 +972,8 @@ async function main() {
 
     // Групирай по категория
     const productsByCategory = {
-      ceps: [],
-      prashki: []
+       boxes_and_bags: []
+     
      
     };
     
