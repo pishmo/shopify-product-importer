@@ -14,13 +14,12 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 
 // Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  pike_and_catfish: ['45'],
-  pole_and_match: ['50'],
-  knives: ['59'],
-  chairs_umbrellas_tents: ['63']
+  keps: ['11'],
+  prashki: ['26'],
+  
 };
 
-const ACCESSORIES_PARENT_ID = '11';
+
 
 // Shopify collection IDs - САМО 4 КАТЕГОРИИ
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
