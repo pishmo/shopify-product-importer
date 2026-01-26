@@ -995,7 +995,7 @@ async function main() {
         productsByCategory[categoryType].push(product);
 
 
-    }
+    
     }
     });
 
