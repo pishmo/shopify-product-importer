@@ -985,6 +985,20 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
 
 
 
+// След проверката за formattedVariantName
+const filstarVariantsCount = filstarVariants.length;
+const shopifyVariantsCount = shopifyVariants.length;
+
+if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
+  console.log('   🗑️ Filstar has multiple variants, Shopify has 1 - recreating...');
+  await deleteShopifyProduct(productGid);
+  await createShopifyProduct(filstarProduct, categoryType);
+  return true;
+}
+
+
+      
+
 
 
       
