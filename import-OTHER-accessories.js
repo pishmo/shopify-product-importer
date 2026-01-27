@@ -989,6 +989,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     if (firstFilstarVariant) {
       const formattedVariantName = formatVariantName(firstFilstarVariant);
       const shopifyVariants = shopifyProduct.variants?.edges || [];
+
+
+// ДОБАВИ ТУК:
+console.log(`  🐛 formattedVariantName = "${formattedVariantName}"`);
+console.log(`  🐛 shopifyVariants.length = ${shopifyVariants.length}`);
+console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attributes);
+
+
       
       if (formattedVariantName === '' && shopifyVariants.length === 1) {
         const shopifyVariant = shopifyVariants[0].node;
