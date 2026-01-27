@@ -63,8 +63,7 @@ async function deleteShopifyProduct(productId) {
 
 
 // Създаване на продукт БЕЗ варианти
-// Създаване на продукт БЕЗ варианти
-async function createShopifyProductNoVariants(filstarProduct, category) {
+async function createShopifyProductNoVariants(filstarProduct, categoryType) {
   const vendor = filstarProduct.manufacturer || 'Unknown';
   const price = filstarProduct.variants?.[0]?.price || filstarProduct.price || '0.00';
   const sku = filstarProduct.variants?.[0]?.sku || filstarProduct.sku || '';
@@ -75,8 +74,8 @@ async function createShopifyProductNoVariants(filstarProduct, category) {
       title: filstarProduct.name,
       body_html: filstarProduct.description || filstarProduct.short_description || '',
       vendor: vendor,
-      product_type: getCategoryName(category),
-      tags: ['Filstar', category, vendor].filter(Boolean).join(', '),
+      product_type: getCategoryName(categoryType),
+      tags: ['Filstar', categoryType, vendor].filter(Boolean).join(', '),
       variants: [
         {
           price: price,
@@ -111,13 +110,11 @@ async function createShopifyProductNoVariants(filstarProduct, category) {
   
   console.log(` ✅ Product created (ID: ${newProduct.id}) | Price: ${price} | Stock: ${stock} | Images: ${newProduct.images?.length || 0}`);
   
-  // Добави в колекция (ако има mapping)
-  if (typeof COLLECTION_MAPPING !== 'undefined' && COLLECTION_MAPPING[category]) {
-    await addProductToCollection(newProduct.id, COLLECTION_MAPPING[category]);
-  }
+  // Добави в колекция
+  await addProductToCollection(`gid://shopify/Product/${newProduct.id}`, categoryType);
   
-  stats[category].created++;
-  stats[category].images += newProduct.images?.length || 0;
+  stats[categoryType].created++;
+  stats[categoryType].images += newProduct.images?.length || 0;
   
   return newProduct;
 }
