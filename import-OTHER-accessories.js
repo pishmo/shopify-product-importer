@@ -10,6 +10,7 @@ const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2025-01';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
+const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
 // Filstar category IDs за аксесоари
