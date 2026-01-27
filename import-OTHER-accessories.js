@@ -380,6 +380,10 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     const name = attr.attribute_name || '';
     return !cachedCategoryNames.includes(name);
   });
+
+console.log('  🐛 cachedCategoryNames:', cachedCategoryNames);
+console.log('  🐛 filtered:', filtered);
+
   
   if (filtered.length === 0) {
     return '';
