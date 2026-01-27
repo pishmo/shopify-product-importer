@@ -948,19 +948,19 @@ const formattedVariantName = formatVariantName(firstFilstarVariant.attributes, f
         const productOptions = shopifyProduct.options || [];
         const hasDropdown = productOptions.some(opt => opt.name !== 'Title');
         
-        if (hasDropdown) {
-          console.log('   ⚠️ Converting to default variant...');
-          const converted = await convertToDefaultVariant(
-            productGid,
-            shopifyVariant.id,
-            firstFilstarVariant.sku,
-            firstFilstarVariant.price
-          );
-          if (converted) {
-            console.log('   ✅ Converted to default variant');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
+
+
+
+if (formattedVariantName === '' && hasDropdown) {
+  console.log('   🗑️ Has dropdown but Filstar has no variants - recreating...');
+  await deleteShopifyProduct(productGid);
+  await createShopifyProduct(filstarProduct, categoryType);
+  return true;
+}
+
+
+
+        
       }
 
 
