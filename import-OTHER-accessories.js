@@ -283,8 +283,11 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   result = result.replace(/^\/+|\/+$/g, '').trim();
   
   if (!result || result === '') {
-    return sku || 'Стандартен';
-  }
+  return sku || '';  // Връща SKU или празен стринг
+}
+
+return result;
+
   
   return result;
 }
