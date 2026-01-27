@@ -247,7 +247,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   }
   
   if (!attributes || attributes.length === 0) {
-    return sku || 'Стандартен';
+    return '';
   }
   
   // Филтрирай атрибути чието име съвпада с категория
@@ -257,7 +257,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   });
   
   if (filtered.length === 0) {
-    return sku || 'Стандартен';
+    return '';
   }
   
   // Търси "МОДЕЛ" атрибут
@@ -282,13 +282,12 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   let result = parts.join(' / ');
   result = result.replace(/^\/+|\/+$/g, '').trim();
   
- if (!result || result === '') {
-  return '';  // Връща празен стринг
-}
+  if (!result || result === '') {
+    return '';
+  }
 
-return result;
+  return result;
 }
-
 
 
 
