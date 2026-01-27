@@ -1096,7 +1096,7 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
     console.log(` ✓ Updated inventory: ${stock}`);
   }
 }
-
+    }
     // Снимки и reordering (същото като преди)
     const existingImages = shopifyProduct.images?.edges?.map(edge => ({
       id: edge.node.id,
