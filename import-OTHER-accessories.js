@@ -679,11 +679,6 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const firstVariantName = formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
     const needsOptions = totalVariants > 1 || firstVariantName !== '';
 
-// DEBUG
-console.log(`  🐛 DEBUG: totalVariants = ${totalVariants}`);
-console.log(`  🐛 DEBUG: firstVariantName = "${firstVariantName}"`);
-console.log(`  🐛 DEBUG: needsOptions = ${needsOptions}`);
-console.log(`  🐛 DEBUG: attributes =`, filstarProduct.variants[0].attributes);
 
 
 
