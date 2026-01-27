@@ -67,7 +67,8 @@ async function createShopifyProductNoVariants(filstarProduct, categoryType) {
   const vendor = filstarProduct.manufacturer || 'Unknown';
   const price = filstarProduct.variants?.[0]?.price || filstarProduct.price || '0.00';
   const sku = filstarProduct.variants?.[0]?.sku || filstarProduct.sku || '';
-  const stock = filstarProduct.variants?.[0]?.stock || 0;
+  const stock = filstarProduct.variants?.[0]?.quantity || 0;
+
   
   const productData = {
     product: {
