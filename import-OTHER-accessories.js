@@ -883,177 +883,175 @@ console.log(`  🐛 DEBUG: attributes =`, filstarProduct.variants[0].attributes)
 
 
 // Функция за обновяване на съществуващ продукт
-
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\n🔄 Updating: ${filstarProduct.name}`);
-  
   try {
     const productId = shopifyProduct.id.replace('gid://shopify/Product/', '');
     const productGid = shopifyProduct.id;
     
-    const existingImages = shopifyProduct.images?.edges?.map(edge => ({
-      id: edge.node.id,
-      src: edge.node.src
-    })) || [];
+    // Проверка за варианти
+    const filstarVariants = filstarProduct.variants || [];
+    const firstFilstarVariant = filstarVariants[0];
     
-    const existingFilenames = existingImages.map(img => {
-      return getImageFilename(img.src);
-    });
-      let newImagesUploaded = 0;
-    if (filstarProduct.images && filstarProduct.images.length > 0) {
-      console.log(`   🖼️  Processing ${filstarProduct.images.length} images from Filstar...`);
+    if (firstFilstarVariant) {
+      const formattedVariantName = formatVariantName(firstFilstarVariant);
+      const shopifyVariants = shopifyProduct.variants?.edges || [];
       
-    
-      
-      for (const imageUrl of filstarProduct.images) {
-        const filename = imageUrl.split('/').pop();
+      if (formattedVariantName === '' && shopifyVariants.length === 1) {
+        const shopifyVariant = shopifyVariants[0].node;
+        const productOptions = shopifyProduct.options || [];
+        const hasDropdown = productOptions.some(opt => opt.name !== 'Title');
         
-       if (imageExists(existingImages, imageUrl)) {
-          console.log(`      ⏭️  Image already exists, skipping: ${filename}`);
-          continue;
-        }
-        
-        const normalizedBuffer = await normalizeImage(imageUrl, filstarProduct.variants[0].sku);
-        
-        if (normalizedBuffer) {
-          const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
-          
-          if (resourceUrl) {
-            const attachMutation = `
-              mutation {
-                productCreateMedia(
-                  productId: \"${productGid}\",
-                  media: [{
-                    originalSource: \"${resourceUrl}\",
-                    mediaContentType: IMAGE
-                  }]
-                ) {
-                  media {
-                    ... on MediaImage {
-                      id
-                      image {
-                        url
-                      }
-                    }
-                  }
-                  mediaUserErrors {
-                    field
-                    message
-                  }
-                }
-              }
-            `;
-            
-            const attachResponse = await fetch(
-              `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-              {
-                method: 'POST',
-                headers: {
-                  'X-Shopify-Access-Token': ACCESS_TOKEN,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query: attachMutation })
-              }
-            );
-            
-            const attachData = await attachResponse.json();
-            
-            if (attachData.data?.productCreateMedia?.media?.[0]) {
-              console.log(`      ✓ Uploaded new image: ${filename}`);
-              newImagesUploaded++;
-              stats[categoryType].images++;
-            }
+        if (hasDropdown) {
+          console.log('   ⚠️ Converting to default variant...');
+          const converted = await convertToDefaultVariant(
+            productGid,
+            shopifyVariant.id,
+            firstFilstarVariant.sku,
+            firstFilstarVariant.price
+          );
+          if (converted) {
+            console.log('   ✅ Converted to default variant');
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
-      if (newImagesUploaded > 0) {
-        console.log(`   ✅ Uploaded ${newImagesUploaded} new images`);
-      } else {
-        console.log(`   ℹ️  No new images to upload`);
-      }
+      // Обнови цена и наличност
+      const shopifyVariantId = shopifyVariants[0]?.node?.id;
+      const inventoryItemId = shopifyVariants[0]?.node?.inventoryItem?.id;
       
-      const updatedProductQuery = `
-        {
-          product(id: \"${productGid}\") {
-            images(first: 50) {
-              edges {
-                node {
-                  id
-                  src
-                }
-              }
+      if (shopifyVariantId) {
+        // Обнови цена
+        const updatePriceMutation = `
+          mutation {
+            productVariantUpdate(input: {
+              id: "${shopifyVariantId}"
+              price: "${firstFilstarVariant.price}"
+            }) {
+              productVariant { id }
+              userErrors { field message }
             }
           }
-        }
-      `;
-      
-      const updatedResponse = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-        {
+        `;
+        
+        await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
           method: 'POST',
           headers: {
             'X-Shopify-Access-Token': ACCESS_TOKEN,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ query: updatedProductQuery })
-        }
-      );
-      
-      const updatedData = await updatedResponse.json();
-      const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
-        id: edge.node.id,
-        src: edge.node.src
-      })) || [];
-      
-      if (allImages.length > 0) {
-        console.log(`   🔄 Reordering images...`);
+          body: JSON.stringify({ query: updatePriceMutation })
+        });
         
-        const ogImage = await scrapeOgImage(filstarProduct.slug);
-        
-        if (ogImage) {
-                   
-const ogFilename = ogImage.split('/').pop();
-const ogBase = getImageFilename(ogFilename).split('.')[0];
-
-console.log(`   🔍 OG filename: ${ogFilename}`);
-console.log(`   🔍 OG base: ${ogBase}`);
-console.log(`   🔍 Comparing with ${allImages.length} images:`);
-
-const ogIndex = allImages.findIndex(img => {
-  const shopifyFilename = img.src.split('/').pop();
-  const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
-  console.log(`   🔍   Shopify: ${shopifyFilename} -> base: ${shopifyBase}`);
-  return shopifyBase === ogBase;
-});
-
-console.log(`   🔍 OG index result: ${ogIndex}`);
-
-
-
-          
-          if (ogIndex > 0) {
-            const [ogImg] = allImages.splice(ogIndex, 1);
-            allImages.unshift(ogImg);
-            console.log(`   ✅ Moved OG image to first position`);
-            await reorderProductImages(productGid, allImages);
-          } else if (ogIndex === 0) {
-            console.log(`   ℹ️  OG image already first`);
-          } else {
-            console.log(`   ⚠️  OG image not found - keeping current order`);
+        console.log(` ✓ Updated price`);
+      }
+      
+      if (inventoryItemId) {
+        // Обнови наличност
+        const stock = firstFilstarVariant.stock || 0;
+        const updateInventoryMutation = `
+          mutation {
+            inventorySetQuantities(input: {
+              reason: "correction"
+              name: "available"
+              quantities: [{
+                inventoryItemId: "${inventoryItemId}"
+                locationId: "${LOCATION_ID}"
+                quantity: ${stock}
+              }]
+            }) {
+              userErrors { field message }
+            }
           }
-        } else {
-          console.log(`   ⚠️  No OG image found from scraping`);
-        }
+        `;
+        
+        await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query: updateInventoryMutation })
+        });
+        
+        console.log(` ✓ Updated inventory: ${stock}`);
       }
     }
     
+    // Снимки и reordering (същото като преди)
+    const existingImages = shopifyProduct.images?.edges?.map(edge => ({
+      id: edge.node.id,
+      src: edge.node.src
+    })) || [];
+
+    let newImagesUploaded = 0;
+    if (filstarProduct.images && filstarProduct.images.length > 0) {
+      console.log(` 🖼️ Processing ${filstarProduct.images.length} images...`);
+      for (const imageUrl of filstarProduct.images) {
+        const filename = imageUrl.split('/').pop();
+        if (imageExists(existingImages, imageUrl)) {
+          console.log(` ⏭️ Image exists: ${filename}`);
+          continue;
+        }
+        const normalizedBuffer = await normalizeImage(imageUrl, filstarProduct.variants[0].sku);
+        if (normalizedBuffer) {
+          const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
+          if (resourceUrl) {
+            const attachMutation = `
+              mutation {
+                productCreateMedia(productId: \"${productGid}\", media: [{ originalSource: \"${resourceUrl}\", mediaContentType: IMAGE }]) {
+                  media { ... on MediaImage { id image { url } } }
+                  mediaUserErrors { field message }
+                }
+              }
+            `;
+            const attachResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+              method: 'POST',
+              headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: attachMutation })
+            });
+            const attachData = await attachResponse.json();
+            if (attachData.data?.productCreateMedia?.media?.[0]) {
+              console.log(` ✓ Uploaded: ${filename}`);
+              newImagesUploaded++;
+              stats[categoryType].images++;
+            }
+          }
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // Reordering
+    const updatedProductQuery = `{ product(id: \"${productGid}\") { images(first: 50) { edges { node { id src } } } } }`;
+    const updatedResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+      method: 'POST',
+      headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: updatedProductQuery })
+    });
+    const updatedData = await updatedResponse.json();
+    const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({ id: edge.node.id, src: edge.node.src })) || [];
+
+    if (allImages.length > 0) {
+      console.log(` 🔄 Reordering...`);
+      const ogImage = await scrapeOgImage(filstarProduct.slug);
+      if (ogImage) {
+        const ogBase = getImageFilename(ogImage.split('/').pop()).split('.')[0];
+        const ogIndex = allImages.findIndex(img => getImageFilename(img.src.split('/').pop()).split('.')[0] === ogBase);
+        if (ogIndex > 0) {
+          const [ogImg] = allImages.splice(ogIndex, 1);
+          allImages.unshift(ogImg);
+          await reorderProductImages(productGid, allImages);
+          console.log(` ✅ Reordered`);
+        }
+      }
+    }
+
     stats[categoryType].updated++;
     return true;
   } catch (error) {
-    console.error(`   ❌ Error updating product: ${error.message}`);
+    console.error(` ❌ Error: ${error.message}`);
     return false;
   }
 }
