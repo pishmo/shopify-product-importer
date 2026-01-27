@@ -341,6 +341,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   
   // Филтрирай атрибути чието име съвпада с категория
   const filtered = attrArray.filter(attr => {
+    if (!attr) return false;
     const name = attr.attribute_name || '';
     return !cachedCategoryNames.includes(name);
   });
@@ -351,11 +352,13 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   
   // Търси "МОДЕЛ" атрибут
   const modelAttr = filtered.find(attr => {
+    if (!attr) return false;
     const attrName = attr.attribute_name?.toLowerCase() || '';
     return attrName.includes('модел');
   });
 
   const otherAttrs = filtered.filter(attr => {
+    if (!attr) return false;
     const attrName = attr.attribute_name?.toLowerCase() || '';
     return !attrName.includes('модел');
   });
@@ -365,7 +368,9 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     parts.push(`${modelAttr.attribute_name} ${modelAttr.value}`);
   }
   otherAttrs.forEach(attr => {
-    parts.push(`${attr.attribute_name} ${attr.value}`);
+    if (attr && attr.attribute_name && attr.value) {
+      parts.push(`${attr.attribute_name} ${attr.value}`);
+    }
   });
   
   let result = parts.join(' / ');
@@ -377,7 +382,6 @@ function formatVariantName(attributes, sku, categoryNames = null) {
 
   return result;
 }
-
 
 
 
