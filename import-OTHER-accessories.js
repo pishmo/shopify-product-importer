@@ -1040,17 +1040,21 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
 
  console.log(`  🐛 Updating price to: ${firstFilstarVariant.price}`);
         
-        const updatePriceMutation = `
-          mutation {
-            productVariantUpdate(input: {
-              id: "${shopifyVariantId}"
-              price: "${firstFilstarVariant.price}"
-            }) {
-              productVariant { id }
-              userErrors { field message }
-            }
-          }
-        `;
+     const updatePriceMutation = `
+  mutation {
+    productVariantsBulkUpdate(
+      productId: \"${productGid}\"
+      variants: [{
+        id: \"${shopifyVariantId}\"
+        price: \"${firstFilstarVariant.price}\"
+      }]
+    ) {
+      productVariants { id price }
+      userErrors { field message }
+    }
+  }
+`;
+
         
         await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
           method: 'POST',
