@@ -1061,39 +1061,42 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
         console.log(` ✓ Updated price`);
       }
       
-      if (inventoryItemId) {
-        // Обнови наличност
-       const stock = firstFilstarVariant.quantity || 0;
-
-        const updateInventoryMutation = `
-          mutation {
-            inventorySetQuantities(input: {
-              reason: "correction"
-              name: "available"
-              quantities: [{
-                inventoryItemId: "${inventoryItemId}"
-                locationId: "${LOCATION_ID}"
-                quantity: ${stock}
-              }]
-            }) {
-              userErrors { field message }
-            }
-          }
-        `;
-        
-        await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query: updateInventoryMutation })
-        });
-        
-        console.log(` ✓ Updated inventory: ${stock}`);
+    if (inventoryItemId) {
+  // Обнови наличност
+  const stock = firstFilstarVariant.quantity || 0;
+  const updateInventoryMutation = `
+    mutation {
+      inventorySetQuantities(input: {
+        reason: "correction"
+        name: "available"
+        quantities: [{
+          inventoryItemId: \"${inventoryItemId}\"
+          locationId: \"${LOCATION_ID}\"
+          quantity: ${stock}
+        }]
+      }) {
+        userErrors { field message }
       }
     }
-    
+  `;
+  
+  const invResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': ACCESS_TOKEN,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ query: updateInventoryMutation })
+  });
+  
+  const invData = await invResponse.json();
+  if (invData.data?.inventorySetQuantities?.userErrors?.length > 0) {
+    console.log(` ❌ Inventory errors:`, invData.data.inventorySetQuantities.userErrors);
+  } else {
+    console.log(` ✓ Updated inventory: ${stock}`);
+  }
+}
+
     // Снимки и reordering (същото като преди)
     const existingImages = shopifyProduct.images?.edges?.map(edge => ({
       id: edge.node.id,
