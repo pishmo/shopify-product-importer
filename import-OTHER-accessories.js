@@ -1158,7 +1158,7 @@ async function main() {
 
 
 // Филтър за тест SKU-та
-const TEST_SKUS = ['923273', '933509']; // Добави/махни SKU-та тук
+const TEST_SKUS = ['961295', '961294']; // Добави/махни SKU-та тук
 accessoryProducts = accessoryProducts.filter(p => 
   p.variants?.some(v => TEST_SKUS.includes(v.sku))
 );
