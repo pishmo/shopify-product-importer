@@ -571,6 +571,10 @@ async function findProductBySku(sku) {
               id
               title
               handle
+              options {
+                id
+                name
+              }
               images(first: 50) {
                 edges {
                   node {
@@ -584,6 +588,9 @@ async function findProductBySku(sku) {
                   node {
                     id
                     sku
+                    inventoryItem {
+                      id
+                    }
                   }
                 }
               }
@@ -617,6 +624,7 @@ async function findProductBySku(sku) {
     return null;
   }
 }
+
 
 // Функция за добавяне на продукт в колекция
 async function addProductToCollection(productId, categoryType) {
