@@ -1056,7 +1056,8 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
       
       if (inventoryItemId) {
         // Обнови наличност
-        const stock = firstFilstarVariant.stock || 0;
+       const stock = firstFilstarVariant.quantity || 0;
+
         const updateInventoryMutation = `
           mutation {
             inventorySetQuantities(input: {
