@@ -282,15 +282,13 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   let result = parts.join(' / ');
   result = result.replace(/^\/+|\/+$/g, '').trim();
   
-  if (!result || result === '') {
-  return sku || '';  // Връща SKU или празен стринг
+ if (!result || result === '') {
+  return '';  // Връща празен стринг
 }
 
 return result;
-
-  
-  return result;
 }
+
 
 
 
