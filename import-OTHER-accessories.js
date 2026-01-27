@@ -1199,15 +1199,8 @@ async function main() {
   
   // Провери дали има падащо меню
   const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
-  
-  if (hasDropdown) {
-    console.log(` 🗑️ Has dropdown - deleting and recreating...`);
-    await deleteShopifyProduct(existingProduct.id);
-    await createShopifyProduct(product, categoryType);
-  } else {
-    console.log(` 🔄 No dropdown - updating...`);
-    await updateShopifyProduct(existingProduct, product, categoryType);
-  }
+await updateShopifyProduct(existingProduct, product, categoryType);
+    
 }
 
 
