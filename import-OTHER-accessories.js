@@ -534,19 +534,26 @@ async function reorderProductImages(productGid, images) {
 // Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
- cachedCategoryNames = filstarProduct.categories?.map(c => c.name) || [];
-
+  
   try {
     const vendor = filstarProduct.manufacturer || 'Unknown';
     console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
     
     const productType = getCategoryName(categoryType);
     
+    // Извлечи имената на категориите и брой варианти
+    const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
+    const totalVariants = filstarProduct.variants.length;
+    
     // Подготви варианти с поправено форматиране
     const variants = filstarProduct.variants.map(variant => {
-      const variantName = formatVariantName(variant.attributes, variant.sku);
-
-    
+      let variantName = formatVariantName(variant.attributes, variant.sku, categoryNames);
+      
+      // Ако е празно/SKU и има само 1 вариант, използвай Default Title
+      if (variantName === variant.sku && totalVariants === 1) {
+        variantName = 'Default Title';
+      }
+      
       return {
         option1: variantName,
         price: variant.price?.toString() || '0',
@@ -740,23 +747,38 @@ async function createShopifyProduct(filstarProduct, categoryType) {
           });
           await reorderProductImages(productGid, allImages);
         } else if (ogIndex === 0) {
-          console.log(`    ℹ️  OG image already first`);
+          console.log(`    ✓ OG image already first`);
         } else {
           console.log(`    ⚠️  OG image not found in uploaded images`);
         }
       } else {
-        console.log(`    ⚠️  Could not fetch OG image from Filstar`);
+        console.log(`    ⚠️  No OG image found, sorting by SKU...`);
+        
+        allImages.sort((a, b) => {
+          const skuA = extractSkuFromImageFilename(getImageFilename(a.src));
+          const skuB = extractSkuFromImageFilename(getImageFilename(b.src));
+          
+          if (skuA === '999999' && skuB !== '999999') return 1;
+          if (skuA !== '999999' && skuB === '999999') return -1;
+          
+          return skuA.localeCompare(skuB);
+        });
+        
+        console.log(`    📋 Final order by SKU (${allImages.length} images):`);
+        allImages.forEach((img, i) => {
+          const sku = extractSkuFromImageFilename(getImageFilename(img.src));
+          console.log(`      ${i + 1}. ${getImageFilename(img.src.split('/').pop())} (SKU: ${sku})`);
+        });
+        
+        await reorderProductImages(productGid, allImages);
       }
-    } else {
-      console.log(`    ⚠️  No images found after 3 attempts`);
     }
     
     stats[categoryType].created++;
-    return productGid;
-    
+    return true;
   } catch (error) {
     console.error(`  ❌ Error creating product: ${error.message}`);
-    return null;
+    return false;
   }
 }
 
