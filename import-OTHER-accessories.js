@@ -39,6 +39,91 @@ const stats = {
 // 2 част
 
 
+// Функция за премахване на вариант с падащо меню и създаване на default вариант
+async function convertToDefaultVariant(productId, oldVariantId, sku, price) {
+  try {
+    console.log('   🔄 Converting to default variant...');
+    
+    // Създай нов default вариант
+    const createMutation = `
+      mutation {
+        productVariantCreate(input: {
+          productId: "${productId}"
+          price: "${price}"
+          sku: "${sku}"
+        }) {
+          productVariant {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    
+    const createResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: createMutation })
+      }
+    );
+    
+    const createData = await createResponse.json();
+    
+    if (createData.data?.productVariantCreate?.userErrors?.length > 0) {
+      console.error('   ❌ Error creating default variant:', createData.data.productVariantCreate.userErrors);
+      return false;
+    }
+    
+    console.log('   ✓ Created new default variant');
+    
+    // Изтрий стария вариант
+    const deleteMutation = `
+      mutation {
+        productVariantDelete(id: "${oldVariantId}") {
+          deletedProductVariantId
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    
+    const deleteResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: deleteMutation })
+      }
+    );
+    
+    const deleteData = await deleteResponse.json();
+    
+    if (deleteData.data?.productVariantDelete?.userErrors?.length > 0) {
+      console.error('   ❌ Error deleting old variant:', deleteData.data.productVariantDelete.userErrors);
+      return false;
+    }
+    
+    console.log('   ✓ Removed old variant with dropdown menu');
+    return true;
+    
+  } catch (error) {
+    console.error('   ❌ Error converting to default variant:', error.message);
+    return false;
+  }
+}
 
 
 
