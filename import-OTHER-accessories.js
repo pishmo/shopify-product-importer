@@ -1037,6 +1037,9 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
       
       if (shopifyVariantId) {
         // Обнови цена
+
+ console.log(`  🐛 Updating price to: ${firstFilstarVariant.price}`);
+        
         const updatePriceMutation = `
           mutation {
             productVariantUpdate(input: {
