@@ -1054,13 +1054,6 @@ async function main() {
     });
 
 
-// Филтър за тест SKU-та
-const TEST_SKUS = ['960713', '961983']; // Добави/махни SKU-та тук
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => TEST_SKUS.includes(v.sku))
-);
-console.log(`🧪 Filtered to ${TEST_SKUS.length} test SKUs: ${accessoryProducts.length} products\n`);
-
     
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
