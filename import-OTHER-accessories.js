@@ -550,6 +550,15 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     // Проверка дали трябва да има опции
     const firstVariantName = formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
     const needsOptions = totalVariants > 1 || firstVariantName !== '';
+
+// DEBUG
+console.log(`  🐛 DEBUG: totalVariants = ${totalVariants}`);
+console.log(`  🐛 DEBUG: firstVariantName = "${firstVariantName}"`);
+console.log(`  🐛 DEBUG: needsOptions = ${needsOptions}`);
+console.log(`  🐛 DEBUG: attributes =`, filstarProduct.variants[0].attributes);
+
+
+
     
     // Подготви варианти с поправено форматиране
     const variants = filstarProduct.variants.map(variant => {
