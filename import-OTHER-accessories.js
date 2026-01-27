@@ -1165,45 +1165,33 @@ async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('📋 Categories to import:');
   console.log('  - Аксесоари Други - Категория Id - (68)');
- 
- 
   
   try {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
     
     // Филтрирай само аксесоарите от 4-те категории
-   let accessoryProducts = allProducts.filter(product => {
-  const categoryType = getCategoryType(product);
-  return categoryType !== null;
-});
+    let accessoryProducts = allProducts.filter(product => {
+      const categoryType = getCategoryType(product);
+      return categoryType !== null;
+    });
 
-
-accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku === '934764'));
-
-
-
+    accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku === '934764'));
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
     // Групирай по категория
     const productsByCategory = {
         other: []
-     
     };
     
     accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
       if (categoryType) {
         productsByCategory[categoryType].push(product);
-
-
-    
-    }
+      }
     });
 
-
-    
     // Покажи разпределението
     console.log('📊 Products by category:');
     Object.entries(productsByCategory).forEach(([type, products]) => {
@@ -1238,9 +1226,14 @@ accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku ==
         const existingProduct = await findProductBySku(firstSku);
         
         if (existingProduct) {
-          await updateShopifyProduct(existingProduct, product, categoryType);
+          console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
+          console.log(` 🗑️ Deleting old product...`);
+          await deleteShopifyProduct(existingProduct.id);
+          console.log(` ✨ Creating new product without variants...`);
+          await createShopifyProductNoVariants(product, categoryType);
         } else {
-          await createShopifyProduct(product, categoryType);
+          console.log(` ✓ Product not found, creating new without variants...`);
+          await createShopifyProductNoVariants(product, categoryType);
         }
         
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1268,3 +1261,6 @@ accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku ==
 }
 
 main();
+
+
+
