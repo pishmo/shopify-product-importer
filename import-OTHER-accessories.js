@@ -1059,7 +1059,7 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ query: updatePriceMutation })
-        });
+        }).then(r => r.json()).then(d => console.log('  🐛 Price response:', JSON.stringify(d)));
         
         console.log(` ✓ Updated price`);
       }
