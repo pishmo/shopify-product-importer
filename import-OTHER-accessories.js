@@ -1080,7 +1080,7 @@ async function main() {
 });
 
 
-accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku === '960712'));
+accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku === '934764'));
 
 
 
