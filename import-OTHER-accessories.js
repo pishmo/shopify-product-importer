@@ -62,6 +62,7 @@ async function deleteShopifyProduct(productId) {
 }
 
 // Създаване на продукт БЕЗ варианти
+// Създаване на продукт БЕЗ варианти
 async function createShopifyProductNoVariants(filstarProduct, category) {
   console.log(` ✨ Creating new product without variants...`);
   
@@ -81,7 +82,8 @@ async function createShopifyProductNoVariants(filstarProduct, category) {
           inventory_management: 'shopify',
           inventory_policy: 'deny'
         }
-      ]
+      ],
+      images: filstarProduct.images?.map(url => ({ src: url })) || []
     }
   };
   
@@ -106,11 +108,7 @@ async function createShopifyProductNoVariants(filstarProduct, category) {
   const newProduct = result.product;
   
   console.log(` ✅ Product created (ID: ${newProduct.id})`);
-  
-  // Качи снимки
-  if (filstarProduct.images && filstarProduct.images.length > 0) {
-    await uploadProductImages(newProduct.id, filstarProduct.images);
-  }
+  console.log(` 📸 Images: ${newProduct.images?.length || 0} uploaded`);
   
   // Добави в колекция
   const collectionId = COLLECTION_MAPPING[category];
@@ -119,12 +117,10 @@ async function createShopifyProductNoVariants(filstarProduct, category) {
   }
   
   stats[category].created++;
+  stats[category].images += newProduct.images?.length || 0;
   
   return newProduct;
 }
-
-
-
 
 
 
