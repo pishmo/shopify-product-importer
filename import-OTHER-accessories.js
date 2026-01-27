@@ -1232,13 +1232,20 @@ async function main() {
         
         const firstSku = product.variants[0].sku;
         const existingProduct = await findProductBySku(firstSku);
-        
-    if (existingProduct) {
+  if (existingProduct) {
   console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
-  console.log(` 🗑️ Deleting old product...`);
-  await deleteShopifyProduct(existingProduct.id);
-  console.log(` ✨ Creating new product without variants...`);
-  await createShopifyProductNoVariants(product, categoryType);
+  
+  // Провери дали има падащо меню
+  const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
+  
+  if (hasDropdown) {
+    console.log(` 🗑️ Has dropdown - deleting and recreating...`);
+    await deleteShopifyProduct(existingProduct.id);
+    await createShopifyProductNoVariants(product, categoryType);
+  } else {
+    console.log(` 🔄 No dropdown - updating...`);
+    await updateShopifyProduct(existingProduct, product, categoryType);
+  }
 }
 
 
