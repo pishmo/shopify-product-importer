@@ -369,7 +369,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   });
   
   let result = parts.join(' / ');
-  result = result.replace(/^\\/+|\\/+$/g, '').trim();
+  result = result.replace(/^\/+|\/+$/g, '').trim();
   
   if (!result || result === '') {
     return '';
@@ -377,6 +377,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
 
   return result;
 }
+
 
 
 
