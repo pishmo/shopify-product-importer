@@ -1219,13 +1219,11 @@ async function main() {
         const firstSku = product.variants[0].sku;
         const existingProduct = await findProductBySku(firstSku);
         
-        if (existingProduct) {
-          console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
-          console.log(` 🗑️ Deleting old product...`);
-          await deleteShopifyProduct(existingProduct.id);
-          console.log(` ✨ Creating new product without variants...`);
-          await createShopifyProductNoVariants(product, categoryType);
-        } else {
+       if (existingProduct) {
+  console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
+  await updateShopifyProduct(existingProduct, product, categoryType);
+}
+else {
           console.log(` ✓ Product not found, creating new without variants...`);
           await createShopifyProductNoVariants(product, categoryType);
         }
