@@ -991,10 +991,11 @@ async function main() {
     const allProducts = await fetchAllProducts();
     
     // Филтрирай само аксесоарите от 4-те категории
-    const accessoryProducts = allProducts.filter(product => {
-      const categoryType = getCategoryType(product);
-      return categoryType !== null;
-    });
+   let accessoryProducts = allProducts.filter(product => {
+  const categoryType = getCategoryType(product);
+  return categoryType !== null;
+});
+
 
 accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku === '960712'));
 
