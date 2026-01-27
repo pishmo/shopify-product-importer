@@ -69,6 +69,10 @@ async function createShopifyProductNoVariants(filstarProduct, categoryType) {
   const sku = filstarProduct.variants?.[0]?.sku || filstarProduct.sku || '';
   const stock = filstarProduct.variants?.[0]?.quantity || 0;
 
+
+
+console.log('  🐛 Variants:', filstarProduct.variants.length, 'needsOptions:', needsOptions, 'variants:', JSON.stringify(variants, null, 2));
+
   
   const productData = {
     product: {
