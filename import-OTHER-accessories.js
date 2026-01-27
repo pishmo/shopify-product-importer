@@ -62,67 +62,6 @@ async function deleteShopifyProduct(productId) {
 }
 
 
-// Създаване на продукт БЕЗ варианти
-async function createShopifyProductNoVariants(filstarProduct, categoryType) {
-  const vendor = filstarProduct.manufacturer || 'Unknown';
-  const price = filstarProduct.variants?.[0]?.price || filstarProduct.price || '0.00';
-  const sku = filstarProduct.variants?.[0]?.sku || filstarProduct.sku || '';
-  const stock = filstarProduct.variants?.[0]?.quantity || 0;
-
-
-
-console.log('  🐛 Variants:', filstarProduct.variants.length, 'needsOptions:', needsOptions, 'variants:', JSON.stringify(variants, null, 2));
-
-  
-  const productData = {
-    product: {
-      title: filstarProduct.name,
-      body_html: filstarProduct.description || filstarProduct.short_description || '',
-      vendor: vendor,
-      product_type: getCategoryName(categoryType),
-      tags: ['Filstar', categoryType, vendor].filter(Boolean).join(', '),
-      variants: [
-        {
-          price: price,
-          sku: sku,
-          inventory_management: 'shopify',
-          inventory_quantity: stock
-        }
-      ],
-      images: filstarProduct.images?.map(url => ({ src: url })) || []
-    }
-  };
-  
-  const response = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
-    {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(productData)
-    }
-  );
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
-  }
-  
-  const result = await response.json();
-  const newProduct = result.product;
-  
-  console.log(` ✅ Product created (ID: ${newProduct.id}) | Price: ${price} | Stock: ${stock} | Images: ${newProduct.images?.length || 0}`);
-  
-  // Добави в колекция
-  await addProductToCollection(`gid://shopify/Product/${newProduct.id}`, categoryType);
-  
-  stats[categoryType].created++;
-  stats[categoryType].images += newProduct.images?.length || 0;
-  
-  return newProduct;
-}
 
 
 
@@ -1264,7 +1203,7 @@ async function main() {
   if (hasDropdown) {
     console.log(` 🗑️ Has dropdown - deleting and recreating...`);
     await deleteShopifyProduct(existingProduct.id);
-    await createShopifyProductNoVariants(product, categoryType);
+    await createShopifyProduct(product, categoryType);
   } else {
     console.log(` 🔄 No dropdown - updating...`);
     await updateShopifyProduct(existingProduct, product, categoryType);
@@ -1275,7 +1214,7 @@ async function main() {
          
 else {
           console.log(` ✓ Product not found, creating new without variants...`);
-          await createShopifyProductNoVariants(product, categoryType);
+          await createShopifyProduct(product, categoryType);
         }
         
         await new Promise(resolve => setTimeout(resolve, 1000));
