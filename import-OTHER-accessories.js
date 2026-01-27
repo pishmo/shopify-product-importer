@@ -101,7 +101,14 @@ async function convertToDefaultVariant(productId, oldVariantId, sku, price) {
       }
     );
     
-    const createData = await createResponse.json();
+   
+
+const createData = await createResponse.json();
+console.log('   🐛 Create response:', JSON.stringify(createData));
+
+
+
+    
     
     if (createData.data?.productVariantCreate?.userErrors?.length > 0) {
       console.error('   ❌ Error creating default variant:', createData.data.productVariantCreate.userErrors);
@@ -135,7 +142,10 @@ async function convertToDefaultVariant(productId, oldVariantId, sku, price) {
       }
     );
     
+   
     const deleteData = await deleteResponse.json();
+    console.log('   🐛 Delete response:', JSON.stringify(deleteData));
+
     
     if (deleteData.data?.productVariantDelete?.userErrors?.length > 0) {
       console.error('   ❌ Error deleting old variant:', deleteData.data.productVariantDelete.userErrors);
