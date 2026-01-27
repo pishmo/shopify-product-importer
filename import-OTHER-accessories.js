@@ -1069,6 +1069,7 @@ console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attri
       inventorySetQuantities(input: {
         reason: "correction"
         name: "available"
+         ignoreCompareQuantity: true
         quantities: [{
           inventoryItemId: \"${inventoryItemId}\"
           locationId: \"${LOCATION_ID}\"
