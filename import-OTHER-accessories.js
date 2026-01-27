@@ -101,14 +101,7 @@ async function convertToDefaultVariant(productId, oldVariantId, sku, price) {
       }
     );
     
-   
 
-const createData = await createResponse.json();
-console.log('   🐛 Create response:', JSON.stringify(createData));
-
-
-
-    
     
     if (createData.data?.productVariantCreate?.userErrors?.length > 0) {
       console.error('   ❌ Error creating default variant:', createData.data.productVariantCreate.userErrors);
