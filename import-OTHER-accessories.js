@@ -1025,7 +1025,7 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ query: updatePriceMutation })
-        }).then(r => r.json()).then(d => console.log('  🐛 Price response:', JSON.stringify(d)));
+        });
         
         console.log(` ✓ Updated price`);
       }
