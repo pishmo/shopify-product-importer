@@ -984,7 +984,7 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
       
       // Обнови цена и наличност
 
-      console.log(`  🐛 Filstar stock/quantity:`, firstFilstarVariant.quantity, firstFilstarVariant.stock)
+     
       const shopifyVariantId = shopifyVariants[0]?.node?.id;
       const inventoryItemId = shopifyVariants[0]?.node?.inventoryItem?.id;
       
