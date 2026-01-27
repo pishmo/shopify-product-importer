@@ -135,9 +135,7 @@ async function convertToDefaultVariant(productId, oldVariantId, sku, price) {
       }
     );
     
-   
-    const deleteData = await deleteResponse.json();
-    console.log('   🐛 Delete response:', JSON.stringify(deleteData));
+
 
     
     if (deleteData.data?.productVariantDelete?.userErrors?.length > 0) {
