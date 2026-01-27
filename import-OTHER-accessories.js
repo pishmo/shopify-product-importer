@@ -236,13 +236,14 @@ async function scrapeOgImage(productSlug) {
   }
 }
 
+
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
 
-function formatVariantName(attributes, sku, product = null) {
-  // Ако е подаден product при първото извикване, кешираме категориите
-  if (product && product.categories) {
-    cachedCategoryNames = product.categories.map(c => c.name);
+function formatVariantName(attributes, sku, categoryNames = null) {
+  // Ако са подадени categoryNames, кешираме ги
+  if (categoryNames && Array.isArray(categoryNames)) {
+    cachedCategoryNames = categoryNames;
   }
   
   if (!attributes || attributes.length === 0) {
