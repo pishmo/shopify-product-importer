@@ -1170,7 +1170,7 @@ async function main() {
       return categoryType !== null;
     });
 
-    accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku === '934356'));
+    accessoryProducts = accessoryProducts.filter(p => p.variants?.some(v => v.sku === '929503'));
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
