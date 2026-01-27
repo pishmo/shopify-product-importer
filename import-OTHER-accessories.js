@@ -534,6 +534,7 @@ async function reorderProductImages(productGid, images) {
 
 
 // Функция за създаване на нов продукт
+// Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
   
@@ -547,23 +548,29 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
     const totalVariants = filstarProduct.variants.length;
     
+    // Проверка дали трябва да има опции
+    const firstVariantName = formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
+    const needsOptions = totalVariants > 1 || firstVariantName !== '';
+    
     // Подготви варианти с поправено форматиране
     const variants = filstarProduct.variants.map(variant => {
-      let variantName = formatVariantName(variant.attributes, variant.sku, categoryNames);
+      const variantName = formatVariantName(variant.attributes, variant.sku, categoryNames);
+      const finalName = variantName || variant.sku;
       
-      // Ако е празно/SKU и има само 1 вариант, използвай Default Title
-      if (variantName === variant.sku && totalVariants === 1) {
-        variantName = 'Default Title';
-      }
-      
-      return {
-        option1: variantName,
+      const variantData = {
         price: variant.price?.toString() || '0',
         sku: variant.sku,
         barcode: variant.barcode || variant.sku,
         inventory_quantity: parseInt(variant.quantity) || 0,
         inventory_management: 'shopify'
       };
+      
+      // Добави option1 САМО ако трябва да има опции
+      if (needsOptions) {
+        variantData.option1 = finalName;
+      }
+      
+      return variantData;
     });
 
     // Създай продукта
@@ -575,12 +582,14 @@ async function createShopifyProduct(filstarProduct, categoryType) {
         product_type: productType,
         tags: ['Filstar', categoryType, vendor],
         status: 'active',
-        variants: variants,
-        options: [
-          { name: 'Вариант' }
-        ]
+        variants: variants
       }
     };
+    
+    // Добави options САМО ако трябва
+    if (needsOptions) {
+      productData.product.options = [{ name: 'Вариант' }];
+    }
 
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
@@ -757,19 +766,14 @@ async function createShopifyProduct(filstarProduct, categoryType) {
         console.log(`    ⚠️  No OG image found, sorting by SKU...`);
         
         allImages.sort((a, b) => {
-          const skuA = extractSkuFromImageFilename(getImageFilename(a.src));
-          const skuB = extractSkuFromImageFilename(getImageFilename(b.src));
-          
-          if (skuA === '999999' && skuB !== '999999') return 1;
-          if (skuA !== '999999' && skuB === '999999') return -1;
-          
+          const skuA = extractSkuFromImageFilename(a.src.split('/').pop());
+          const skuB = extractSkuFromImageFilename(b.src.split('/').pop());
           return skuA.localeCompare(skuB);
         });
         
-        console.log(`    📋 Final order by SKU (${allImages.length} images):`);
+        console.log(`    📋 Final order (${allImages.length} images):`);
         allImages.forEach((img, i) => {
-          const sku = extractSkuFromImageFilename(getImageFilename(img.src));
-          console.log(`      ${i + 1}. ${getImageFilename(img.src.split('/').pop())} (SKU: ${sku})`);
+          console.log(`      ${i + 1}. ${getImageFilename(img.src.split('/').pop())}`);
         });
         
         await reorderProductImages(productGid, allImages);
