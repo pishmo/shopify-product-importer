@@ -40,6 +40,96 @@ const stats = {
 // 2 част
 
 
+// Изтриване на продукт
+async function deleteShopifyProduct(productId) {
+  const numericId = productId.replace('gid://shopify/Product/', '');
+  
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}.json`,
+    {
+      method: 'DELETE',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN
+      }
+    }
+  );
+  
+  if (!response.ok) {
+    throw new Error(`Failed to delete product: ${response.status}`);
+  }
+  
+  console.log(` ✅ Product deleted`);
+}
+
+// Създаване на продукт БЕЗ варианти
+async function createShopifyProductNoVariants(filstarProduct, category) {
+  console.log(` ✨ Creating new product without variants...`);
+  
+  const vendor = filstarProduct.manufacturer || 'Unknown';
+  
+  const productData = {
+    product: {
+      title: filstarProduct.name,
+      body_html: filstarProduct.description || filstarProduct.short_description || '',
+      vendor: vendor,
+      product_type: getCategoryName(category),
+      tags: ['Filstar', category, vendor].filter(Boolean).join(', '),
+      variants: [
+        {
+          price: filstarProduct.price || '0.00',
+          sku: filstarProduct.variants?.[0]?.sku || filstarProduct.sku || '',
+          inventory_management: 'shopify',
+          inventory_policy: 'deny'
+        }
+      ]
+    }
+  };
+  
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
+    {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(productData)
+    }
+  );
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
+  }
+  
+  const result = await response.json();
+  const newProduct = result.product;
+  
+  console.log(` ✅ Product created (ID: ${newProduct.id})`);
+  
+  // Качи снимки
+  if (filstarProduct.images && filstarProduct.images.length > 0) {
+    await uploadProductImages(newProduct.id, filstarProduct.images);
+  }
+  
+  // Добави в колекция
+  const collectionId = COLLECTION_MAPPING[category];
+  if (collectionId) {
+    await addProductToCollection(newProduct.id, collectionId);
+  }
+  
+  stats[category].created++;
+  
+  return newProduct;
+}
+
+
+
+
+
+
+
+
 // Функция за премахване на вариант с падащо меню и създаване на default вариант
 async function convertToDefaultVariant(productId, oldVariantId, sku, price) {
   try {
