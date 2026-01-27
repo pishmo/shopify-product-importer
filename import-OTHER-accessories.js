@@ -63,12 +63,12 @@ async function deleteShopifyProduct(productId) {
 
 
 // Създаване на продукт БЕЗ варианти
+// Създаване на продукт БЕЗ варианти
 async function createShopifyProductNoVariants(filstarProduct, category) {
-  console.log(` ✨ Creating new product without variants...`);
-  
   const vendor = filstarProduct.manufacturer || 'Unknown';
   const price = filstarProduct.variants?.[0]?.price || filstarProduct.price || '0.00';
   const sku = filstarProduct.variants?.[0]?.sku || filstarProduct.sku || '';
+  const stock = filstarProduct.variants?.[0]?.stock || 0;
   
   const productData = {
     product: {
@@ -81,8 +81,8 @@ async function createShopifyProductNoVariants(filstarProduct, category) {
         {
           price: price,
           sku: sku,
-          inventory_management: null,
-          inventory_policy: 'continue'
+          inventory_management: 'shopify',
+          inventory_quantity: stock
         }
       ],
       images: filstarProduct.images?.map(url => ({ src: url })) || []
@@ -109,16 +109,18 @@ async function createShopifyProductNoVariants(filstarProduct, category) {
   const result = await response.json();
   const newProduct = result.product;
   
-  console.log(` ✅ Product created (ID: ${newProduct.id})`);
-  console.log(` 💰 Price: ${price}`);
-  console.log(` 📸 Images: ${newProduct.images?.length || 0} uploaded`);
+  console.log(` ✅ Product created (ID: ${newProduct.id}) | Price: ${price} | Stock: ${stock} | Images: ${newProduct.images?.length || 0}`);
+  
+  // Добави в колекция (ако има mapping)
+  if (typeof COLLECTION_MAPPING !== 'undefined' && COLLECTION_MAPPING[category]) {
+    await addProductToCollection(newProduct.id, COLLECTION_MAPPING[category]);
+  }
   
   stats[category].created++;
   stats[category].images += newProduct.images?.length || 0;
   
   return newProduct;
 }
-
 
 
 
