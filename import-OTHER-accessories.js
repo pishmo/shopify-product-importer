@@ -336,8 +336,11 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     return '';
   }
   
+  // ПОПРАВКА: Конвертирай в масив ако е обект
+  const attrArray = Array.isArray(attributes) ? attributes : Object.values(attributes);
+  
   // Филтрирай атрибути чието име съвпада с категория
-  const filtered = attributes.filter(attr => {
+  const filtered = attrArray.filter(attr => {
     const name = attr.attribute_name || '';
     return !cachedCategoryNames.includes(name);
   });
@@ -366,7 +369,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   });
   
   let result = parts.join(' / ');
-  result = result.replace(/^\/+|\/+$/g, '').trim();
+  result = result.replace(/^\\/+|\\/+$/g, '').trim();
   
   if (!result || result === '') {
     return '';
