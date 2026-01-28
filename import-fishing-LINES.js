@@ -1136,21 +1136,8 @@ async function main() {
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
-
-
-    
-  // филтър ску
-const testSkus = ['956709', '952121', '952109',  '960412', '933930', '960808'];
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => testSkus.includes(v.sku))
-);
-console.log(`🧪 Filtered to ${accessoryProducts.length} test products\n`);
-// край на филтъра
-
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
-
-
     
     // Групирай по категория
     const productsByCategory = {      
