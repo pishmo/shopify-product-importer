@@ -1071,6 +1071,16 @@ async function main() {
 
 
     
+   // тук се слага филтъра
+
+// филтър ску
+const testSkus = ['925654'];
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => testSkus.includes(v.sku))
+);
+console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
+// край на филтъра
+
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
