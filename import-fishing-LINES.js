@@ -671,9 +671,6 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const firstVariantName = formatLineVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
     const needsOptions = totalVariants > 1 || firstVariantName !== '';
 
-
-
-
     
     // Подготви варианти с поправено форматиране
     const variants = filstarProduct.variants.map(variant => {
