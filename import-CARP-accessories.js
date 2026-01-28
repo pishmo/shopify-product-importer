@@ -258,6 +258,10 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   if (categoryNames && Array.isArray(categoryNames)) {
     cachedCategoryNames = categoryNames;
   }
+
+
+console.log(`  🐛 cachedCategoryNames:`, cachedCategoryNames);
+
   
   if (!attributes || attributes.length === 0) {
     return '';
