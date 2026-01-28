@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  Import 4CATEGORIES accessories:
+  Import-4CATEGORIES-accessories:
     runs-on: ubuntu-latest
     
     steps:
