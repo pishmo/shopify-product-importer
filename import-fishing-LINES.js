@@ -397,7 +397,19 @@ function getCategoryType(product) {
       }
     }
   }
-  
+
+
+//само за влакна 
+
+let result = parts.join(' / ');
+result = result.replace(/^\/+|\/+$/g, '').trim();
+
+// Ако няма резултат - опитай форматирането за влакна
+if (!result || result === '') {
+  const variant = { attributes, sku };
+  result = formatLineVariantName(variant, null);
+}
+ 
   return null;
 }
 
