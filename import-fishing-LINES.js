@@ -307,7 +307,7 @@ function formatLineVariantName(variant, filstarProduct) {
 
 
 
-// Глобална променлива за кеширане на категории
+// Глобална променлива за кеширане на категории и функциуя за формат на имена с филтър за категории и атрибути
 let cachedCategoryNames = [];
 
 function formatVariantName(attributes, sku, categoryNames = null) {
