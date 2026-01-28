@@ -377,17 +377,11 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     return '';
   }
 
-let result = parts.join(' / ');
-result = result.replace(/^\/+|\/+$/g, '').trim();
-
 // Ако няма резултат - опитай форматирането за влакна
 if (!result || result === '') {
   const variant = { attributes, sku };
   result = formatLineVariantName(variant, null);
-}
-
-
- 
+} 
   return result;
 }
 
