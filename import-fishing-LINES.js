@@ -264,6 +264,57 @@ async function scrapeOgImage(productSlug) {
 
 
 
+// само за влакна
+
+// Форматиране на variant name за влакна
+function formatLineVariantName(variant, filstarProduct) {
+  if (!variant.attributes || variant.attributes.length === 0) {
+    return variant.model || variant.sku || 'Default';
+  }
+
+  const parts = [];
+
+  // 1. Model (ако има)
+  if (variant.model && variant.model.trim()) {
+    parts.push(variant.model.trim());
+  }
+
+  // 2. Дължина
+  const length = variant.attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА') )?.value;
+  if (length) {
+    parts.push(`${length}м`);
+  }
+
+  // 3. Диаметър
+  const diameter = variant.attributes.find(a => a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM') )?.value;
+  if (diameter) {
+    parts.push(`o${diameter}мм`);
+  }
+
+  // 4. Японска номерация
+  const japaneseSize = variant.attributes.find(a => a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ') )?.value;
+  if (japaneseSize) {
+    parts.push(japaneseSize);
+  }
+
+  // 5. Тест (kg/LB)
+  const testKg = variant.attributes.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG') )?.value;
+  const testLb = variant.attributes.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('LB') )?.value;
+  if (testKg && testLb) {
+    parts.push(`${testKg}кг / ${testLb}LB`);
+  } else if (testKg) {
+    parts.push(`${testKg}кг`);
+  } else if (testLb) {
+    parts.push(`${testLb}LB`);
+  }
+
+  return parts.length > 0 ? parts.join(' / ') : variant.sku;
+}
+
+
+
+
+
 
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
