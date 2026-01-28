@@ -668,7 +668,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const totalVariants = filstarProduct.variants.length;
     
     // Проверка дали трябва да има опции
-    const firstVariantName = formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
+    const firstVariantName = formatLineVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
     const needsOptions = totalVariants > 1 || firstVariantName !== '';
 
 
