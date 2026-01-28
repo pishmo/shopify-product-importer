@@ -24,10 +24,6 @@ const COLLECTION_MAPPING = {
   other: 'gid://shopify/Collection/739068576126' // Влакно Други
 };
 
-
-
-
-
 // Filstar категории за влакна
 const FILSTAR_LINE_CATEGORY_IDS = {
   monofilament: ['41'],
