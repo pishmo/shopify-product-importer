@@ -1,4 +1,4 @@
-// import-fishing-LINES.js - Импорт на 4 категории Влакна от Filstar API
+// import-fishing-LINES.js - Импорт на Влакна от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -14,37 +14,30 @@ const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
  
-
-// Колекции за влакна
-const COLLECTION_MAPPING = {
-  monofilament: 'gid://shopify/Collection/738965946750',
-  braided: 'gid://shopify/Collection/738965979518',
-  fluorocarbon: 'gid://shopify/Collection/738987442558',
-  other: 'gid://shopify/Collection/739068576126' // Влакно Други
+// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
+const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
+  pike_and_catfish: ['45'],
+  pole_and_match: ['50'],
+  knives: ['59'],
+  chairs_umbrellas_tents: ['63']
 };
 
+const ACCESSORIES_PARENT_ID = '11';
 
-
-
-
-// Filstar категории за влакна
-const FILSTAR_LINE_CATEGORY_IDS = {
-  monofilament: ['41'],
-  braided: ['105'],
-  fluorocarbon: ['107'],
-  other: ['109']
+// Shopify collection IDs - САМО 4 КАТЕГОРИИ
+const SHOPIFY_ACCESSORIES_COLLECTIONS = {
+  pike_and_catfish: 'gid://shopify/Collection/739661185406',
+  pole_and_match: 'gid://shopify/Collection/739661218174',
+  knives: 'gid://shopify/Collection/739661250942',
+  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782'
 };
 
-const LINES_PARENT_ID = '4';
-
-
-
-// Статистика
+// Статистика - САМО 4 КАТЕГОРИИ
 const stats = {
-  monofilament: { created: 0, updated: 0, images: 0 },
-  braided: { created: 0, updated: 0, images: 0 },
-  fluorocarbon: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }
+  pike_and_catfish: { created: 0, updated: 0, images: 0 },
+  pole_and_match: { created: 0, updated: 0, images: 0 },
+  knives: { created: 0, updated: 0, images: 0 },
+  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 }
 };
 
 
@@ -264,67 +257,6 @@ async function scrapeOgImage(productSlug) {
 
 
 
-// само за влакна
-
-// Форматиране на variant name за влакна
-function formatLineVariantName(variant, filstarProduct) {
-  if (!variant.attributes || variant.attributes.length === 0) {
-    return variant.model || variant.sku || 'Default';
-  }
-
-  const parts = [];
-
-  // 1. Model (ако има)
-  if (variant.model && variant.model.trim()) {
-    parts.push(variant.model.trim());
-  }
-
-  // 2. Дължина
-  const length = variant.attributes.find(a => a.attribute_name.includes('ДЪЛЖИНА') )?.value;
-  if (length) {
-    parts.push(`${length}м`);
-  }
-
-  // 3. Диаметър
-  const diameter = variant.attributes.find(a => a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM') )?.value;
-  if (diameter) {
-    parts.push(`o${diameter}мм`);
-  }
-
-  // 4. Японска номерация
-  const japaneseSize = variant.attributes.find(a => a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ') )?.value;
-  if (japaneseSize) {
-    parts.push(japaneseSize);
-  }
-
-  // 5. Тест (kg/LB)
-  const testKg = variant.attributes.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG') )?.value;
-  const testLb = variant.attributes.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('LB') )?.value;
-  if (testKg && testLb) {
-    parts.push(`${testKg}кг / ${testLb}LB`);
-  } else if (testKg) {
-    parts.push(`${testKg}кг`);
-  } else if (testLb) {
-    parts.push(`${testLb}LB`);
-  }
-
-
-// Цвят (ако има)
-if (attributes.ЦВЯТ) {
-  parts.push(attributes.ЦВЯТ);
-}
-
-
-
-
- 
-  return parts.length > 0 ? parts.join(' / ') : variant.sku;
-}
-
-
-
-
-
 
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
@@ -387,11 +319,6 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     return '';
   }
 
-// Ако няма резултат - опитай форматирането за влакна
-if (!result || result === '') {
-  const variant = { attributes, sku };
-  result = formatLineVariantName(variant, null);
-} 
   return result;
 }
 
@@ -406,26 +333,23 @@ function getCategoryType(product) {
   for (const category of product.categories) {
     const categoryId = category.id?.toString();
     
-    for (const [type, ids] of Object.entries(FILSTAR_LINE_CATEGORY_IDS)) {
+    for (const [type, ids] of Object.entries(FILSTAR_ACCESSORIES_CATEGORY_IDS)) {
       if (ids.includes(categoryId)) {
         return type;
       }
     }
   }
-
+  
   return null;
 }
-
-
-
 
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-  monofilament: 'Влакно Монофилно',
-  braided: 'Влакно Плетено',
-  fluorocarbon: 'Влакно Флуорокарбон',
-  other: 'Елакно Други'
+    pike_and_catfish: 'Аксесоари щука и сом',
+    pole_and_match: 'Аксесоари щека и мач',
+    knives: 'Ножове',
+    chairs_umbrellas_tents: 'Столове и палатки'
    
   };
   
@@ -562,7 +486,7 @@ async function findProductBySku(sku) {
 
 // Функция за добавяне на продукт в колекция
 async function addProductToCollection(productId, categoryType) {
-  const collectionId = COLLECTION_MAPPING[categoryType];
+  const collectionId = SHOPIFY_ACCESSORIES_COLLECTIONS[categoryType];
   
   if (!collectionId) {
     console.log(`  ⚠️  No collection mapping for category: ${categoryType}`);
@@ -652,11 +576,11 @@ async function reorderProductImages(productGid, images) {
 
 
 
-
+// Функция за създаване на нов продукт
 // Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
- 
+  
   try {
     const vendor = filstarProduct.manufacturer || 'Unknown';
     console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
@@ -668,20 +592,18 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const totalVariants = filstarProduct.variants.length;
     
     // Проверка дали трябва да има опции
-    const firstVariantName = formatLineVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
+    const firstVariantName = formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
     const needsOptions = totalVariants > 1 || firstVariantName !== '';
+
+
+
 
     
     // Подготви варианти с поправено форматиране
-   
-     
-      const variantName = formatLineVariantName(variant.attributes, variant.sku);
-     
-     
+    const variants = filstarProduct.variants.map(variant => {
+      const variantName = formatVariantName(variant.attributes, variant.sku, categoryNames);
       const finalName = variantName || variant.sku;
-       
       
-     
       const variantData = {
         price: variant.price?.toString() || '0',
         sku: variant.sku,
@@ -932,7 +854,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     
     if (firstFilstarVariant) {
 const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
-const formattedVariantName = formatLineVariantName(firstFilstarVariant.attributes, firstFilstarVariant.sku, categoryNames);
+const formattedVariantName = formatVariantName(firstFilstarVariant.attributes, firstFilstarVariant.sku, categoryNames);
 
 const shopifyVariants = shopifyProduct.variants?.edges || [];
 
@@ -1138,15 +1060,17 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 
 async function main() {
   
-  console.log('?? Starting Filstar LINES Import\n');
+  console.log('?? Starting Filstar Accessories Import\n');
   console.log('?? Categories to import:');
+  console.log('  - Аксесоари щука и сом - Категория Id - (45)');
+  console.log('  - Аксесоари щека и мач - Категория Id - (50)');
+  console.log('  - Ножове - Категория Id - (59)'); 
+  console.log('  - Столове и палатки - Категория Id - (63)\n');
   
-  console.log('  - Влакно Монофилно - Категория Id - (41)');
-  console.log('  - Влакно плетено - Категория Id - (105)');
-  console.log('  - влакно Флуорокарбон - Id - (107)'); 
-  console.log('  - Влакно Други - Категория Id - (109)\n');
+
   
-   
+ 
+  
   try {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
@@ -1157,14 +1081,8 @@ async function main() {
       return categoryType !== null;
     });
 
-// филтър ску
-const testSkus = ['956709', '960412'];
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => testSkus.includes(v.sku))
-);
-console.log(`🧪 Filtered to ${accessoryProducts.length} test products\n`);
-// край на филтъра
 
+    
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
@@ -1172,11 +1090,10 @@ console.log(`🧪 Filtered to ${accessoryProducts.length} test products\n`);
     
     // Групирай по категория
     const productsByCategory = {
-
-  monofilament: [],
-  braided: [],
-  fluorocarbon: [],
-  other: []            
+      pike_and_catfish: [],
+      pole_and_match: [],
+      knives: [],
+      chairs_umbrellas_tents: []
     };
     
     accessoryProducts.forEach(product => {
