@@ -251,6 +251,8 @@ async function scrapeOgImage(productSlug) {
 }
 
 
+
+
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
 
@@ -258,10 +260,6 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   if (categoryNames && Array.isArray(categoryNames)) {
     cachedCategoryNames = categoryNames;
   }
-
-
-console.log(`  🐛 cachedCategoryNames:`, cachedCategoryNames);
-
   
   if (!attributes || attributes.length === 0) {
     return '';
@@ -271,14 +269,15 @@ console.log(`  🐛 cachedCategoryNames:`, cachedCategoryNames);
   
   const filtered = attrArray.filter(attr => {
     if (!attr) return false;
-    const attrName = attr.attribute_name || '';
-    const attrValue = attr.value || '';
+    const attrName = (attr.attribute_name || '').toLowerCase();
+    const attrValue = (attr.value || '').toLowerCase();
     
     // Махни ако името ИЛИ стойността съвпада с категория
-    return !cachedCategoryNames.some(cat => 
-      attrName.includes(cat) || attrValue.includes(cat) || 
-      cat.includes(attrName) || cat.includes(attrValue)
-    );
+    return !cachedCategoryNames.some(cat => {
+      const catLower = cat.toLowerCase();
+      return attrName.includes(catLower) || attrValue.includes(catLower) || 
+             catLower.includes(attrName) || catLower.includes(attrValue);
+    });
   });
 
   if (filtered.length === 0) {
