@@ -340,10 +340,12 @@ function getCategoryType(product) {
   return null;
 }
 
+
+
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-   boxes_and_bags: 'Шарански Риболов',
+   boxes_and_bags: 'Шарански Риболов'
    
   };
   
