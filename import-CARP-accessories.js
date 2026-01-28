@@ -1058,6 +1058,18 @@ async function main() {
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
+
+// филтър
+
+// След fetchAllProducts(), преди обработката
+const testSkus = ['922971', '922683'];
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => testSkus.includes(v.sku))
+);
+console.log(`🧪 Filtered to ${accessoryProducts.length} test products\n`);
+// край на филтъра
+
+    
     // Групирай по категория
     const productsByCategory = {
        carp_fishing: []
@@ -1090,11 +1102,7 @@ async function main() {
       for (let i = 0; i < products.length; i++) {
         const product = products[i];
         const productNumber = i + 1;
-
-
-if (!['922971', '922683'].includes(product.sku)) continue;
-        
-        
+               
         console.log(`\n${'-'.repeat(60)}`);
         console.log(`[${productNumber}/${totalInCategory}] Processing: ${product.name}`);
         console.log(`${'-'.repeat(60)}`);
