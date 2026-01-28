@@ -851,13 +851,6 @@ const formattedVariantName = formatVariantName(firstFilstarVariant.attributes, f
 const shopifyVariants = shopifyProduct.variants?.edges || [];
 
 
-console.log(`  🐛 formattedVariantName = "${formattedVariantName}"`);
-console.log(`  🐛 shopifyVariants.length = ${shopifyVariants.length}`);
-console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attributes);
-
-const needsConversion = shopifyVariants.length === 1 && formattedVariantName === '';
-console.log(`  🐛 needsConversion = ${needsConversion}`);
-
       
       if (formattedVariantName === '' && shopifyVariants.length === 1) {
         const shopifyVariant = shopifyVariants[0].node;
