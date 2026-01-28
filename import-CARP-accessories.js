@@ -1090,6 +1090,10 @@ async function main() {
       for (let i = 0; i < products.length; i++) {
         const product = products[i];
         const productNumber = i + 1;
+
+
+if (!['922971', '922683'].includes(product.sku)) continue;
+        
         
         console.log(`\n${'-'.repeat(60)}`);
         console.log(`[${productNumber}/${totalInCategory}] Processing: ${product.name}`);
