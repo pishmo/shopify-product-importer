@@ -341,16 +341,16 @@ function getCategoryType(product) {
 }
 
 
-
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-   boxes_and_bags: 'Кутии и калъфи',
+   carp_fishing: 'Кутии и калъфи',
    
   };
   
   return names[categoryType] || 'Аксесоари';
 }
+
 
 
 
