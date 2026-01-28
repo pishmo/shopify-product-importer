@@ -1,4 +1,4 @@
-name: Import Keepnets and Catapults (Кепове и Прашки)
+name: Import KEEPNETS-CATAPULTS (Кепове и Прашки)
 
 on:
   # Schedule (commented out - uncomment to enable)
