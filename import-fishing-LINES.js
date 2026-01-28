@@ -18,7 +18,7 @@ const COLLECTION_MAPPING = {
   monofilament: 'gid://shopify/Collection/738965946750',
   braided: 'gid://shopify/Collection/738965979518',
   fluorocarbon: 'gid://shopify/Collection/738987442558',
-  other: 'gid://shopify/Collection/739068576126' // Влакно Други
+  other: 'gid://shopify/Collection/739068576126' 
 };
 
 // Filstar категории за влакна
