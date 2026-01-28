@@ -930,7 +930,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     
     if (firstFilstarVariant) {
 const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
-const formattedVariantName = formatVariantName(firstFilstarVariant.attributes, firstFilstarVariant.sku, categoryNames);
+const formattedVariantName = formatLineVariantName(firstFilstarVariant.attributes, firstFilstarVariant.sku, categoryNames);
 
 const shopifyVariants = shopifyProduct.variants?.edges || [];
 
