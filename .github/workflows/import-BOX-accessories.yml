@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  import-carp-accessories:
+  import-BOX-accessories:
     runs-on: ubuntu-latest
     
     steps:
