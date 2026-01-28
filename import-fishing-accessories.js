@@ -13,26 +13,31 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
-// Filstar category IDs за аксесоари
+ 
+// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  
-  carp_fishing: ['37'] 
+  pike_and_catfish: ['45'],
+  pole_and_match: ['50'],
+  knives: ['59'],
+  chairs_umbrellas_tents: ['63']
 };
 
 const ACCESSORIES_PARENT_ID = '11';
 
-// Shopify collection IDs
+// Shopify collection IDs - САМО 4 КАТЕГОРИИ
 const SHOPIFY_ACCESSORIES_COLLECTIONS = {
-  
-  carp_fishing: 'gid://shopify/Collection/739661152638'
- 
+  pike_and_catfish: 'gid://shopify/Collection/739661185406',
+  pole_and_match: 'gid://shopify/Collection/739661218174',
+  knives: 'gid://shopify/Collection/739661250942',
+  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782'
 };
 
-// Статистика
+// Статистика - САМО 4 КАТЕГОРИИ
 const stats = {
-  
-  carp_fishing: { created: 0, updated: 0, images: 0 }
-  
+  pike_and_catfish: { created: 0, updated: 0, images: 0 },
+  pole_and_match: { created: 0, updated: 0, images: 0 },
+  knives: { created: 0, updated: 0, images: 0 },
+  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 }
 };
 
 
@@ -1051,9 +1056,17 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 // MAIN функция
 
 async function main() {
-  console.log('🚀 Starting Filstar Accessories Import\n');
-  console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Други - Шарански Риболов -  Категория Id - (37)');
+  
+  console.log('?? Starting Filstar Accessories Import\n');
+  console.log('?? Categories to import:');
+  console.log('  - Аксесоари щука и сом - Категория Id - (45)');
+  console.log('  - Аксесоари щека и мач - Категория Id - (50)');
+  console.log('  - Ножове - Категория Id - (59)'); 
+  console.log('  - Столове и палатки - Категория Id - (63)\n');
+  
+
+  
+ 
   
   try {
     // Fetch всички продукти от Filstar
@@ -1074,7 +1087,10 @@ async function main() {
     
     // Групирай по категория
     const productsByCategory = {
-       carp_fishing: []
+      pike_and_catfish: [],
+      pole_and_match: [],
+      knives: [],
+      chairs_umbrellas_tents: []
     };
     
     accessoryProducts.forEach(product => {
