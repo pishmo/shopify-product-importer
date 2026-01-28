@@ -17,6 +17,7 @@ const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 // Колекции за влакна
 const COLLECTION_MAPPING = {
+
   monofilament: 'gid://shopify/Collection/738965946750',
   braided: 'gid://shopify/Collection/738965979518',
   fluorocarbon: 'gid://shopify/Collection/738987442558',
@@ -1106,11 +1107,11 @@ console.log(`🧪 Filtered to ${accessoryProducts.length} test products\n`);
 
     
     // Групирай по категория
-    const productsByCategory = {
-      pike_and_catfish: [],
-      pole_and_match: [],
-      knives: [],
-      chairs_umbrellas_tents: []
+    const productsByCategory = {      
+      monofilament: [],
+      braided: [],
+      fluorocarbon: [],
+      other: []
     };
     
     accessoryProducts.forEach(product => {
