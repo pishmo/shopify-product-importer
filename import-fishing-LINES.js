@@ -1,4 +1,4 @@
-// import-fishing-accessories.js - Импорт на 4 категории Влакна от Filstar API
+// import-fishing-LINES.js - Импорт на 4 категории Влакна от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -1126,7 +1126,7 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 
 async function main() {
   
-  console.log('?? Starting Filstar Accessories Import\n');
+  console.log('?? Starting Filstar LINES Import\n');
   console.log('?? Categories to import:');
   
   console.log('  - Влакно Монофилно - Категория Id - (41)');
