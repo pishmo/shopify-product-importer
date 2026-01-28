@@ -832,12 +832,25 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     // Проверка за варианти
     const filstarVariants = filstarProduct.variants || [];
     const firstFilstarVariant = filstarVariants[0];
+
+
+console.log(`  🐛 formattedVariantName = "${formattedVariantName}"`);
+console.log(`  🐛 shopifyVariants.length = ${shopifyVariants.length}`);
+console.log(`  🐛 firstFilstarVariant.attributes =`, firstFilstarVariant.attributes);
+
+const needsConversion = shopifyVariants.length === 1 && formattedVariantName === '';
+console.log(`  🐛 needsConversion = ${needsConversion}`);
+
+
     
     if (firstFilstarVariant) {
 const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
 const formattedVariantName = formatVariantName(firstFilstarVariant.attributes, firstFilstarVariant.sku, categoryNames);
 
-      const shopifyVariants = shopifyProduct.variants?.edges || [];
+const shopifyVariants = shopifyProduct.variants?.edges || [];
+
+
+
 
       
       if (formattedVariantName === '' && shopifyVariants.length === 1) {
