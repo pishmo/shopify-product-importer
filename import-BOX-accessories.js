@@ -1,4 +1,4 @@
-// import-fishing-accessories.js - Импорт на аксесоари Кепове и прашки от Filstar API
+// import-BOX-accessories.js - Импорт на кутии и калъфи от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
