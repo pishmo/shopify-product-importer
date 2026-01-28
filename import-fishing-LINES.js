@@ -321,12 +321,12 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   
   const attrArray = Array.isArray(attributes) ? attributes : Object.values(attributes);
   
+  // Филтрирай атрибути които съвпадат с категория (запазваме тази проверка)
   const filtered = attrArray.filter(attr => {
     if (!attr) return false;
     const attrName = (attr.attribute_name || '').toLowerCase();
     const attrValue = (attr.value || '').toLowerCase();
     
-    // Махни ако името ИЛИ стойността съвпада с категория
     return !cachedCategoryNames.some(cat => {
       const catLower = cat.toLowerCase();
       return attrName.includes(catLower) || attrValue.includes(catLower) || 
@@ -338,39 +338,45 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     return '';
   }
   
-  // Търси "МОДЕЛ" атрибут
-  const modelAttr = filtered.find(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return attrName.includes('модел');
-  });
-
-  const otherAttrs = filtered.filter(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return !attrName.includes('модел');
-  });
-  
   const parts = [];
-  if (modelAttr) {
-    parts.push(`${modelAttr.attribute_name} ${modelAttr.value}`);
-  }
-  otherAttrs.forEach(attr => {
-    if (attr && attr.attribute_name && attr.value) {
-      parts.push(`${attr.attribute_name} ${attr.value}`);
-    }
-  });
   
-  let result = parts.join(' / ');
-  result = result.replace(/^\/+|\/+$/g, '').trim();
-  
-  if (!result || result === '') {
-    return '';
+  // 1. Дължина
+  const length = filtered.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
+  if (length) {
+    parts.push(`${length}м`);
   }
-
-  return result;
+  
+  // 2. Диаметър
+  const diameter = filtered.find(a => a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM'))?.value;
+  if (diameter) {
+    parts.push(`${diameter}мм`);
+  }
+  
+  // 3. Японска номерация
+  const japaneseSize = filtered.find(a => a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ'))?.value;
+  if (japaneseSize) {
+    parts.push(japaneseSize);
+  }
+  
+  // 4. Тест (kg/LB)
+  const testKg = filtered.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG'))?.value;
+  const testLb = filtered.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('LB'))?.value;
+  if (testKg && testLb) {
+    parts.push(`${testKg}кг / ${testLb}LB`);
+  } else if (testKg) {
+    parts.push(`${testKg}кг`);
+  } else if (testLb) {
+    parts.push(`${testLb}LB`);
+  }
+  
+  // 5. Цвят накрая
+  const color = filtered.find(a => a.attribute_name.includes('ЦВЯТ'))?.value;
+  if (color) {
+    parts.push(color.toLowerCase());
+  }
+  
+  return parts.length > 0 ? parts.join(' / ') : '';
 }
-
 
 
 // Функция за определяне на типа аксесоар
