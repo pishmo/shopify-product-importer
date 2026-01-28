@@ -1076,7 +1076,7 @@ async function main() {
     
     // Групирай по категория
     const productsByCategory = {
-       carp_fishing: []
+       carp_fishing:[]
     };
     
     accessoryProducts.forEach(product => {
