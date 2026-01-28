@@ -277,7 +277,44 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     );
   });
 
+  if (filtered.length === 0) {
+    return '';
+  }
+  
+  // Търси "МОДЕЛ" атрибут
+  const modelAttr = filtered.find(attr => {
+    if (!attr) return false;
+    const attrName = attr.attribute_name?.toLowerCase() || '';
+    return attrName.includes('модел');
+  });
+
+  const otherAttrs = filtered.filter(attr => {
+    if (!attr) return false;
+    const attrName = attr.attribute_name?.toLowerCase() || '';
+    return !attrName.includes('модел');
+  });
+  
+  const parts = [];
+  if (modelAttr) {
+    parts.push(`${modelAttr.attribute_name} ${modelAttr.value}`);
+  }
+  otherAttrs.forEach(attr => {
+    if (attr && attr.attribute_name && attr.value) {
+      parts.push(`${attr.attribute_name} ${attr.value}`);
+    }
+  });
+  
+  let result = parts.join(' / ');
+  result = result.replace(/^\/+|\/+$/g, '').trim();
+  
+  if (!result || result === '') {
+    return '';
+  }
+
+  return result;
 }
+
+
 
 // Функция за определяне на типа аксесоар
 function getCategoryType(product) {
