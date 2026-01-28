@@ -372,7 +372,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   // 5. Цвят накрая
   const color = filtered.find(a => a.attribute_name.includes('ЦВЯТ'))?.value;
   if (color) {
-    parts.push(color.toLowerCase());
+    parts.push(color);
   }
   
   return parts.length > 0 ? parts.join(' / ') : '';
