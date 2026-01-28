@@ -12,9 +12,6 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
-
-
-
 // Колекции за влакна
 const COLLECTION_MAPPING = {
 
