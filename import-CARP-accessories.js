@@ -255,7 +255,6 @@ async function scrapeOgImage(productSlug) {
 let cachedCategoryNames = [];
 
 function formatVariantName(attributes, sku, categoryNames = null) {
-  // Ако са подадени categoryNames, кешираме ги
   if (categoryNames && Array.isArray(categoryNames)) {
     cachedCategoryNames = categoryNames;
   }
@@ -264,52 +263,19 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     return '';
   }
   
-  // ПОПРАВКА: Конвертирай в масив ако е обект
   const attrArray = Array.isArray(attributes) ? attributes : Object.values(attributes);
   
-  // Филтрирай атрибути чието име съвпада с категория
   const filtered = attrArray.filter(attr => {
     if (!attr) return false;
-    const name = attr.attribute_name || '';
-    return !cachedCategoryNames.includes(name);
+    const attrName = attr.attribute_name || '';
+    const attrValue = attr.value || '';
+    
+    // Махни ако името ИЛИ стойността съвпада с категория
+    return !cachedCategoryNames.some(cat => 
+      attrName.includes(cat) || attrValue.includes(cat) || 
+      cat.includes(attrName) || cat.includes(attrValue)
+    );
   });
-
-  if (filtered.length === 0) {
-    return '';
-  }
-  
-  // Търси "МОДЕЛ" атрибут
-  const modelAttr = filtered.find(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return attrName.includes('модел');
-  });
-
-  const otherAttrs = filtered.filter(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return !attrName.includes('модел');
-  });
-  
-  const parts = [];
-  if (modelAttr) {
-    parts.push(`${modelAttr.attribute_name} ${modelAttr.value}`);
-  }
-  otherAttrs.forEach(attr => {
-    if (attr && attr.attribute_name && attr.value) {
-      parts.push(`${attr.attribute_name} ${attr.value}`);
-    }
-  });
-  
-  let result = parts.join(' / ');
-  result = result.replace(/^\/+|\/+$/g, '').trim();
-  
-  if (!result || result === '') {
-    return '';
-  }
-
-  return result;
-}
 
 
 
