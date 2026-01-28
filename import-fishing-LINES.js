@@ -13,32 +13,40 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
- 
-// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
-const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  pike_and_catfish: ['45'],
-  pole_and_match: ['50'],
-  knives: ['59'],
-  chairs_umbrellas_tents: ['63']
+
+
+// Колекции за влакна
+const COLLECTION_MAPPING = {
+  monofilament: 'gid://shopify/Collection/738965946750',
+  braided: 'gid://shopify/Collection/738965979518',
+  fluorocarbon: 'gid://shopify/Collection/738987442558',
+  other: 'gid://shopify/Collection/739068576126' // Влакно Други
 };
 
-const ACCESSORIES_PARENT_ID = '11';
 
-// Shopify collection IDs - САМО 4 КАТЕГОРИИ
-const SHOPIFY_ACCESSORIES_COLLECTIONS = {
-  pike_and_catfish: 'gid://shopify/Collection/739661185406',
-  pole_and_match: 'gid://shopify/Collection/739661218174',
-  knives: 'gid://shopify/Collection/739661250942',
-  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782'
+
+
+
+// Filstar категории за влакна
+const FILSTAR_LINE_CATEGORY_IDS = {
+  monofilament: ['41'],
+  braided: ['105'],
+  fluorocarbon: ['107'],
+  other: ['109']
 };
 
-// Статистика - САМО 4 КАТЕГОРИИ
+const LINES_PARENT_ID = '4';
+
+
+
+// Статистика
 const stats = {
-  pike_and_catfish: { created: 0, updated: 0, images: 0 },
-  pole_and_match: { created: 0, updated: 0, images: 0 },
-  knives: { created: 0, updated: 0, images: 0 },
-  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 }
+  monofilament: { created: 0, updated: 0, images: 0 },
+  braided: { created: 0, updated: 0, images: 0 },
+  fluorocarbon: { created: 0, updated: 0, images: 0 },
+  other: { created: 0, updated: 0, images: 0 }
 };
+
 
 
 
