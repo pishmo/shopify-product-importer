@@ -308,6 +308,16 @@ function formatLineVariantName(variant, filstarProduct) {
     parts.push(`${testLb}LB`);
   }
 
+
+// Цвят (ако има)
+if (attributes.ЦВЯТ) {
+  parts.push(attributes.ЦВЯТ);
+}
+
+
+
+
+ 
   return parts.length > 0 ? parts.join(' / ') : variant.sku;
 }
 
