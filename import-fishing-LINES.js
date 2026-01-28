@@ -349,7 +349,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   // 2. Диаметър
   const diameter = filtered.find(a => a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM'))?.value;
   if (diameter) {
-    parts.push(`${diameter}мм.`);
+    parts.push(`ø${diameter}мм.`);
   }
   
   // 3. Японска номерация
