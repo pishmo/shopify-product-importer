@@ -1140,7 +1140,7 @@ async function main() {
 
     
   // филтър ску
-const testSkus = ['956709', '960412'];
+const testSkus = ['956709', '952121', '952109',  '960412', '933930', '960808'];
 accessoryProducts = accessoryProducts.filter(p => 
   p.variants?.some(v => testSkus.includes(v.sku))
 );
