@@ -343,13 +343,13 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   // 1. Дължина
   const length = filtered.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
   if (length) {
-    parts.push(`${length}м`);
+    parts.push(`${length}м.`);
   }
   
   // 2. Диаметър
   const diameter = filtered.find(a => a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM'))?.value;
   if (diameter) {
-    parts.push(`${diameter}мм`);
+    parts.push(`${diameter}мм.`);
   }
   
   // 3. Японска номерация
@@ -362,9 +362,9 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   const testKg = filtered.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG'))?.value;
   const testLb = filtered.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('LB'))?.value;
   if (testKg && testLb) {
-    parts.push(`${testKg}кг / ${testLb}LB`);
+    parts.push(`${testKg}кг. / ${testLb}LB`);
   } else if (testKg) {
-    parts.push(`${testKg}кг`);
+    parts.push(`${testKg}кг.`);
   } else if (testLb) {
     parts.push(`${testLb}LB`);
   }
