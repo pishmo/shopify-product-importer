@@ -321,6 +321,7 @@ function formatVariantName(attributes, sku, categoryNames = null) {
 
 
 
+
 // Функция за определяне на типа аксесоар
 function getCategoryType(product) {
   if (!product.categories || product.categories.length === 0) {
