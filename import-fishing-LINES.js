@@ -652,11 +652,11 @@ async function reorderProductImages(productGid, images) {
 
 
 
-// Функция за създаване на нов продукт
+
 // Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
-  
+  console.log('🔍 Raw attributes:', JSON.stringify(variant.attributes, null, 2));
   try {
     const vendor = filstarProduct.manufacturer || 'Unknown';
     console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
