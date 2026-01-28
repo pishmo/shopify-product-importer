@@ -20,7 +20,7 @@ jobs:
           npm install node-fetch@2
           npm install sharp
       
-      - name: Run fishing lines import
+      - name: Run fishing LINES import
         env:
           SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
           SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
