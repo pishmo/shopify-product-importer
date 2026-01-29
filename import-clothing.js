@@ -33,7 +33,7 @@ const FILSTAR_CLOTHING_CATEGORY_IDS = {
 const CLOTHING_PARENT_ID = '10';
 
 
-/ Колекции за облекло (TODO: добави GID-овете на колекциите)
+// Колекции за облекло (TODO: добави GID-овете на колекциите)
 const COLLECTION_MAPPING = {
   shoes: 'gid://shopify/Collection/739347595646',
   tshirts: 'gid://shopify/Collection/739347038590',
