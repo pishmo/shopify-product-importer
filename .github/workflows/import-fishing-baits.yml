@@ -24,6 +24,7 @@ jobs:
         run: |
           npm install node-fetch
           npm install sharp
+          npm install form-data
       
       - name: Run baits import
         env:
