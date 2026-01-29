@@ -19,6 +19,7 @@ jobs:
         run: |
           npm install node-fetch@2
           npm install sharp
+          npm install form-data
       
       - name: Run fishing REELS import
         env:
