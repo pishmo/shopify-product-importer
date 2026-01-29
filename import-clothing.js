@@ -1090,7 +1090,7 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 
 async function main() {	
 	
-  console.log('?? Starting Filstar Accessories Import\n');
+  console.log('?? Starting Filstar Cothing Import\n');
   console.log('?? Categories to import:');
   console.log('  - Обувки - Категория Id - (90)');
   console.log('  - Панталовни - Категория Id - (86)');
