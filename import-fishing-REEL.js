@@ -1064,9 +1064,16 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 // MAIN функция
 
 async function main() {
-  console.log('🚀 Starting Filstar Accessories Import\n');
+  console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Кутии и калъфи - Категория Id - (61)');
+  
+  console.log('  -  Front Drag Reels - Категория Id - (19)');
+  console.log('  -  Rear Drag Reels - Категория Id - (24)');
+  console.log('  -  Baitrunner Reels - Категория Id - (30)');
+  console.log('  -  Multiplier Reels - Категория Id - (34)');
+  console.log('  -  Other Reels - Категория Id - (43)');
+
+  
   
   try {
     // Fetch всички продукти от Filstar
