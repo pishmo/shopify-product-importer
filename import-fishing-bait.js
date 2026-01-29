@@ -332,7 +332,7 @@ parts.push(`${formattedName}${suffix} ${attr.value}`);
 
 
 
-// Функция за определяне на типа аксесоар
+// Функция за определяне на типа 
 function getCategoryType(product) {
   if (!product.categories || product.categories.length === 0) {
     return null;
@@ -341,7 +341,7 @@ function getCategoryType(product) {
   for (const category of product.categories) {
     const categoryId = category.id?.toString();
     
-    for (const [type, ids] of Object.entries(FILSTAR_ACCESSORIES_CATEGORY_IDS)) {
+    for (const [type, ids] of Object.entries(FILSTAR_BAIT_CATEGORY_IDS)) {
       if (ids.includes(categoryId)) {
         return type;
       }
@@ -355,8 +355,12 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-   boxes_and_bags: 'Кутии и калъфи',
-   
+    groundbait: 'Захранка',
+    boilies: 'Бойли и пелети',
+    additives: 'Добавки',
+    seeds: 'Семена',
+    pastes: 'Пасти',
+    other: 'Други захранки'
   };
   
   return names[categoryType] || 'Аксесоари';
