@@ -497,7 +497,7 @@ async function findProductBySku(sku) {
 
 // Функция за добавяне на продукт в колекция
 async function addProductToCollection(productId, categoryType) {
-  const collectionId = SHOPIFY_ACCESSORIES_COLLECTIONS[categoryType];
+  const collectionId = COLLECTION_MAPPING[categoryType];
   
   if (!collectionId) {
     console.log(`  ⚠️  No collection mapping for category: ${categoryType}`);
