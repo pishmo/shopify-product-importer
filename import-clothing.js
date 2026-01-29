@@ -1087,20 +1087,7 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 
 // MAIN функция
 
-async function main() {
-
-
- shoes: ['90'],
-  tshirts: ['84'],
-  pants: ['85'],
-  jackets: ['86'],
-  hats: ['88'],
-  gloves: ['89'],
-  sunglasses: ['92'],
-  sets: ['87'],
-  other: ['95']
-
-
+async function main() {	
 	
   console.log('?? Starting Filstar Accessories Import\n');
   console.log('?? Categories to import:');
