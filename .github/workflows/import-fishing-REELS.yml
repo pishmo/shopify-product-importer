@@ -2,11 +2,11 @@ name: Import Fishing REELS
 
 on:
   # schedule:
-   # - cron: '0 4 * * *'  # Всеки ден в 4:00 сутринта
+   # - cron: '0 10 * * *'  # Всеки ден в 10:00 сутринта (2 часа след въдиците)
   workflow_dispatch:
 
 jobs:
-  import fishing REELS:
+  import-fishing-LINES:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
           npm install sharp
           npm install form-data
       
-      - name: Run fishing REELS import
+      - name: Run fishing LINES import
         env:
           SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
           SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
