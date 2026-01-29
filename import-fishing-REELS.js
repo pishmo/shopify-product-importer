@@ -291,31 +291,32 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   }
   
   // Търси "МОДЕЛ" атрибут
-  const modelAttr = filtered.find(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return attrName.includes('модел');
-  });
+ const modelAttr = filtered.find(attr => {
+  if (!attr) return false;
+  const attrName = attr.attribute_name?.toLowerCase() || '';
+  const attrValue = attr.value || '';
+  // Намери всичко подобно на "модел" (малки, големи, средни) и с непразна стойност
+  return attrName.includes('модел') && attrValue.trim() !== '';
+});
 
-  const otherAttrs = filtered.filter(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return !attrName.includes('модел');
-  });
-  
-  const parts = [];
-  if (modelAttr) {
-    parts.push(`${modelAttr.attribute_name} ${modelAttr.value}`);
+const otherAttrs = filtered.filter(attr => {
+  if (!attr) return false;
+  const attrName = attr.attribute_name?.toLowerCase() || '';
+  return !attrName.includes('модел');
+});
+
+const parts = [];
+if (modelAttr) {
+  parts.push(modelAttr.value);  // Само стойността, без "Модел"
+}
+otherAttrs.forEach(attr => {
+  if (attr && attr.attribute_name && attr.value) {
+    const formattedName = attr.attribute_name.charAt(0).toUpperCase() + attr.attribute_name.slice(1).toLowerCase();
+    const suffix = attr.attribute_name.includes(',') ? '. :' : ':';
+    parts.push(`${formattedName}${suffix} ${attr.value}`);
   }
-  otherAttrs.forEach(attr => {
-    if (attr && attr.attribute_name && attr.value) {
-      
-const formattedName = attr.attribute_name.charAt(0).toUpperCase() + attr.attribute_name.slice(1).toLowerCase();
-const suffix = attr.attribute_name.includes(',') ? '. :' : ':';
-parts.push(`${formattedName}${suffix} ${attr.value}`);
-      
-    }
-  });
+});
+
   
   let result = parts.join(' / ');
   result = result.replace(/^\/+|\/+$/g, '').trim();
