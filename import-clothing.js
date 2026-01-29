@@ -1126,7 +1126,7 @@ async function main() {
     jackets: [],
     hats: [],
     gloves: [],
-    sunglasses: []
+    sunglasses: [],
     sets: [],
     other: []
     };
