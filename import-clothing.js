@@ -370,18 +370,21 @@ function getCategoryType(product) {
 }
 
 // Функция за получаване на име на категория
-function getCategoryName(categoryType) {
+// Имена на категориите
+function getCategoryName(category) {
   const names = {
-    pike_and_catfish: 'Аксесоари щука и сом',
-    pole_and_match: 'Аксесоари щека и мач',
-    knives: 'Ножове',
-    chairs_umbrellas_tents: 'Столове и палатки'
-   
+    shoes: 'Обувки',
+    tshirts: 'Тениски',
+    pants: 'Панталони',
+    jackets: 'Якета',
+    hats: 'Шапки',
+    gloves: 'Ръкавици',
+    sunglasses: 'Слънчеви очила',
+    sets: 'Комплекти и костюми',
+    other: 'Друго облекло'
   };
-  
-  return names[categoryType] || 'Аксесоари';
+  return names[category] || category;
 }
-
 
 
 
