@@ -46,7 +46,7 @@ const COLLECTION_MAPPING = {
   other: 'gid://shopify/Collection/739347661182'
 
 
-
+};
 
 
 
