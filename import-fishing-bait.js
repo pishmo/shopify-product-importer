@@ -1115,7 +1115,12 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     
     // Групирай по категория
     const productsByCategory = {
-       boxes_and_bags: []
+  groundbait: [],
+  boilies: [],
+  additives: [],
+  seeds: [],
+  pastes: [],
+  other: []
     };
     
     accessoryProducts.forEach(product => {
