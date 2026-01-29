@@ -14,6 +14,16 @@ const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
 
+
+const COLLECTION_MAPPING = {
+  front_drag: 'gid://shopify/Collection/739175301502',
+  rear_drag: 'gid://shopify/Collection/739175334270',
+  baitrunner: 'gid://shopify/Collection/739175399806',
+  multipliers: 'gid://shopify/Collection/739175432574',
+  other: 'gid://shopify/Collection/739175530878'
+};
+
+
 const FILSTAR_REEL_CATEGORY_IDS = {
   front_drag: ['19'],
   rear_drag: ['24'],
