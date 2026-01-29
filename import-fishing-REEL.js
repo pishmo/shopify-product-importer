@@ -353,7 +353,11 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-   boxes_and_bags: 'Кутии и калъфи',
+    front_drag: 'Front Drag Reels',
+    rear_drag: 'Rear Drag Reels',
+    baitrunner: 'Baitrunner Reels',
+    multipliers: 'Multiplier Reels',
+    other: 'Other Reels'
    
   };
   
