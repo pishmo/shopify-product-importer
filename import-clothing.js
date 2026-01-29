@@ -32,6 +32,24 @@ const FILSTAR_CLOTHING_CATEGORY_IDS = {
 
 const CLOTHING_PARENT_ID = '10';
 
+
+/ Колекции за облекло (TODO: добави GID-овете на колекциите)
+const COLLECTION_MAPPING = {
+  shoes: 'gid://shopify/Collection/739347595646',
+  tshirts: 'gid://shopify/Collection/739347038590',
+  pants: 'gid://shopify/Collection/739347136894',
+  jackets: 'gid://shopify/Collection/739347235198',
+  hats: 'gid://shopify/Collection/739347399038',
+  gloves: 'gid://shopify/Collection/739347530110',
+  sunglasses: 'gid://shopify/Collection/739347628414',
+  sets: 'gid://shopify/Collection/739347267966',
+  other: 'gid://shopify/Collection/739347661182'
+
+
+
+
+
+
 // Статистика
 const stats = {
   shoes: { created: 0, updated: 0, images: 0 },
