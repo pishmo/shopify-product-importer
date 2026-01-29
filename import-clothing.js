@@ -1088,18 +1088,30 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 // MAIN функция
 
 async function main() {
-  
+
+
+ shoes: ['90'],
+  tshirts: ['84'],
+  pants: ['85'],
+  jackets: ['86'],
+  hats: ['88'],
+  gloves: ['89'],
+  sunglasses: ['92'],
+  sets: ['87'],
+  other: ['95']
+
+
+	
   console.log('?? Starting Filstar Accessories Import\n');
   console.log('?? Categories to import:');
-  console.log('  - Аксесоари щука и сом - Категория Id - (45)');
-  console.log('  - Аксесоари щека и мач - Категория Id - (50)');
-  console.log('  - Ножове - Категория Id - (59)'); 
-  console.log('  - Столове и палатки - Категория Id - (63)\n');
-  
+  console.log('  - Обувки - Категория Id - (90)');
+  console.log('  - Панталовни - Категория Id - (86)');
+  console.log('  - Якета Id - (59)'); 
+  console.log('  - Ръкавици Id - (88)\n');
+  console.log('  - Очила Id - (88)\n');
+  console.log('  - Комплекти Id - (88)\n');
+  console.log('  - Други Id - (88)\n');
 
-  
- 
-  
   try {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
