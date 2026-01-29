@@ -13,7 +13,7 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
-// Filstar категории за облекло
+
 	
 	// Filstar категории за облекло
 const FILSTAR_CLOTHING_CATEGORY_IDS = {
