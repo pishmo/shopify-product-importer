@@ -63,23 +63,6 @@ const stats = {
   other: { created: 0, updated: 0, images: 0 }
 };
 
-// Имена на категориите
-function getCategoryName(category) {
-  const names = {
-    shoes: 'Обувки',
-    tshirts: 'Тениски',
-    pants: 'Панталони',
-    jackets: 'Якета',
-    hats: 'Шапки',
-    gloves: 'Ръкавици',
-    sunglasses: 'Слънчеви очила',
-    sets: 'Комплекти и костюми',
-    other: 'Друго облекло'
-  };
-  return names[category] || category;
-}
-
-
 
 
 // 2 част
