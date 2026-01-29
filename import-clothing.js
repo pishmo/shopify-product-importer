@@ -1107,10 +1107,11 @@ async function main() {
   console.log('  - Обувки - Категория Id - (90)');
   console.log('  - Панталовни - Категория Id - (86)');
   console.log('  - Якета Id - (59)'); 
-  console.log('  - Ръкавици Id - (88)');
-  console.log('  - Очила Id - (88)');
-  console.log('  - Комплекти Id - (88)');
-  console.log('  - Други Id - (88)\n');
+  console.log('  - Шапки Id - (88)'); 
+  console.log('  - Ръкавици Id - (89)');
+  console.log('  - Очила Id - (92)');
+  console.log('  - Комплекти Id - (87)');
+  console.log('  - Други Id - (95)\n');
 
   try {
     // Fetch всички продукти от Filstar
