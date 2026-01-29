@@ -305,7 +305,11 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   }
   otherAttrs.forEach(attr => {
     if (attr && attr.attribute_name && attr.value) {
-      parts.push(`${attr.attribute_name} ${attr.value}`);
+      
+const formattedName = attr.attribute_name.charAt(0).toUpperCase() + attr.attribute_name.slice(1).toLowerCase();
+const suffix = attr.attribute_name.includes(',') ? '. :' : ':';
+parts.push(`${formattedName}${suffix} ${attr.value}`);
+      
     }
   });
   
