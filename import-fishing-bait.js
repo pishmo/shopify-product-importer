@@ -1070,7 +1070,7 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 // MAIN функция
 
 async function main() {
-  console.log('🚀 Starting Filstar Accessories Import\n');
+  console.log('🚀 Starting Filstar Bait API Import\n');
   console.log('📋 Categories to import:');
   
 console.log('  - Захранка - Категория Id - (66)');
