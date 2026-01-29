@@ -1106,7 +1106,11 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     
     // Групирай по категория
     const productsByCategory = {
-       boxes_and_bags: []
+  front_drag: [],
+  rear_drag: [],
+  baitrunner: [],
+  multipliers: [],
+  other: []
     };
     
     accessoryProducts.forEach(product => {
