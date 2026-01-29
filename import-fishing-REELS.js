@@ -586,6 +586,8 @@ async function reorderProductImages(productGid, images) {
 
 // Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
+const collectionId = COLLECTION_MAPPING[categoryType];
+  
   console.log(`\n🆕 Creating: ${filstarProduct.name}`);
   
   try {
