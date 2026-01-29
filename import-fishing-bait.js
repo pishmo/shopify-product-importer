@@ -1068,7 +1068,15 @@ if (filstarVariantsCount > 1 && shopifyVariantsCount === 1) {
 async function main() {
   console.log('🚀 Starting Filstar Accessories Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Кутии и калъфи - Категория Id - (61)');
+  
+console.log('  - Захранка - Категория Id - (66)');
+console.log('  - Бойли и пелети - Категория Id - (69)');
+console.log('  - Добавки - Категория Id - (71)');
+console.log('  - Семена - Категория Id - (73)');
+console.log('  - Пасти - Категория Id - (75)');
+console.log('  - Други захранки - Категория Id - (77)');
+
+
   
   try {
     // Fetch всички продукти от Filstar
@@ -1079,6 +1087,20 @@ async function main() {
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
+
+
+
+
+ // филтър ску
+const testSkus = ['963252', '962013','960594','952471','954949', '960415'];
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => testSkus.includes(v.sku))
+);
+console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
+// край на филтъра
+
+
+
 
 
     
