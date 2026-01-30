@@ -888,6 +888,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     
     // REORDER IMAGES
 
+
 // REORDER IMAGES
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
@@ -944,6 +945,16 @@ if (allImages.length > 0 && ogImageUrl) {
     
     console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
     await reorderProductImages(productGid, finalOrder);
+  }
+}
+
+    
+    return productGid;
+    
+  } catch (error) {
+    console.error(`  ❌ Error creating product: ${error.message}`);
+    stats[categoryType].errors++;
+    return null;
   }
 }
 
