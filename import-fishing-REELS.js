@@ -778,33 +778,49 @@ if (imageMapping.size > 0) {
   const variantsToUpdate = [];
   
   // ← ЗАМЕНИ ОТ ТУК
-  for (const filstarVariant of filstarProduct.variants) {
-    let variantImageUrl = null;
+for (const filstarVariant of filstarProduct.variants) {
+  console.log(`🐛 Processing variant SKU: ${filstarVariant.sku}`);
+  
+  let variantImageUrl = null;
+  
+  if (filstarVariant.image) {
+    variantImageUrl = filstarVariant.image.startsWith('http') 
+      ? filstarVariant.image 
+      : `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
+    console.log(`  Has own image: ${variantImageUrl}`);
+  } else if (ogImageUrl) {
+    variantImageUrl = ogImageUrl;
+    console.log(`  Using OG image: ${variantImageUrl}`);
+  } else {
+    console.log(`  No image available`);
+  }
+  
+  if (variantImageUrl) {
+    const cleanFilename = getImageFilename(variantImageUrl);
+    console.log(`  Clean filename: ${cleanFilename}`);
     
-    if (filstarVariant.image) {
-      variantImageUrl = filstarVariant.image.startsWith('http') 
-        ? filstarVariant.image 
-        : `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
-    } else if (ogImageUrl) {
-      variantImageUrl = ogImageUrl;
-    }
+    const shopifyImageId = imageMapping.get(cleanFilename);
+    console.log(`  Shopify image ID: ${shopifyImageId}`);
     
-    if (variantImageUrl) {
-      const cleanFilename = getImageFilename(variantImageUrl);
-      const shopifyImageId = imageMapping.get(cleanFilename);
+    if (shopifyImageId) {
+      const shopifyVariant = shopifyVariants.find(v => v.node.sku === filstarVariant.sku);
+      console.log(`  Shopify variant found: ${shopifyVariant ? 'YES' : 'NO'}`);
       
-      if (shopifyImageId) {
-        const shopifyVariant = shopifyVariants.find(v => v.node.sku === filstarVariant.sku);
-        
-        if (shopifyVariant) {
-          variantsToUpdate.push({
-            id: shopifyVariant.node.id,
-            mediaId: shopifyImageId
-          });
-        }
+      if (shopifyVariant) {
+        variantsToUpdate.push({
+          id: shopifyVariant.node.id,
+          mediaId: shopifyImageId
+        });
+        console.log(`  ✓ Added to update queue`);
       }
     }
   }
+}
+
+console.log(`🐛 Total variants to update: ${variantsToUpdate.length}`);
+console.log(`🐛 Variants array: ${JSON.stringify(variantsToUpdate, null, 2)}`);
+
+  
   // ← ДО ТУК
   
   if (variantsToUpdate.length > 0) {
