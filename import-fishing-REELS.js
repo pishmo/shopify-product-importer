@@ -1293,21 +1293,11 @@ async function main() {
     
     // Обработи всяка категория
 
-let processedCount = 0;
-const MAX_PRODUCTS = 20;
+
 
     
     for (const [categoryType, products] of Object.entries(productsByCategory)) {
       if (products.length === 0) continue;
-
-
-// Филтъра за 20 продукта
-       if (processedCount >= MAX_PRODUCTS) {
-    console.log(`\n🛑 Reached limit of ${MAX_PRODUCTS} products - stopping\n`);
-    break;
-  }
-
-
       
       console.log(`\n${'='.repeat(60)}`);
       console.log(`📂 Processing category: ${getCategoryName(categoryType)}`);
@@ -1348,9 +1338,6 @@ else {
         
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
-  
-    
-    processedCount++;
     
     }
 
