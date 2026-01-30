@@ -789,6 +789,16 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             );
             
             if (shopifyVariant) {
+
+
+    console.log(`🐛 DEBUG for SKU ${filstarVariant.sku}:`);
+    console.log(`   Filstar image URL: ${fullImageUrl}`);
+    console.log(`   Clean filename: ${cleanFilename}`);
+    console.log(`   Shopify image ID: ${shopifyImageId}`);
+    console.log(`   Variant ID: ${shopifyVariant.node.id}`);
+
+
+              
              const updateVariantMutation = `
   mutation {
     productVariantUpdate(input: {
