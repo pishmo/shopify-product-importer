@@ -1355,10 +1355,6 @@ else {
       }
     
     }
-
-
-console.log(`\n✅ Processed ${processedCount} products total`);
-
     
     // Финална статистика
     console.log(`\n${'='.repeat(60)}`);
