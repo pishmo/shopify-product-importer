@@ -586,20 +586,31 @@ async function reorderProductImages(productGid, images) {
 
 
 // Функция за създаване на нов продукт
+
 async function createShopifyProduct(filstarProduct, categoryType) {
+const collectionId = COLLECTION_MAPPING[categoryType];
+  
+  console.log(`\n🆕 Creating: ${filstarProduct.name}`);
+  
   try {
-    console.log(`\n📦 Creating: ${filstarProduct.name}`);
-    console.log(`  SKUs: ${filstarProduct.variants.map(v => v.sku).join(', ')}`);
-    
-    // Извлечи vendor, productType и categoryNames
     const vendor = filstarProduct.manufacturer || 'Unknown';
+    console.log(` 🏷️ Manufacturer: ${filstarProduct.manufacturer} → Vendor: ${vendor}`);
+    
     const productType = getCategoryName(categoryType);
+    
+    // Извлечи имената на категориите и брой варианти
     const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
+    const totalVariants = filstarProduct.variants.length;
     
-    const needsOptions = filstarProduct.variants.length > 1 || 
-      (filstarProduct.variants.length === 1 && 
-       formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames));
+    // Проверка дали трябва да има опции
+    const firstVariantName = formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames);
+    const needsOptions = totalVariants > 1 || firstVariantName !== '';
+
+
+
+
     
+    // Подготви варианти с поправено форматиране
     const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant.attributes, variant.sku, categoryNames);
       const finalName = variantName || variant.sku;
@@ -612,13 +623,15 @@ async function createShopifyProduct(filstarProduct, categoryType) {
         inventory_management: 'shopify'
       };
       
+      // Добави option1 САМО ако трябва да има опции
       if (needsOptions) {
         variantData.option1 = finalName;
       }
       
       return variantData;
     });
-    
+
+    // Създай продукта
     const productData = {
       product: {
         title: filstarProduct.name,
@@ -631,10 +644,11 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
     };
     
+    // Добави options САМО ако трябва
     if (needsOptions) {
       productData.product.options = [{ name: 'Вариант' }];
     }
-    
+
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json`,
       {
@@ -646,30 +660,30 @@ async function createShopifyProduct(filstarProduct, categoryType) {
         body: JSON.stringify(productData)
       }
     );
-    
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.log(`  ❌ Failed to create: ${response.status} - ${errorText}`);
-      stats[categoryType].errors++;
-      return null;
+      throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
     }
-    
+
     const result = await response.json();
-    const productGid = `gid://shopify/Product/${result.product.id}`;
-    console.log(`  ✅ Created product: ${productGid}`);
-    stats[categoryType].created++;
+    const productId = result.product.id;
+    const productGid = `gid://shopify/Product/${productId}`;
     
-    // IMAGES
-    const imageMapping = new Map();
-    
+    console.log(`  ✅ Created product ID: ${productId}`);
+    console.log(`  📦 Created ${variants.length} variants`);
+
+    // Добави в колекция
+    await addProductToCollection(productGid, categoryType);
+
+    // Качи и нормализирай изображения
+    const uploadedImages = [];
     if (filstarProduct.images && filstarProduct.images.length > 0) {
-      console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
+      console.log(`  🖼️  Processing ${filstarProduct.images.length} images...`);
       
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
-        const fullImageUrl = `${FILSTAR_BASE_URL}/${imageUrl}`;
-        
-        const normalizedBuffer = await normalizeImage(fullImageUrl, filstarProduct.variants[0].sku);
+        const normalizedBuffer = await normalizeImage(imageUrl, filstarProduct.variants[0].sku);
         
         if (normalizedBuffer) {
           const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
@@ -678,16 +692,18 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             const attachMutation = `
               mutation {
                 productCreateMedia(
-                  productId: \"${productGid}\"
+                  productId: \"${productGid}\",
                   media: [{
-                    originalSource: \"${resourceUrl}\"
+                    originalSource: \"${resourceUrl}\",
                     mediaContentType: IMAGE
                   }]
                 ) {
                   media {
                     ... on MediaImage {
                       id
-                      image { url }
+                      image {
+                        url
+                      }
                     }
                   }
                   mediaUserErrors {
@@ -713,32 +729,34 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             const attachData = await attachResponse.json();
             
             if (attachData.data?.productCreateMedia?.media?.[0]) {
-              const shopifyImageId = attachData.data.productCreateMedia.media[0].id;
-              imageMapping.set(fullImageUrl, shopifyImageId);
+              uploadedImages.push(attachData.data.productCreateMedia.media[0]);
               console.log(`    ✓ Uploaded: ${filename}`);
               stats[categoryType].images++;
-            } else if (attachData.data?.productCreateMedia?.mediaUserErrors?.length > 0) {
-              console.log(`    ❌ Upload error: ${attachData.data.productCreateMedia.mediaUserErrors[0].message}`);
             }
           }
         }
         
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+      
+      console.log(`  ✅ Uploaded ${uploadedImages.length} images`);
     }
     
-    // ASSIGN IMAGES TO VARIANTS
-    if (imageMapping.size > 0) {
-      console.log(`  🔗 Assigning images to variants...`);
+    // REORDERING с retry логика
+    console.log(`  🔄 Reordering images...`);
+    
+    let allImages = [];
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const productQuery = `
+      const updatedProductQuery = `
         {
           product(id: \"${productGid}\") {
-            variants(first: 50) {
+            images(first: 50) {
               edges {
                 node {
                   id
-                  sku
+                  src
                 }
               }
             }
@@ -746,7 +764,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
         }
       `;
       
-      const productResponse = await fetch(
+      const updatedResponse = await fetch(
         `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
         {
           method: 'POST',
@@ -754,71 +772,80 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             'X-Shopify-Access-Token': ACCESS_TOKEN,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ query: productQuery })
+          body: JSON.stringify({ query: updatedProductQuery })
         }
       );
       
-      const productData = await productResponse.json();
-      const shopifyVariants = productData.data?.product?.variants?.edges || [];
+      const updatedData = await updatedResponse.json();
+      allImages = updatedData.data?.product?.images?.edges?.map(edge => ({
+        id: edge.node.id,
+        src: edge.node.src
+      })) || [];
       
-      for (const filstarVariant of filstarProduct.variants) {
-        if (filstarVariant.image) {
-          const fullImageUrl = `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
-          const shopifyImageId = imageMapping.get(fullImageUrl);
-          
-          if (shopifyImageId) {
-            const shopifyVariant = shopifyVariants.find(v => 
-              v.node.sku === filstarVariant.sku
-            );
-            
-            if (shopifyVariant) {
-              const updateVariantMutation = `
-                mutation {
-                  productVariantUpdate(input: {
-                    id: \"${shopifyVariant.node.id}\"
-                    imageId: \"${shopifyImageId}\"
-                  }) {
-                    productVariant { id }
-                    userErrors { field message }
-                  }
-                }
-              `;
-              
-              const variantResponse = await fetch(
-                `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'X-Shopify-Access-Token': ACCESS_TOKEN,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ query: updateVariantMutation })
-                }
-              );
-              
-              const variantData = await variantResponse.json();
-              
-              if (variantData.data?.productVariantUpdate?.userErrors?.length > 0) {
-                console.log(`    ❌ Error assigning image to ${filstarVariant.sku}: ${variantData.data.productVariantUpdate.userErrors[0].message}`);
-              } else {
-                console.log(`    ✓ Assigned image to variant ${filstarVariant.sku}`);
-              }
-              
-              await new Promise(resolve => setTimeout(resolve, 300));
-            }
-          }
-        }
+      if (allImages.length > 0) {
+        console.log(`    ✓ Found ${allImages.length} images on attempt ${attempt}`);
+        break;
+      }
+      
+      if (attempt < 3) {
+        console.log(`    ⏳ Attempt ${attempt}/3 - no images yet, retrying...`);
       }
     }
     
-    return productGid;
+    if (allImages.length > 0) {
+      const ogImage = await scrapeOgImage(filstarProduct.slug);
+      
+      if (ogImage) {
+        console.log(`    🌐 Fetching main image from: ${FILSTAR_BASE_URL}/${filstarProduct.slug}`);
+        console.log(`    ✓ Found OG image: ${ogImage.split('/').pop()}`);
+        
+        const ogFilename = ogImage.split('/').pop();
+        const ogBase = getImageFilename(ogFilename).split('.')[0];
+        const ogIndex = allImages.findIndex(img => {
+          const shopifyFilename = img.src.split('/').pop();
+          const shopifyBase = getImageFilename(shopifyFilename).split('.')[0];
+          return shopifyBase === ogBase;
+        });
+        
+        if (ogIndex > 0) {
+          const [ogImg] = allImages.splice(ogIndex, 1);
+          allImages.unshift(ogImg);
+          console.log(`    📋 Final order (${allImages.length} images):`);
+          allImages.forEach((img, i) => {
+            console.log(`      ${i + 1}. ${getImageFilename(img.src.split('/').pop())}`);
+          });
+          await reorderProductImages(productGid, allImages);
+        } else if (ogIndex === 0) {
+          console.log(`    ✓ OG image already first`);
+        } else {
+          console.log(`    ⚠️  OG image not found in uploaded images`);
+        }
+      } else {
+        console.log(`    ⚠️  No OG image found, sorting by SKU...`);
+        
+        allImages.sort((a, b) => {
+          const skuA = extractSkuFromImageFilename(a.src.split('/').pop());
+          const skuB = extractSkuFromImageFilename(b.src.split('/').pop());
+          return skuA.localeCompare(skuB);
+        });
+        
+        console.log(`    📋 Final order (${allImages.length} images):`);
+        allImages.forEach((img, i) => {
+          console.log(`      ${i + 1}. ${getImageFilename(img.src.split('/').pop())}`);
+        });
+        
+        await reorderProductImages(productGid, allImages);
+      }
+    }
     
+    stats[categoryType].created++;
+    return true;
   } catch (error) {
     console.error(`  ❌ Error creating product: ${error.message}`);
-    stats[categoryType].errors++;
-    return null;
+    return false;
   }
 }
+
 
 
 
