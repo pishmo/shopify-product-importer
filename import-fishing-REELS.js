@@ -261,76 +261,59 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
-function formatVariantName(variant, categoryNames = null) {
-  
-  if (categoryNames && Array.isArray(categoryNames)) {
-    cachedCategoryNames = categoryNames;
-  }
-  
-  // Първо провери дали има директно поле model
-  if (variant.model && variant.model.trim() !== '') {
-    console.log('🐛 Found variant.model:', variant.model); 
-    return variant.model.trim();
-  }
-
-console.log('🐛 No variant.model, checking attributes...');
-  
-  // После провери в attributes
-  const attributes = variant.attributes;
-  
-  if (!attributes || attributes.length === 0) {
-    return '';
-  }
-  
-  const attrArray = Array.isArray(attributes) ? attributes : Object.values(attributes);
-  
-  const filtered = attrArray.filter(attr => {
-    if (!attr) return false;
-    const attrName = (attr.attribute_name || '').toLowerCase();
-    const attrValue = (attr.value || '').toLowerCase();
-    
-    return !cachedCategoryNames.some(cat => {
-      const catLower = cat.toLowerCase();
-      return attrName.includes(catLower) || attrValue.includes(catLower) || 
-             catLower.includes(attrName) || catLower.includes(attrValue);
-    });
-  });
-
-  if (filtered.length === 0) {
-    return '';
-  }
-  
-  const modelAttr = filtered.find(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    const attrValue = attr.value || '';
-    return attrName.includes('model') && attrValue.trim() !== '';
-  });
-
-  const otherAttrs = filtered.filter(attr => {
-    if (!attr) return false;
-    const attrName = attr.attribute_name?.toLowerCase() || '';
-    return !attrName.includes('model');
-  });
-
+function formatVariantTitle(variant, productName) {
   const parts = [];
-  if (modelAttr) {
-    parts.push(modelAttr.value);
-  }
-  otherAttrs.forEach(attr => {
-    if (attr && attr.attribute_name && attr.value) {
-      const formattedName = attr.attribute_name.charAt(0).toUpperCase() + attr.attribute_name.slice(1).toLowerCase();
-      const suffix = attr.attribute_name.includes(',') ? '. :' : ':';
-      parts.push(`${formattedName}${suffix} ${attr.value}`);
+  
+  // 1. MODEL (от variant.model или атрибут "АРТИКУЛ")
+  let model = variant.model;
+  
+  if (!model) {
+    console.log(`  🐛 No variant.model, checking attributes...`);
+    const artikulAttr = variant.attributes?.find(attr => 
+      attr.attribute_name.toUpperCase() === 'АРТИКУЛ'
+    );
+    if (artikulAttr) {
+      model = artikulAttr.value;
     }
-  });
+  }
   
-  let result = parts.join(' / ');
-  result = result.replace(/^\/+|\/+$/g, '').trim();
+  if (model && model !== productName) {
+    parts.push(model);
+  }
   
-  return result || '';
+  // 2. АРТИКУЛ (само стойност, без "Артикул:")
+  const artikulAttr = variant.attributes?.find(attr => 
+    attr.attribute_name.toUpperCase() === 'АРТИКУЛ'
+  );
+  if (artikulAttr && artikulAttr.value && artikulAttr.value !== model) {
+    parts.push(artikulAttr.value);
+  }
+  
+  // 3. РАЗМЕР
+  const sizeAttr = variant.attributes?.find(attr => 
+    attr.attribute_name.toUpperCase() === 'РАЗМЕР'
+  );
+  if (sizeAttr && sizeAttr.value) {
+    parts.push(`Размер: ${sizeAttr.value}`);
+  }
+  
+  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер)
+  if (variant.attributes && variant.attributes.length > 0) {
+    const otherAttrs = variant.attributes
+      .filter(attr => {
+        const name = attr.attribute_name.toUpperCase();
+        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value;
+      })
+      .map(attr => `${attr.attribute_name}: ${attr.value}`);
+    
+    parts.push(...otherAttrs);
+  }
+  
+  const result = parts.join(' / ');
+  console.log(`  📦 Variant VALUE : ${result}`);
+  
+  return result || 'Default';
 }
-
 
 
 
