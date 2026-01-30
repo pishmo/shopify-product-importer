@@ -1,4 +1,4 @@
-// test-accessories-categories.js - Тест за извличане на category IDs за аксесоари
+// test-accessories-categories.js - Тест за извличане на ВСЕ полета от API
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -8,9 +8,7 @@ const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 const TEST_SKUS = [
-  '960471'
- 
-  
+  '947828'
 ];
 
 async function fetchAllProducts() {
@@ -31,19 +29,16 @@ async function fetchAllProducts() {
       }
     );
     
-const data = await response.json();
-if (data && data.length > 0) {
-  allProducts = allProducts.concat(data);
-  console.log(` ✓ Page ${page}: ${data.length} products`);
-  page++;
-  hasMore = data.length > 0; // продължава докато има продукти
-  if (page > 10) hasMore = false; // safety limit
-} else {
-  hasMore = false;
-}
-
-
-
+    const data = await response.json();
+    if (data && data.length > 0) {
+      allProducts = allProducts.concat(data);
+      console.log(`  ✓ Page ${page}: ${data.length} products`);
+      page++;
+      hasMore = data.length > 0;
+      if (page > 10) hasMore = false;
+    } else {
+      hasMore = false;
+    }
     
     await new Promise(resolve => setTimeout(resolve, 500));
   }
@@ -57,50 +52,44 @@ async function testAccessoriesCategories() {
   
   console.log('🧪 Searching for test SKUs...\n');
   
-  const results = [];
-  
   for (const sku of TEST_SKUS) {
     console.log(`📍 Looking for SKU: ${sku}`);
     
-const product = allProducts.find(p => 
-  p.variants?.some(v => v.sku === sku)
-);
-
+    const product = allProducts.find(p => 
+      p.variants?.some(v => v.sku === sku)
+    );
     
     if (product) {
-      console.log(`   ✅ Found: ${product.name}`);
-      console.log(`   🏷️  Categories:`, product.categories);
-      console.log(' 🔧 Variants:');
-  product.variants.forEach((v, i) => {
-  console.log(`   [${i+1}] SKU: ${v.sku}`);
-  console.log(`       Attributes:`, v.attributes);
-});
-
+      console.log(`\n✅ PRODUCT FOUND: ${product.name}\n`);
+      
+      // Покажи ВСИЧКИ полета на продукта
+      console.log('📦 FULL PRODUCT OBJECT:');
+      console.log(JSON.stringify(product, null, 2));
+      console.log('\n' + '='.repeat(80) + '\n');
+      
+      // Специално внимание на снимките
+      console.log('🖼️  IMAGES:');
+      if (product.images) {
+        console.log(`   Total images: ${product.images.length}`);
+        product.images.forEach((img, i) => {
+          console.log(`   [${i}] ${JSON.stringify(img, null, 2)}`);
+        });
+      } else {
+        console.log('   No images field');
+      }
       console.log('');
       
-      results.push({
-        sku: sku,
-        name: product.name,
-        categories: product.categories,
-
-variants: product.variants.map(v => ({
-    sku: v.sku,
-    attributes: v.attributes
-
-
-    }))
-});
+      // Специално внимание на вариантите
+      console.log('🔧 VARIANTS:');
+      product.variants.forEach((v, i) => {
+        console.log(`\n   [${i}] VARIANT ${i}:`);
+        console.log(JSON.stringify(v, null, 2));
+      });
+      
     } else {
       console.log(`   ❌ Not found\n`);
     }
   }
-  
-  console.log('\n📊 SUMMARY:\n');
-  results.forEach(r => {
-    console.log(`SKU ${r.sku}: ${r.name}`);
-    console.log(`   Categories:`, r.categories);
-    console.log('');
-  });
 }
 
 testAccessoriesCategories();
