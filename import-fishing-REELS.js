@@ -610,11 +610,12 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const needsOptions = filstarProduct.variants.length > 1 || 
       (filstarProduct.variants.length === 1 && formatVariantName(filstarProduct.variants[0], categoryNames));
     
-    const variants = filstarProduct.variants.map(variant => {
+      const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant, categoryNames);
       const finalName = variantName || variant.sku;
-
- console.log(`\n📦 Variant VALUE : ${filstarProduct.name}`);
+       
+console.log(`\n📦 Variant VALUE : ${variantName}`);
+ 
       
       const variantData = {
         price: variant.price?.toString() || '0',
