@@ -310,7 +310,7 @@ function formatVariantName(variant, productName) {
     attr.attribute_name.toUpperCase() === 'РАЗМЕР'
   );
   if (sizeAttr && sizeAttr.value) {
-    parts.push(`${formatAttributeName(sizeAttr.attribute_name)}: ${sizeAttr.value}`);
+    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`);
   }
   
   // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер)
