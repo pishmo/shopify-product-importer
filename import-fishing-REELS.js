@@ -296,13 +296,13 @@ function formatVariantName(attributes, sku, categoryNames = null) {
   const attrName = attr.attribute_name?.toLowerCase() || '';
   const attrValue = attr.value || '';
   // Намери всичко подобно на "модел" (малки, големи, средни) и с непразна стойност
-  return attrName.includes('модел') && attrValue.trim() !== '';
+  return attrName.includes('model') && attrValue.trim() !== '';
 });
 
 const otherAttrs = filtered.filter(attr => {
   if (!attr) return false;
   const attrName = attr.attribute_name?.toLowerCase() || '';
-  return !attrName.includes('модел');
+  return !attrName.includes('model');
 });
 
 const parts = [];
