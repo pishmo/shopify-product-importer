@@ -789,17 +789,23 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             );
             
             if (shopifyVariant) {
-              const updateVariantMutation = `
-                mutation {
-                  productVariantUpdate(input: {
-                    id: \"${shopifyVariant.node.id}\"
-                    imageId: \"${shopifyImageId}\"
-                  }) {
-                    productVariant { id }
-                    userErrors { field message }
-                  }
-                }
-              `;
+             const updateVariantMutation = `
+  mutation {
+    productVariantUpdate(input: {
+      id: \"${shopifyVariant.node.id}\"
+      mediaId: \"${shopifyImageId}\"
+    }) {
+      productVariant {
+        id
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
               
               const variantResponse = await fetch(
                 `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
