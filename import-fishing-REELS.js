@@ -591,10 +591,10 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     console.log(`\n📦 Creating: ${filstarProduct.name}`);
     console.log(`  SKUs: ${filstarProduct.variants.map(v => v.sku).join(', ')}`);
     
-    // Вземи vendor и productType от категорията
-    const vendor = CATEGORY_MAPPINGS[categoryType]?.vendor || 'Filstar';
-    const productType = CATEGORY_MAPPINGS[categoryType]?.productType || 'Риболовни макари';
-    const categoryNames = CATEGORY_MAPPINGS[categoryType]?.categoryNames || [];
+    // Извлечи vendor, productType и categoryNames
+    const vendor = filstarProduct.manufacturer || 'Unknown';
+    const productType = getCategoryName(categoryType);
+    const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
     
     const needsOptions = filstarProduct.variants.length > 1 || 
       (filstarProduct.variants.length === 1 && 
@@ -731,7 +731,6 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     if (imageMapping.size > 0) {
       console.log(`  🔗 Assigning images to variants...`);
       
-      // Вземи актуалните варианти от Shopify
       const productQuery = `
         {
           product(id: \"${productGid}\") {
