@@ -606,7 +606,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
        formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames));
     
     const variants = filstarProduct.variants.map(variant => {
-      const variantName = formatVariantName(variant.attributes, variant.sku, categoryNames);
+      const variantName = formatVariantName(variant, categoryNames);
       const finalName = variantName || variant.sku;
       
       const variantData = {
