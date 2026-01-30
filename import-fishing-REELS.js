@@ -846,22 +846,54 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const updatedData = await updatedResponse.json();
     const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({ id: edge.node.id, src: edge.node.src })) || [];
 
-    if (allImages.length > 0 && ogImageUrl) {
-      console.log(` 🔄 Reordering...`);
+// REORDER IMAGES
+if (allImages.length > 0 && ogImageUrl) {
+  console.log(`  🔄 Reordering images...`);
+  
+  const ogFilename = getImageFilename(ogImageUrl);
+  
+  // Намери OG image
+  const ogImageIndex = allImages.findIndex(img => {
+    const imgFilename = getImageFilename(img.node.src);
+    return imgFilename === ogFilename;
+  });
+  
+  if (ogImageIndex !== -1) {
+    const ogImage = allImages[ogImageIndex];
+    
+    // Раздели на assigned и unassigned (без OG)
+    const unassignedImages = [];
+    const assignedImages = [];
+    
+    allImages.forEach((img, idx) => {
+      if (idx === ogImageIndex) return; // Skip OG image
       
-      const ogFilename = getImageFilename(ogImageUrl);
-      const ogIndex = allImages.findIndex(img => {
-        const imgFilename = getImageFilename(img.src);
-        return imgFilename === ogFilename;
-      });
+      // Провери дали снимката е assigned към някой вариант
+      const hasVariant = variantImageAssignments.some(v => 
+        v.imageIds && v.imageIds.includes(img.node.id)
+      );
       
-      if (ogIndex > 0) {
-        const [ogImg] = allImages.splice(ogIndex, 1);
-        allImages.unshift(ogImg);
-        await reorderProductImages(productGid, allImages);
-        console.log(` ✅ Reordered - OG image first`);
+      if (hasVariant) {
+        assignedImages.push(img);
+      } else {
+        unassignedImages.push(img);
       }
-    }
+    });
+    
+    // Финален ред: OG → unassigned → assigned
+    const finalOrder = [
+      ogImage,
+      ...unassignedImages,
+      ...assignedImages
+    ];
+    
+    console.log(`    📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant images`);
+    await reorderProductImages(productGid, finalOrder);
+  } else {
+    console.log(`    ⚠️  OG image not found in product images`);
+  }
+}
+
     
     return productGid;
     
