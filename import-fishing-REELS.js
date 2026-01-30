@@ -881,25 +881,35 @@ console.log('🐛 allImages:', allImages.length);
 
 console.log('🐛 allImages:', allImages);
 
-    
+// REORDER IMAGES
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
   
   const ogFilename = getImageFilename(ogImageUrl);
+  console.log(`  🐛 Looking for OG: ${ogFilename}`);
   
   const ogImageIndex = allImages.findIndex(img => {
-    const imgFilename = getImageFilename(img.src);
+    const imgFilename = getImageFilename(img.node.src);
+    console.log(`    Comparing: ${imgFilename}`);
     return imgFilename === ogFilename;
   });
+  
+  console.log(`  🐛 OG found at index: ${ogImageIndex}`);
   
   if (ogImageIndex > 0) {
     const ogImage = allImages[ogImageIndex];
     allImages.splice(ogImageIndex, 1);
     allImages.unshift(ogImage);
     
+    console.log(`  🐛 New order: ${allImages.map(i => getImageFilename(i.node.src)).join(', ')}`);
     await reorderProductImages(productGid, allImages);
+  } else if (ogImageIndex === 0) {
+    console.log(`    ✓ OG already first`);
+  } else {
+    console.log(`    ⚠️  OG not found`);
   }
 }
+
 
     
     return productGid;
