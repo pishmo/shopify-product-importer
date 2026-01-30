@@ -554,10 +554,15 @@ async function reorderProductImages(productGid, images) {
   try {
     const productId = productGid.replace('gid://shopify/Product/', '');
     
-    const reorderedImages = images.map((img, index) => ({
-      id: img.id.replace('gid://shopify/ProductImage/', ''),
-      position: index + 1
-    }));
+    const reorderedImages = images.map((img, index) => {
+      const imageId = img.node?.id || img.id;
+      const numericId = imageId.replace('gid://shopify/ProductImage/', '');
+      
+      return {
+        id: numericId,
+        position: index + 1
+      };
+    });
 
     const response = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${productId}.json`,
