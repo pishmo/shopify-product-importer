@@ -928,7 +928,7 @@ if (allImages.length > 0 && ogImageUrl) {
 
 return productGid;
 
-
+  }
 
 
 // Функция за обновяване на съществуващ продукт
