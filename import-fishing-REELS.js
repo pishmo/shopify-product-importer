@@ -321,7 +321,7 @@ function formatVariantName(variant, productName) {
   }
   
   const result = parts.join(' / ');
-  console.log(`  📦 Variant VALUE : ${result}`);
+ 
   
   return result || 'Default';
 }
