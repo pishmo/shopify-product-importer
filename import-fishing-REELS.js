@@ -723,7 +723,10 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             
             if (attachData.data?.productCreateMedia?.media?.[0]) {
               const shopifyImageId = attachData.data.productCreateMedia.media[0].id;
-              imageMapping.set(fullImageUrl, shopifyImageId);
+              
+            const cleanFilename = getImageFilename(fullImageUrl);
+            imageMapping.set(cleanFilename, shopifyImageId);
+              
               console.log(`    ✓ Uploaded: ${filename}`);
               stats[categoryType].images++;
             } else if (attachData.data?.productCreateMedia?.mediaUserErrors?.length > 0) {
@@ -777,7 +780,8 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             filstarVariant.image : 
             `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
           
-          const shopifyImageId = imageMapping.get(fullImageUrl);
+         const cleanFilename = getImageFilename(fullImageUrl);
+         const shopifyImageId = imageMapping.get(cleanFilename);
           
           if (shopifyImageId) {
             const shopifyVariant = shopifyVariants.find(v => 
