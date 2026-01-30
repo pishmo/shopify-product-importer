@@ -261,7 +261,7 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
-function formatVariantTitle(variant, productName) {
+function formatVariantName(variant, productName) {
   const parts = [];
   
   // 1. MODEL (от variant.model или атрибут "АРТИКУЛ")
