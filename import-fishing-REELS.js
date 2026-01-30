@@ -1263,7 +1263,7 @@ async function main() {
 
 
  // филтър ску
-const testSkus = ['961823'];
+const testSkus = ['962097'];
 accessoryProducts = accessoryProducts.filter(p => 
   p.variants?.some(v => testSkus.includes(v.sku))
 );
