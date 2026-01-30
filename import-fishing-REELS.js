@@ -740,107 +740,115 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     }
     
     // Scrape OG image
-    const ogImageUrl = await scrapeOgImage(filstarProduct.slug);
-    
-    // ASSIGN IMAGES TO VARIANTS
-    if (imageMapping.size > 0) {
-      console.log(`  🔗 Assigning images to variants...`);
-      
-      const productQuery = `
-        {
-          product(id: \"${productGid}\") {
-            variants(first: 50) {
-              edges {
-                node {
-                  id
-                  sku
-                }
-              }
+// Scrape OG image
+const ogImageUrl = await scrapeOgImage(filstarProduct.slug);
+
+// ASSIGN IMAGES TO VARIANTS
+const variantImageAssignments = []; // Запазваме за reorder
+
+if (imageMapping.size > 0) {
+  console.log(`  🔗 Assigning images to variants...`);
+  
+  const productQuery = `
+    {
+      product(id: \"${productGid}\") {
+        variants(first: 50) {
+          edges {
+            node {
+              id
+              sku
             }
           }
         }
-      `;
-      
-      const productResponse = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query: productQuery })
-        }
-      );
-      
-      const productData = await productResponse.json();
-      const shopifyVariants = productData.data?.product?.variants?.edges || [];
-      
-      const variantsToUpdate = [];
-      
-      for (const filstarVariant of filstarProduct.variants) {
-        let variantImageUrl = null;
-        
-        if (filstarVariant.image) {
-          variantImageUrl = filstarVariant.image.startsWith('http') 
-            ? filstarVariant.image 
-            : `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
-        } else if (ogImageUrl) {
-          variantImageUrl = ogImageUrl;
-        }
-        
-        if (variantImageUrl) {
-          const cleanFilename = getImageFilename(variantImageUrl);
-          const shopifyImageId = imageMapping.get(cleanFilename);
-          
-          if (shopifyImageId) {
-            const shopifyVariant = shopifyVariants.find(v => v.node.sku === filstarVariant.sku);
-            
-            if (shopifyVariant) {
-              variantsToUpdate.push({
-                id: shopifyVariant.node.id,
-                mediaId: shopifyImageId
-              });
-            }
-          }
-        }
-      }
-      
-      if (variantsToUpdate.length > 0) {
-        const bulkUpdateMutation = `
-          mutation {
-            productVariantsBulkUpdate(
-              productId: \"${productGid}\"
-              variants: ${JSON.stringify(variantsToUpdate).replace(/"([^"]+)":/g, '$1:')}
-            ) {
-              productVariants {
-                id
-              }
-              userErrors {
-                field
-                message
-              }
-            }
-          }
-        `;
-        
-        const response = await fetch(
-          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ query: bulkUpdateMutation })
-          }
-        );
-        
-        const data = await response.json();
-        console.log(`  ✅ Assigned ${variantsToUpdate.length} variant images`);
       }
     }
+  `;
+  
+  const productResponse = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query: productQuery })
+    }
+  );
+  
+  const productData = await productResponse.json();
+  const shopifyVariants = productData.data?.product?.variants?.edges || [];
+  
+  const variantsToUpdate = [];
+  
+  for (const filstarVariant of filstarProduct.variants) {
+    let variantImageUrl = null;
     
+    if (filstarVariant.image) {
+      variantImageUrl = filstarVariant.image.startsWith('http') 
+        ? filstarVariant.image 
+        : `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
+    } else if (ogImageUrl) {
+      variantImageUrl = ogImageUrl;
+    }
+    
+    if (variantImageUrl) {
+      const cleanFilename = getImageFilename(variantImageUrl);
+      const shopifyImageId = imageMapping.get(cleanFilename);
+      
+      if (shopifyImageId) {
+        const shopifyVariant = shopifyVariants.find(v => v.node.sku === filstarVariant.sku);
+        
+        if (shopifyVariant) {
+          variantsToUpdate.push({
+            id: shopifyVariant.node.id,
+            mediaId: shopifyImageId
+          });
+          
+          // Запази за reorder
+          variantImageAssignments.push({
+            variantId: shopifyVariant.node.id,
+            imageId: shopifyImageId
+          });
+        }
+      }
+    }
+  }
+  
+  if (variantsToUpdate.length > 0) {
+    const bulkUpdateMutation = `
+      mutation {
+        productVariantsBulkUpdate(
+          productId: \"${productGid}\"
+          variants: ${JSON.stringify(variantsToUpdate).replace(/"([^"]+)":/g, '$1:')}
+        ) {
+          productVariants {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: bulkUpdateMutation })
+      }
+    );
+    
+    const data = await response.json();
+    console.log(`  ✅ Assigned ${variantsToUpdate.length} variant images`);
+  }
+}
 
 // Fetch all images за reorder
 const allImagesQuery = `
@@ -873,58 +881,52 @@ const allImagesResponse = await fetch(
 const allImagesData = await allImagesResponse.json();
 const allImages = allImagesData.data?.product?.images?.edges || [];
 
-console.log('🐛 allImages:', allImages.length);
-
-
-
-    
-// REORDER IMAGES
-
-
-
-    
-
-console.log('🐛 allImages:', allImages);
-
 // REORDER IMAGES
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
   
   const ogFilename = getImageFilename(ogImageUrl);
-  console.log(`  🐛 Looking for OG: ${ogFilename}`);
   
   const ogImageIndex = allImages.findIndex(img => {
     const imgFilename = getImageFilename(img.node.src);
-    console.log(`    Comparing: ${imgFilename}`);
     return imgFilename === ogFilename;
   });
   
-  console.log(`  🐛 OG found at index: ${ogImageIndex}`);
-  
-  if (ogImageIndex > 0) {
+  if (ogImageIndex !== -1) {
     const ogImage = allImages[ogImageIndex];
-    allImages.splice(ogImageIndex, 1);
-    allImages.unshift(ogImage);
     
-    console.log(`  🐛 New order: ${allImages.map(i => getImageFilename(i.node.src)).join(', ')}`);
-    await reorderProductImages(productGid, allImages);
-  } else if (ogImageIndex === 0) {
-    console.log(`    ✓ OG already first`);
-  } else {
-    console.log(`    ⚠️  OG not found`);
+    // Раздели на assigned и unassigned (без OG)
+    const unassignedImages = [];
+    const assignedImages = [];
+    
+    allImages.forEach((img, idx) => {
+      if (idx === ogImageIndex) return; // Skip OG image
+      
+      const imgId = img.node.id;
+      
+      // Провери дали снимката е assigned към някой вариант
+      const hasVariant = variantImageAssignments.some(v => v.imageId === imgId);
+      
+      if (hasVariant) {
+        assignedImages.push(img);
+      } else {
+        unassignedImages.push(img);
+      }
+    });
+    
+    // Финален ред: OG → unassigned → assigned
+    const finalOrder = [
+      ogImage,
+      ...unassignedImages,
+      ...assignedImages
+    ];
+    
+    console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
+    await reorderProductImages(productGid, finalOrder);
   }
 }
 
-
-    
-    return productGid;
-    
-  } catch (error) {
-    console.error(`  ❌ Error creating product: ${error.message}`);
-    stats[categoryType].errors++;
-    return null;
-  }
-}
+return productGid;
 
 
 
