@@ -1340,7 +1340,7 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
   
   // Провери дали има падащо меню
   const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
-await updateShopifyProduct(existingProduct, product, categoryType);
+  await updateShopifyProduct(existingProduct, product, categoryType);
     
 }
 
