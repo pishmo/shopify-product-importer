@@ -601,9 +601,9 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const productType = getCategoryName(categoryType);
     const categoryNames = filstarProduct.categories?.map(c => c.name) || [];
     
-    const needsOptions = filstarProduct.variants.length > 1 || 
-      (filstarProduct.variants.length === 1 && 
-       formatVariantName(filstarProduct.variants[0].attributes, filstarProduct.variants[0].sku, categoryNames));
+   const needsOptions = filstarProduct.variants.length > 1 || 
+  (filstarProduct.variants.length === 1 && formatVariantName(filstarProduct.variants[0], categoryNames));
+
     
     const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant, categoryNames);
