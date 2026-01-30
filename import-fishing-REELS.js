@@ -1260,15 +1260,6 @@ async function main() {
 
 
 
- // филтър ску
-const testSkus = ['960874'];
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => testSkus.includes(v.sku))
-);
-console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
-// край на филтъра
-
-
 
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
@@ -1298,9 +1289,25 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     });
     console.log('');
     
+ 
+    
     // Обработи всяка категория
+
+let processedCount = 0;
+const MAX_PRODUCTS = 20;
+
+    
     for (const [categoryType, products] of Object.entries(productsByCategory)) {
       if (products.length === 0) continue;
+
+
+// Филтъра за 20 продукта
+       if (processedCount >= MAX_PRODUCTS) {
+    console.log(`\n🛑 Reached limit of ${MAX_PRODUCTS} products - stopping\n`);
+    break;
+  }
+
+
       
       console.log(`\n${'='.repeat(60)}`);
       console.log(`📂 Processing category: ${getCategoryName(categoryType)}`);
@@ -1341,7 +1348,15 @@ else {
         
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
+  
+    
+    processedCount++;
+    
     }
+
+
+console.log(`\n✅ Processed ${processedCount} products total`);
+
     
     // Финална статистика
     console.log(`\n${'='.repeat(60)}`);
