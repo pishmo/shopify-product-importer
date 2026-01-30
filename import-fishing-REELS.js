@@ -884,7 +884,12 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const allImagesData = await allImagesResponse.json();
     const allImages = allImagesData.data?.product?.images?.edges || [];
 
+
+    
     // REORDER IMAGES
+
+
+    
     if (allImages.length > 0 && ogImageUrl) {
       console.log(`  🔄 Reordering images...`);
       
