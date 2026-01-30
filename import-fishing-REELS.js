@@ -740,109 +740,99 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     }
     
     // ASSIGN IMAGES TO VARIANTS
-    if (imageMapping.size > 0) {
-      console.log(`  🔗 Assigning images to variants...`);
-      
-      const productQuery = `
-        {
-          product(id: \"${productGid}\") {
-            variants(first: 50) {
-              edges {
-                node {
-                  id
-                  sku
-                }
-              }
+ // ASSIGN IMAGES TO VARIANTS
+if (imageMapping.size > 0) {
+  console.log(`  🔗 Assigning images to variants...`);
+  
+  const productQuery = `
+    {
+      product(id: \"${productGid}\") {
+        variants(first: 50) {
+          edges {
+            node {
+              id
+              sku
             }
           }
         }
-      `;
-      
-      const productResponse = await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query: productQuery })
-        }
-      );
-      
-      const productData = await productResponse.json();
-      const shopifyVariants = productData.data?.product?.variants?.edges || [];
-      
-      for (const filstarVariant of filstarProduct.variants) {
-        if (filstarVariant.image) {
-          // Variant image също е относителен път
-          const fullImageUrl = filstarVariant.image.startsWith('http') ? 
-            filstarVariant.image : 
-            `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
-          
-         const cleanFilename = getImageFilename(fullImageUrl);
-         const shopifyImageId = imageMapping.get(cleanFilename);
-          
-          if (shopifyImageId) {
-            const shopifyVariant = shopifyVariants.find(v => 
-              v.node.sku === filstarVariant.sku
-            );
-            
-            if (shopifyVariant) {
-
-
-    console.log(`🐛 DEBUG for SKU ${filstarVariant.sku}:`);
-    console.log(`   Filstar image URL: ${fullImageUrl}`);
-    console.log(`   Clean filename: ${cleanFilename}`);
-    console.log(`   Shopify image ID: ${shopifyImageId}`);
-    console.log(`   Variant ID: ${shopifyVariant.node.id}`);
-
-
-              
-             const updateVariantMutation = `
-  mutation {
-    productVariantUpdate(input: {
-      id: \"${shopifyVariant.node.id}\"
-      mediaId: \"${shopifyImageId}\"
-    }) {
-      productVariant {
-        id
       }
-      userErrors {
-        field
-        message
+    }
+  `;
+  
+  const productResponse = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query: productQuery })
+    }
+  );
+  
+  const productData = await productResponse.json();
+  const shopifyVariants = productData.data?.product?.variants?.edges || [];
+  
+  const variantsToUpdate = [];
+  
+  for (const filstarVariant of filstarProduct.variants) {
+    if (filstarVariant.image) {
+      const fullImageUrl = filstarVariant.image.startsWith('http') 
+        ? filstarVariant.image 
+        : `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
+      
+      const cleanFilename = getImageFilename(fullImageUrl);
+      const shopifyImageId = imageMapping.get(cleanFilename);
+      
+      if (shopifyImageId) {
+        const shopifyVariant = shopifyVariants.find(v => v.node.sku === filstarVariant.sku);
+        
+        if (shopifyVariant) {
+          variantsToUpdate.push({
+            id: shopifyVariant.node.id,
+            mediaId: shopifyImageId
+          });
+        }
       }
     }
   }
-`;
-
-              console.log(`🐛 Mutation: ${updateVariantMutation}`);
-              const variantResponse = await fetch(
-                `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'X-Shopify-Access-Token': ACCESS_TOKEN,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ query: updateVariantMutation })
-                }
-              );
-              
-              const variantData = await variantResponse.json();
-              console.log(`🐛 Response: ${JSON.stringify(variantData, null, 2)}`);
-              if (variantData.data?.productVariantUpdate?.userErrors?.length > 0) {
-                console.log(`    ❌ Error assigning image to ${filstarVariant.sku}: ${variantData.data.productVariantUpdate.userErrors[0].message}`);
-              } else {
-                console.log(`    ✓ Assigned image to variant ${filstarVariant.sku}`);
-              }
-              
-              await new Promise(resolve => setTimeout(resolve, 300));
-            }
+  
+  if (variantsToUpdate.length > 0) {
+    const bulkUpdateMutation = `
+      mutation {
+        productVariantsBulkUpdate(
+          productId: \"${productGid}\"
+          variants: ${JSON.stringify(variantsToUpdate).replace(/"([^"]+)":/g, '$1:')}
+        ) {
+          productVariants {
+            id
+          }
+          userErrors {
+            field
+            message
           }
         }
       }
-    }
+    `;
+    
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: bulkUpdateMutation })
+      }
+    );
+    
+    const data = await response.json();
+    console.log(`  ✅ Assigned ${variantsToUpdate.length} variant images`);
+  }
+}
+
     
     return productGid;
     
