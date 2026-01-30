@@ -741,6 +741,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     
     // ASSIGN IMAGES TO VARIANTS
  // ASSIGN IMAGES TO VARIANTS
+// ASSIGN IMAGES TO VARIANTS
 if (imageMapping.size > 0) {
   console.log(`  🔗 Assigning images to variants...`);
   
@@ -776,13 +777,20 @@ if (imageMapping.size > 0) {
   
   const variantsToUpdate = [];
   
+  // ← ЗАМЕНИ ОТ ТУК
   for (const filstarVariant of filstarProduct.variants) {
+    let variantImageUrl = null;
+    
     if (filstarVariant.image) {
-      const fullImageUrl = filstarVariant.image.startsWith('http') 
+      variantImageUrl = filstarVariant.image.startsWith('http') 
         ? filstarVariant.image 
         : `${FILSTAR_BASE_URL}/${filstarVariant.image}`;
-      
-      const cleanFilename = getImageFilename(fullImageUrl);
+    } else if (ogImageUrl) {
+      variantImageUrl = ogImageUrl;
+    }
+    
+    if (variantImageUrl) {
+      const cleanFilename = getImageFilename(variantImageUrl);
       const shopifyImageId = imageMapping.get(cleanFilename);
       
       if (shopifyImageId) {
@@ -797,6 +805,7 @@ if (imageMapping.size > 0) {
       }
     }
   }
+  // ← ДО ТУК
   
   if (variantsToUpdate.length > 0) {
     const bulkUpdateMutation = `
