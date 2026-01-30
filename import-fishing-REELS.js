@@ -836,8 +836,48 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
     }
     
+
+// Fetch all images за reorder
+const allImagesQuery = `
+  {
+    product(id: \"${productGid}\") {
+      images(first: 50) {
+        edges {
+          node {
+            id
+            src
+          }
+        }
+      }
+    }
+  }
+`;
+
+const allImagesResponse = await fetch(
+  `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+  {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': ACCESS_TOKEN,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ query: allImagesQuery })
+  }
+);
+
+const allImagesData = await allImagesResponse.json();
+const allImages = allImagesData.data?.product?.images?.edges || [];
+
+console.log('🐛 allImages:', allImages.length);
+
+
+
     
 // REORDER IMAGES
+
+
+
+    
 
 console.log('🐛 allImages:', allImages);
 
