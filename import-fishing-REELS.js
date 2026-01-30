@@ -816,7 +816,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
   }
 `;
 
-              
+              console.log(`🐛 Mutation: ${updateVariantMutation}`);
               const variantResponse = await fetch(
                 `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
                 {
@@ -830,7 +830,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
               );
               
               const variantData = await variantResponse.json();
-              
+              console.log(`🐛 Response: ${JSON.stringify(variantData, null, 2)}`);
               if (variantData.data?.productVariantUpdate?.userErrors?.length > 0) {
                 console.log(`    ❌ Error assigning image to ${filstarVariant.sku}: ${variantData.data.productVariantUpdate.userErrors[0].message}`);
               } else {
