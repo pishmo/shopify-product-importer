@@ -739,12 +739,13 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
     }
     
-    // ASSIGN IMAGES TO VARIANTS
- // ASSIGN IMAGES TO VARIANTS
+// Scrape OG image за да я използваме за варианти без собствена снимка
+const ogImageUrl = await scrapeOgImage(filstarProduct.slug);
+
 // ASSIGN IMAGES TO VARIANTS
 if (imageMapping.size > 0) {
   console.log(`  🔗 Assigning images to variants...`);
-  
+ 
   const productQuery = `
     {
       product(id: \"${productGid}\") {
