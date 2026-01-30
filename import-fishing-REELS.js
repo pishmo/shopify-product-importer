@@ -262,14 +262,21 @@ async function scrapeOgImage(productSlug) {
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
 function formatVariantName(variant, categoryNames = null) {
+
+  console.log('🐛 DEBUG variant:', JSON.stringify(variant, null, 2));
+  console.log('🐛 DEBUG categoryNames:', categoryNames);
+  
   if (categoryNames && Array.isArray(categoryNames)) {
     cachedCategoryNames = categoryNames;
   }
   
   // Първо провери дали има директно поле model
   if (variant.model && variant.model.trim() !== '') {
+    console.log('🐛 Found variant.model:', variant.model); 
     return variant.model.trim();
   }
+
+console.log('🐛 No variant.model, checking attributes...');
   
   // После провери в attributes
   const attributes = variant.attributes;
