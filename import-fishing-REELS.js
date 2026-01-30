@@ -888,63 +888,64 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     
     // REORDER IMAGES
 
-
+// REORDER IMAGES
+if (allImages.length > 0 && ogImageUrl) {
+  console.log(`  🔄 Reordering images...`);
+  
+  const ogFilename = getImageFilename(ogImageUrl);
+  
+  const ogImageIndex = allImages.findIndex(img => {
+    const imgFilename = getImageFilename(img.node.src);
+    return imgFilename === ogFilename;
+  });
+  
+  if (ogImageIndex !== -1) {
+    const ogImage = allImages[ogImageIndex];
     
-    if (allImages.length > 0 && ogImageUrl) {
-      console.log(`  🔄 Reordering images...`);
-      
-      const ogFilename = getImageFilename(ogImageUrl);
-      
-      const ogImageIndex = allImages.findIndex(img => {
-        const imgFilename = getImageFilename(img.node.src);
-        return imgFilename === ogFilename;
-      });
-      
-      if (ogImageIndex !== -1) {
-        const ogImage = allImages[ogImageIndex];
-        
-        // Раздели на assigned и unassigned (без OG)
-        const unassignedImages = [];
-        const assignedImages = [];
-        
-        allImages.forEach((img, idx) => {
-          if (idx === ogImageIndex) return; // Skip OG image
-          
-          const imgId = img.node.id;
-          
-          // Провери дали снимката е assigned към някой вариант
-          const hasVariant = variantImageAssignments.some(v => v.imageId === imgId);
-          
-          if (hasVariant) {
-            assignedImages.push(img);
-          } else {
-            unassignedImages.push(img);
-          }
-        });
-        
-        // Финален ред: OG → unassigned → assigned
-        const finalOrder = [
-          ogImage,
-          ...unassignedImages,
-          ...assignedImages
-        ];
-        
-        console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
-        await reorderProductImages(productGid, finalOrder);
+    // Създай Set с filenames на assigned снимки
+    const assignedFilenames = new Set();
+    for (const assignment of variantImageAssignments) {
+      // Намери filename от imageMapping
+      for (const [filename, imageId] of imageMapping.entries()) {
+        if (imageId === assignment.imageId) {
+          assignedFilenames.add(filename);
+          break;
+        }
       }
     }
     
-    return productGid;
+    console.log(`  🐛 Assigned filenames:`, Array.from(assignedFilenames));
     
-  } catch (error) {
-    console.error(`  ❌ Error creating product: ${error.message}`);
-    stats[categoryType].errors++;
-    return null;
+    // Раздели на assigned и unassigned (без OG)
+    const unassignedImages = [];
+    const assignedImages = [];
+    
+    allImages.forEach((img, idx) => {
+      if (idx === ogImageIndex) return; // Skip OG image
+      
+      const imgFilename = getImageFilename(img.node.src);
+      
+      // Провери дали filename е в assigned
+      const hasVariant = assignedFilenames.has(imgFilename);
+      
+      if (hasVariant) {
+        assignedImages.push(img);
+      } else {
+        unassignedImages.push(img);
+      }
+    });
+    
+    // Финален ред: OG → unassigned → assigned
+    const finalOrder = [
+      ogImage,
+      ...unassignedImages,
+      ...assignedImages
+    ];
+    
+    console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
+    await reorderProductImages(productGid, finalOrder);
   }
 }
-
-
-
 
 
 
