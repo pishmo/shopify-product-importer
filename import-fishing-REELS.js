@@ -273,7 +273,7 @@ function formatVariantName(variant, productName) {
   if (formatted.includes(',')) {
     // Ако вече завършва с точка, не добавяй още една
     if (!formatted.endsWith('.')) {
-      formatted = formatted + '.';
+      formatted = formatted + '. ';
     }
   }
   
