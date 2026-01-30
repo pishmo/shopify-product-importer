@@ -264,6 +264,17 @@ let cachedCategoryNames = [];
 function formatVariantName(variant, productName) {
   const parts = [];
   
+  // Помощна функция за форматиране на име на атрибут
+  function formatAttributeName(name) {
+    // Главна буква + малки
+    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    
+    // Ако има запетая, добави точка и интервал след нея
+    formatted = formatted.replace(/,(\S)/g, '. $1');
+    
+    return formatted;
+  }
+  
   // 1. MODEL (от variant.model или атрибут "АРТИКУЛ")
   let model = variant.model;
   
@@ -294,7 +305,7 @@ function formatVariantName(variant, productName) {
     attr.attribute_name.toUpperCase() === 'РАЗМЕР'
   );
   if (sizeAttr && sizeAttr.value) {
-    parts.push(`Размер: ${sizeAttr.value}`);
+    parts.push(`${formatAttributeName(sizeAttr.attribute_name)}: ${sizeAttr.value}`);
   }
   
   // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер)
@@ -304,7 +315,7 @@ function formatVariantName(variant, productName) {
         const name = attr.attribute_name.toUpperCase();
         return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value;
       })
-      .map(attr => `${attr.attribute_name}: ${attr.value}`);
+      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`);
     
     parts.push(...otherAttrs);
   }
@@ -314,6 +325,7 @@ function formatVariantName(variant, productName) {
   
   return result || 'Default';
 }
+
 
 
 
