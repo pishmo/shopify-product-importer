@@ -267,13 +267,18 @@ function formatVariantName(variant, productName) {
   // Помощна функция за форматиране на име на атрибут
   function formatAttributeName(name) {
     // Главна буква + малки
-    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-    
-    // Ако има запетая, добави точка и интервал след нея
-    formatted = formatted.replace(/,(\S)/g, '. $1');
-    
-    return formatted;
+  let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  
+  // Ако има запетая в името, добави точка и интервал след последната дума
+  if (formatted.includes(',')) {
+    // Ако вече завършва с точка, не добавяй още една
+    if (!formatted.endsWith('.')) {
+      formatted = formatted + '.';
+    }
   }
+  
+  return formatted;
+}
   
   // 1. MODEL (от variant.model или атрибут "АРТИКУЛ")
   let model = variant.model;
