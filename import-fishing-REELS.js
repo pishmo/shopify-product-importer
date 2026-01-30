@@ -261,11 +261,18 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
-
-function formatVariantName(attributes, sku, categoryNames = null) {
+function formatVariantName(variant, categoryNames = null) {
   if (categoryNames && Array.isArray(categoryNames)) {
     cachedCategoryNames = categoryNames;
   }
+  
+  // Първо провери дали има директно поле model
+  if (variant.model && variant.model.trim() !== '') {
+    return variant.model.trim();
+  }
+  
+  // После провери в attributes
+  const attributes = variant.attributes;
   
   if (!attributes || attributes.length === 0) {
     return '';
@@ -278,7 +285,6 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     const attrName = (attr.attribute_name || '').toLowerCase();
     const attrValue = (attr.value || '').toLowerCase();
     
-    // Махни ако името ИЛИ стойността съвпада с категория
     return !cachedCategoryNames.some(cat => {
       const catLower = cat.toLowerCase();
       return attrName.includes(catLower) || attrValue.includes(catLower) || 
@@ -290,42 +296,35 @@ function formatVariantName(attributes, sku, categoryNames = null) {
     return '';
   }
   
-  // Търси "МОДЕЛ" атрибут
- const modelAttr = filtered.find(attr => {
-  if (!attr) return false;
-  const attrName = attr.attribute_name?.toLowerCase() || '';
-  const attrValue = attr.value || '';
-  // Намери всичко подобно на "модел" (малки, големи, средни) и с непразна стойност
-  return attrName.includes('model') && attrValue.trim() !== '';
-});
+  const modelAttr = filtered.find(attr => {
+    if (!attr) return false;
+    const attrName = attr.attribute_name?.toLowerCase() || '';
+    const attrValue = attr.value || '';
+    return attrName.includes('model') && attrValue.trim() !== '';
+  });
 
-const otherAttrs = filtered.filter(attr => {
-  if (!attr) return false;
-  const attrName = attr.attribute_name?.toLowerCase() || '';
-  return !attrName.includes('model');
-});
+  const otherAttrs = filtered.filter(attr => {
+    if (!attr) return false;
+    const attrName = attr.attribute_name?.toLowerCase() || '';
+    return !attrName.includes('model');
+  });
 
-const parts = [];
-if (modelAttr) {
-  parts.push(modelAttr.value);  // Само стойността, без "Модел"
-}
-otherAttrs.forEach(attr => {
-  if (attr && attr.attribute_name && attr.value) {
-    const formattedName = attr.attribute_name.charAt(0).toUpperCase() + attr.attribute_name.slice(1).toLowerCase();
-    const suffix = attr.attribute_name.includes(',') ? '. :' : ':';
-    parts.push(`${formattedName}${suffix} ${attr.value}`);
+  const parts = [];
+  if (modelAttr) {
+    parts.push(modelAttr.value);
   }
-});
-
+  otherAttrs.forEach(attr => {
+    if (attr && attr.attribute_name && attr.value) {
+      const formattedName = attr.attribute_name.charAt(0).toUpperCase() + attr.attribute_name.slice(1).toLowerCase();
+      const suffix = attr.attribute_name.includes(',') ? '. :' : ':';
+      parts.push(`${formattedName}${suffix} ${attr.value}`);
+    }
+  });
   
   let result = parts.join(' / ');
   result = result.replace(/^\/+|\/+$/g, '').trim();
   
-  if (!result || result === '') {
-    return '';
-  }
-
-  return result;
+  return result || '';
 }
 
 
