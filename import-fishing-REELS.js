@@ -262,9 +262,6 @@ async function scrapeOgImage(productSlug) {
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
 function formatVariantName(variant, categoryNames = null) {
-
-  console.log('🐛 DEBUG variant:', JSON.stringify(variant, null, 2));
-  console.log('🐛 DEBUG categoryNames:', categoryNames);
   
   if (categoryNames && Array.isArray(categoryNames)) {
     cachedCategoryNames = categoryNames;
