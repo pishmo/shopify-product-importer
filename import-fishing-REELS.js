@@ -836,61 +836,28 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
     }
     
-    // REORDER IMAGES
-    const updatedProductQuery = `{ product(id: \"${productGid}\") { images(first: 50) { edges { node { id src } } } } }`;
-    const updatedResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-      method: 'POST',
-      headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: updatedProductQuery })
-    });
-    const updatedData = await updatedResponse.json();
-    const allImages = updatedData.data?.product?.images?.edges?.map(edge => ({ id: edge.node.id, src: edge.node.src })) || [];
-
+    
 // REORDER IMAGES
+
+console.log('🐛 allImages:', allImages);
+
+    
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
   
   const ogFilename = getImageFilename(ogImageUrl);
   
-  // Намери OG image
   const ogImageIndex = allImages.findIndex(img => {
-    const imgFilename = getImageFilename(img.node.src);
+    const imgFilename = getImageFilename(img.src);
     return imgFilename === ogFilename;
   });
   
-  if (ogImageIndex !== -1) {
+  if (ogImageIndex > 0) {
     const ogImage = allImages[ogImageIndex];
+    allImages.splice(ogImageIndex, 1);
+    allImages.unshift(ogImage);
     
-    // Раздели на assigned и unassigned (без OG)
-    const unassignedImages = [];
-    const assignedImages = [];
-    
-    allImages.forEach((img, idx) => {
-      if (idx === ogImageIndex) return; // Skip OG image
-      
-      // Провери дали снимката е assigned към някой вариант
-      const hasVariant = variantImageAssignments.some(v => 
-        v.imageIds && v.imageIds.includes(img.node.id)
-      );
-      
-      if (hasVariant) {
-        assignedImages.push(img);
-      } else {
-        unassignedImages.push(img);
-      }
-    });
-    
-    // Финален ред: OG → unassigned → assigned
-    const finalOrder = [
-      ogImage,
-      ...unassignedImages,
-      ...assignedImages
-    ];
-    
-    console.log(`    📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant images`);
-    await reorderProductImages(productGid, finalOrder);
-  } else {
-    console.log(`    ⚠️  OG image not found in product images`);
+    await reorderProductImages(productGid, allImages);
   }
 }
 
