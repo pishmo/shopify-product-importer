@@ -1090,7 +1090,7 @@ const variantsChanged =
 if (variantsChanged) {
   console.log(`  ⚠️  Variants changed - recreating product`);
   await deleteShopifyProduct(productGid);
-  await createShopifyProduct(filstarProduct);
+  await createShopifyProduct(filstarProduct, categoryType); 
   return;
 }
 
