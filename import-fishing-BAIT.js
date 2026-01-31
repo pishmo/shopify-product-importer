@@ -1259,17 +1259,6 @@ console.log('  - Други захранки - Категория Id - (77)');
       return categoryType !== null;
     });
 
-
-
- // филтър ску
-const testSkus = ['954368'];
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => testSkus.includes(v.sku))
-);
-console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
-// край на филтъра
-
-
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
