@@ -618,6 +618,8 @@ async function reorderProductImages(productGid, images) {
 
 // Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
+  console.log(`📦 Creating: ${filstarProduct.name}`);
+  console.log(`  🐛 FULL PRODUCT:`, JSON.stringify(filstarProduct, null, 2));
   try {
     console.log(`\n📦 Creating: ${filstarProduct.name}`);
     console.log(`  SKUs: ${filstarProduct.variants.map(v => v.sku).join(', ')}`);
