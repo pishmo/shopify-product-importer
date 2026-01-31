@@ -1284,15 +1284,6 @@ async function main() {
       return categoryType !== null;
     });
 
- // филтър ску
-const testSkus = ['925922'];
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => testSkus.includes(v.sku))
-);
-console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
-// край на филтъра
-
-
 
 
     
