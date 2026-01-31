@@ -1290,7 +1290,7 @@ async function main() {
     });
 
 // филтър ску
-const testSkus = ['947828'];
+const testSkus = ['947828	'];
 accessoryProducts = accessoryProducts.filter(p => 
   p.variants?.some(v => testSkus.includes(v.sku))
 );
