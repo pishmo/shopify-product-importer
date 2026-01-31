@@ -1326,10 +1326,7 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
   const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
   await updateShopifyProduct(existingProduct, product, categoryType);
     
-}
-
-
-         
+}         
 else {
           console.log(` ✓ Product not found, creating new without variants...`);
           await createShopifyProduct(product, categoryType);
