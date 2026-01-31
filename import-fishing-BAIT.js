@@ -1,5 +1,4 @@
-
-// import-fishing-RODS.js - Импорт на ПРЪЧКИ от Filstar API
+// import-fishing-RODS.js - Импорт на ЗАХРАНКИ от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -15,40 +14,36 @@ const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
 
-
+// Shopify колекции за захранки
 const COLLECTION_MAPPING = {
-  telescopes_with_guides: 'gid://shopify/Collection/739156001150',
-  telescopes_without_guides: 'gid://shopify/Collection/739156033918',
-  carp_rods: 'gid://shopify/Collection/739156099454',
-  match_feeder: 'gid://shopify/Collection/739156132222',
-  specialty_rods: 'gid://shopify/Collection/739156230526',
-  kits: 'gid://shopify/Collection/739156164990',
-  spinning: 'gid://shopify/Collection/739155968382'
+  groundbait: 'gid://shopify/Collection/739410641278',
+  boilies: 'gid://shopify/Collection/739410674046',
+  additives: 'gid://shopify/Collection/739410739582',
+  seeds: 'gid://shopify/Collection/739410772350',
+  pastes: 'gid://shopify/Collection/739410805118',
+  other: 'gid://shopify/Collection/739410837886'
 };
 
-
-const FILSTAR_RODS_CATEGORY_IDS = {
-  telescopes_with_guides: ['33'],
-  telescopes_without_guides: ['38'],
-  carp_rods: ['44'],
-  match_feeder: ['47'],
-  specialty_rods: ['57'],
-  kits: ['56'],
-  spinning: ['28']
+// Filstar категории за захранки
+const FILSTAR_BAIT_CATEGORY_IDS = {
+  groundbait: ['66'],
+  boilies: ['69'],
+  additives: ['71'],
+  seeds: ['73'],
+  pastes: ['75'],
+  other: ['77']
 };
 
-const REELS_PARENT_ID = '6';
+const BAITS_PARENT_ID = '8';
 
 const stats = {
-  telescopes_with_guides: { created: 0, updated: 0, images: 0 },
-  telescopes_without_guides: { created: 0, updated: 0, images: 0 },
-  carp_rods: { created: 0, updated: 0, images: 0 },
-  match_feeder: { created: 0, updated: 0, images: 0 },
-  specialty_rods: { created: 0, updated: 0, images: 0 },
-  kits: { created: 0, updated: 0, images: 0 },
-  spinning: { created: 0, updated: 0, images: 0 }
+  groundbait: { created: 0, updated: 0, images: 0 },
+  boilies: { created: 0, updated: 0, images: 0 },
+  additives: { created: 0, updated: 0, images: 0 },
+  seeds: { created: 0, updated: 0, images: 0 },
+  pastes: { created: 0, updated: 0, images: 0 },
+  other: { created: 0, updated: 0, images: 0 }
 };
-
 
 // 2 част
 
@@ -1263,16 +1258,17 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
 // MAIN функция
 
 async function main() {
-  console.log('🚀 Starting Filstar RODS Import\n');
-  console.log('📋 Categories to import:');
+  console.log('?? Starting Filstar Bait API Import\n');
+  console.log('?? Categories to import:');
+  
+console.log('  - Захранка - Категория Id - (66)');
+console.log('  - Бойли и пелети - Категория Id - (69)');
+console.log('  - Добавки - Категория Id - (71)');
+console.log('  - Семена - Категория Id - (73)');
+console.log('  - Пасти - Категория Id - (75)');
+console.log('  - Други захранки - Категория Id - (77)');
 
-  console.log('  -  Телескопи с водачи - Категория Id - (33)');
-  console.log('  -  Телескопи без водачи- Категория Id - (38)');
-  console.log('  -  Шарански пръчки - Категория Id - (44)');
-  console.log('  -  Мач и Фидер - Категория Id - (47)');
-  console.log('  -  Специални пръчки - Категория Id - (57)');
-  console.log('  -  Комплекти - Категория Id - (56)');
-  console.log('  -  Спининг - Категория Id - (28)');
+
   
   
   try {
@@ -1295,13 +1291,12 @@ async function main() {
     // Групирай по категория
     const productsByCategory = {
 
-  telescopes_with_guides: [],
-  telescopes_without_guides: [],
-  carp_rods: [],
-  match_feeder: [],
-  specialty_rods: [],
-  kits: [],
-  spinning: []
+  groundbait: [],
+  boilies: [],
+  additives: [],
+  seeds: [],
+  pastes: [],
+  other: []
        
     };
     
