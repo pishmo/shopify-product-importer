@@ -1127,133 +1127,71 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
     console.log(`  ✅ Updated product fields`);
 
     // Update variants
-    for (let i = 0; i < filstarVariants.length; i++) {
-      const filstarVariant = filstarVariants[i];
-      const shopifyVariant = shopifyVariants[i];
 
-      if (!shopifyVariant) continue;
+    
+// Update variants
+for (let i = 0; i < filstarVariants.length; i++) {
+  const filstarVariant = filstarVariants[i];
+  const shopifyVariant = shopifyVariants[i];
+  if (!shopifyVariant) continue;
 
-      const variantMutation = `
-        mutation productVariantUpdate($input: ProductVariantInput!) {
-          productVariantUpdate(input: $input) {
-            productVariant {
-              id
-              price
-              inventoryQuantity
-              barcode
-            }
-            userErrors {
-              field
-              message
-            }
-          }
+  console.log(`  🐛 Updating variant ${i}: SKU ${filstarVariant.sku}`);
+  console.log(`  🐛 New price: ${filstarVariant.price}, New quantity: ${filstarVariant.quantity}`);
+
+  const variantMutation = `
+    mutation productVariantUpdate($input: ProductVariantInput!) {
+      productVariantUpdate(input: $input) {
+        productVariant {
+          id
+          price
+          inventoryQuantity
+          barcode
         }
-      `;
-
-      const variantInput = {
-        id: shopifyVariant.id,
-        price: String(filstarVariant.price),
-        barcode: filstarVariant.barcode || '',
-        inventoryQuantities: [
-          {
-            availableQuantity: parseInt(filstarVariant.quantity) || 0,
-            locationId: LOCATION_ID
-          }
-        ]
-      };
-
-    const variantResponse = await fetch(
-  `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-  {
-    method: 'POST',
-    headers: {
-      'X-Shopify-Access-Token': ACCESS_TOKEN,
-      'Content-Type': 'application/json'
-    },
-      body: JSON.stringify({
-      query: variantMutation,
-      variables: { input: variantInput }
-    })
-  }
-);
-
-const variantResult = await variantResponse.json();
-console.log(`  🐛 Variant update response:`, JSON.stringify(variantResult, null, 2));
-
-if (variantResult.data?.productVariantUpdate?.userErrors?.length > 0) {
-  console.log(`  ❌ Variant update errors:`, variantResult.data.productVariantUpdate.userErrors);
-}
-
-    console.log(`  ✅ Updated ${filstarVariants.length} variants`);
-
-    // Upload new images
-    const existingImages = fullProduct.images.edges.map(e => e.node);
-    const existingImageFilenames = existingImages.map(img => 
-      getImageFilename(img.src)
-    );
-
-    const newImages = filstarProduct.images.filter(url => {
-      const filename = getImageFilename(url);
-      return !existingImageFilenames.includes(filename);
-    });
-
-    if (newImages.length > 0) {
-      console.log(`  🖼️  Uploading ${newImages.length} new images...`);
-      
-      for (const imageUrl of newImages) {
-        const fullImageUrl = imageUrl.startsWith('http') 
-          ? imageUrl 
-          : `https://filstar.com/${imageUrl}`;
-
-        const uploadMutation = `
-          mutation productCreateMedia($media: [CreateMediaInput!]!, $productId: ID!) {
-            productCreateMedia(media: $media, productId: $productId) {
-              media {
-                ... on MediaImage {
-                  id
-                  image {
-                    url
-                  }
-                }
-              }
-              mediaUserErrors {
-                field
-                message
-              }
-            }
-          }
-        `;
-
-        await fetch(
-          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Shopify-Access-Token': ACCESS_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              query: uploadMutation,
-              variables: {
-                productId: productGid,
-                media: [{
-                  originalSource: fullImageUrl,
-                  mediaContentType: 'IMAGE'
-                }]
-              }
-            })
-          }
-        );
-
-        await new Promise(resolve => setTimeout(resolve, 500));
+        userErrors {
+          field
+          message
+        }
       }
-
-      console.log(`  ✅ Uploaded ${newImages.length} new images`);
     }
+  `;
 
-    console.log(`✅ Product updated successfully`);
+  const variantInput = {
+    id: shopifyVariant.id,
+    price: String(filstarVariant.price),
+    barcode: filstarVariant.barcode || '',
+    inventoryQuantities: [
+      {
+        availableQuantity: parseInt(filstarVariant.quantity) || 0,
+        locationId: LOCATION_ID
+      }
+    ]
+  };
 
-  } catch (error) {
+  const variantResponse = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: variantMutation,
+        variables: { input: variantInput }
+      })
+    }
+  );
+
+  const variantResult = await variantResponse.json();
+  console.log(`  🐛 Variant update response:`, JSON.stringify(variantResult, null, 2));
+
+  if (variantResult.data?.productVariantUpdate?.userErrors?.length > 0) {
+    console.log(`  ❌ Variant update errors:`, variantResult.data.productVariantUpdate.userErrors);
+  }
+}  // ⬅️ ЗАТВАРЯЩА СКОБА ЗА FOR LOOP-А
+
+console.log(` ✅ Updated ${filstarVariants.length} variants`);
+ catch (error) {
     console.error(`❌ Error updating product: ${error.message}`);
   }
 }
