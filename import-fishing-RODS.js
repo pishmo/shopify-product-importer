@@ -1258,20 +1258,20 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
 
 
 
-
 // MAIN функция
 
 async function main() {
-  console.log('🚀 Starting Filstar RODS Import\n');
-  console.log('📋 Categories to import:');
+  console.log('?? Starting Filstar Bait API Import\n');
+  console.log('?? Categories to import:');
+  
+console.log('  - Захранка - Категория Id - (66)');
+console.log('  - Бойли и пелети - Категория Id - (69)');
+console.log('  - Добавки - Категория Id - (71)');
+console.log('  - Семена - Категория Id - (73)');
+console.log('  - Пасти - Категория Id - (75)');
+console.log('  - Други захранки - Категория Id - (77)');
 
-  console.log('  -  Телескопи с водачи - Категория Id - (33)');
-  console.log('  -  Телескопи без водачи- Категория Id - (38)');
-  console.log('  -  Шарански пръчки - Категория Id - (44)');
-  console.log('  -  Мач и Фидер - Категория Id - (47)');
-  console.log('  -  Специални пръчки - Категория Id - (57)');
-  console.log('  -  Комплекти - Категория Id - (56)');
-  console.log('  -  Спининг - Категория Id - (28)');
+
   
   
   try {
@@ -1284,15 +1284,13 @@ async function main() {
       return categoryType !== null;
     });
 
-
- // филтър ску
-const testSkus = ['962400'];
+// филтър ску
+const testSkus = ['960415'];
 accessoryProducts = accessoryProducts.filter(p => 
   p.variants?.some(v => testSkus.includes(v.sku))
 );
 console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
 // край на филтъра
-
 
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
@@ -1302,13 +1300,12 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     // Групирай по категория
     const productsByCategory = {
 
-  telescopes_with_guides: [],
-  telescopes_without_guides: [],
-  carp_rods: [],
-  match_feeder: [],
-  specialty_rods: [],
-  kits: [],
-  spinning: []
+  groundbait: [],
+  boilies: [],
+  additives: [],
+  seeds: [],
+  pastes: [],
+  other: []
        
     };
     
@@ -1364,10 +1361,7 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
   const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
   await updateShopifyProduct(existingProduct, product, categoryType);
     
-}
-
-
-         
+}         
 else {
           console.log(` ✓ Product not found, creating new without variants...`);
           await createShopifyProduct(product, categoryType);
