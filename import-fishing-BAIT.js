@@ -1170,7 +1170,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
       'X-Shopify-Access-Token': ACCESS_TOKEN,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
+      body: JSON.stringify({
       query: variantMutation,
       variables: { input: variantInput }
     })
