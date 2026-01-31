@@ -1262,6 +1262,16 @@ async function main() {
     });
 
 
+ // филтър ску
+const testSkus = ['962739'];
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => testSkus.includes(v.sku))
+);
+console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
+// край на филтъра
+
+
+
 
 
     
