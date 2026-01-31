@@ -1206,6 +1206,14 @@ console.log(` ✅ Updated ${filstarVariants.length} variants`);
   } catch (error) {
     console.error(`❌ Error updating product: ${error.message}`);
   }
+
+// Обнови статистиката
+if (categoryType && stats[categoryType]) {
+  stats[categoryType].updated++;
+}
+
+
+
 }
 
 
