@@ -1306,7 +1306,7 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
        
     };
     
-    accessoryProducts.forEach(product => {
+     accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
       if (categoryType) {
         productsByCategory[categoryType].push(product);
