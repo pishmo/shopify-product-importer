@@ -1264,6 +1264,8 @@ async function main() {
   console.log('  -  Other Reels - Категория Id - (43)');
 
   
+ 
+  
   
   try {
     // Fetch всички продукти от Filstar
@@ -1275,6 +1277,8 @@ async function main() {
       return categoryType !== null;
     });
 
+
+
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
@@ -1282,11 +1286,14 @@ async function main() {
     
     // Групирай по категория
     const productsByCategory = {
-  front_drag: [],
-  rear_drag: [],
-  baitrunner: [],
-  multipliers: [],
+
+  groundbait: [],
+  boilies: [],
+  additives: [],
+  seeds: [],
+  pastes: [],
   other: []
+       
     };
     
     accessoryProducts.forEach(product => {
@@ -1341,10 +1348,7 @@ async function main() {
   const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
   await updateShopifyProduct(existingProduct, product, categoryType);
     
-}
-
-
-         
+}         
 else {
           console.log(` ✓ Product not found, creating new without variants...`);
           await createShopifyProduct(product, categoryType);
