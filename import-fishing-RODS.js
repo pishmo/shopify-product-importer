@@ -999,8 +999,6 @@ if (allImages.length > 0 && ogImageUrl) {
 
 
 
-
-
                 //    UPDATE PRODUCT
 
 
