@@ -1,5 +1,5 @@
 # .github/workflows/import-fishing-BAIT.yml
-name: Import Fishing Baits from Filstar
+name: Import Fishing BAIT from Filstar
 
 on:
   # schedule:
