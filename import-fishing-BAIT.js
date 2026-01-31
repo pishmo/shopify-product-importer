@@ -1188,7 +1188,7 @@ for (let i = 0; i < filstarVariants.length; i++) {
 }  // ⬅️ ЗАТВАРЯЩА СКОБА ЗА FOR LOOP-А
 
 console.log(` ✅ Updated ${filstarVariants.length} variants`);
- catch (error) {
+  } catch (error) {
     console.error(`❌ Error updating product: ${error.message}`);
   }
 }
