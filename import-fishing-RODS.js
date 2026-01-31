@@ -632,8 +632,7 @@ async function reorderProductImages(productGid, images) {
 
 // Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
-  console.log(`📦 Creating: ${filstarProduct.name}`);
-
+ 
   try {
     console.log(`\n📦 Creating: ${filstarProduct.name}`);
     console.log(`  SKUs: ${filstarProduct.variants.map(v => v.sku).join(', ')}`);
@@ -1083,6 +1082,31 @@ const shopifyVariants = fullProduct.variants.edges.map(e => ({
 
 const filstarVariants = filstarProduct.variants || [];
 
+// Провери брой опции
+const shopifyOptionsCount = fullProduct.options?.filter(opt => opt.name !== 'Title').length || 0;
+const filstarHasOptions = filstarVariants.some(v => {
+  const formattedName = formatVariantName(v, filstarProduct.name);
+  return formattedName && formattedName.trim() !== '';
+});
+const expectedOptionsCount = filstarHasOptions ? 1 : 0;
+
+if (shopifyOptionsCount !== expectedOptionsCount) {
+  console.log(`  ⚠️  Options count changed (${shopifyOptionsCount} → ${expectedOptionsCount}) - recreating`);
+  await deleteShopifyProduct(productGid);
+  await createShopifyProduct(filstarProduct, categoryType);
+  return;
+}
+
+// Провери брой варианти
+if (shopifyVariants.length !== filstarVariants.length) {
+  console.log(`  ⚠️  Variants count changed (${shopifyVariants.length} → ${filstarVariants.length}) - recreating`);
+  await deleteShopifyProduct(productGid);
+  await createShopifyProduct(filstarProduct, categoryType);
+  return;
+}
+
+
+    
 // Провери дали има dropdown меню
 const hasDropdown = shopifyVariants.some(v => 
   v.selectedOptions?.some(opt => opt.name !== 'Title')
@@ -1239,8 +1263,6 @@ console.log(` ✅ Updated ${filstarVariants.length} variants`);
 if (categoryType && stats[categoryType]) {
   stats[categoryType].updated++;
 }
-
-
 
 }
 
