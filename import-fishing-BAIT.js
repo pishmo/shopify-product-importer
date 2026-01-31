@@ -360,7 +360,7 @@ function getCategoryType(product) {
   for (const category of product.categories) {
     const categoryId = category.id?.toString();
     
-    for (const [type, ids] of Object.entries(FILSTAR_RODS_CATEGORY_IDS )) {
+    for (const [type, ids] of Object.entries(FILSTAR_BAIT_CATEGORY_IDS)) {
       if (ids.includes(categoryId)) {
         return type;
       }
