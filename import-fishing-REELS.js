@@ -1222,8 +1222,6 @@ if (categoryType && stats[categoryType]) {
   stats[categoryType].updated++;
 }
 
-
-
 }
 
 
