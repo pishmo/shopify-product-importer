@@ -1208,6 +1208,7 @@ console.log(` ✅ Updated ${filstarVariants.length} variants`);
   }
 
 // Обнови статистиката
+const categoryType = getCategoryType(filstarProduct);
 if (categoryType && stats[categoryType]) {
   stats[categoryType].updated++;
 }
