@@ -67,6 +67,21 @@ async function deleteShopifyProduct(productId) {
   console.log(` ✅ Product deleted`);
 }
 
+// нормализиране на името на снимките
+function normalizeFilename(filename) {
+  // Премахни hash и Shopify UUID
+  let clean = getImageFilename(filename);
+  // Нормализирай .jpeg → .jpg
+  clean = clean.replace(/\.jpeg$/i, '.jpg');
+  return clean;
+}
+
+
+
+
+
+
+
 
 // Функция за извличане на чист filename от URL
 function getImageFilename(src) {
