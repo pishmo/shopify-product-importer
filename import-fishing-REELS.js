@@ -899,6 +899,9 @@ if (allImages.length > 0 && ogImageUrl) {
     const imgFilename = getImageFilename(img.node.src);
     return imgFilename === ogFilename;
   });
+
+  console.log(`  🐛 OG index: ${ogImageIndex}`);
+  console.log(`  🐛 Total images: ${allImages.length}`);
   
   if (ogImageIndex !== -1) {
     const ogImage = allImages[ogImageIndex];
