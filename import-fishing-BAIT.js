@@ -1165,12 +1165,12 @@ for (let i = 0; i < filstarVariants.length; i++) {
   );
 
   const variantResult = await variantResponse.json();
-  console.log(`  🐛 Price update response:`, JSON.stringify(variantResult, null, 2));
+
 
   // Update inventory via REST API
  
 const inventoryItemId = shopifyVariant.inventoryItemId;
-console.log(`  🐛 Inventory item ID: ${inventoryItemId}`);
+
 
 if (inventoryItemId) {
   const locationIdNumeric = LOCATION_ID.replace('gid://shopify/Location/', '');
