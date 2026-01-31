@@ -894,9 +894,15 @@ if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
   
   const ogFilename = getImageFilename(ogImageUrl);
+
+  console.log(`  🐛 OG filename: ${ogFilename}`);
+  console.log(`  🐛 OG URL: ${ogImageUrl}`);
   
-  const ogImageIndex = allImages.findIndex(img => {
+    const ogImageIndex = allImages.findIndex(img => {
     const imgFilename = getImageFilename(img.node.src);
+
+   console.log(`  🐛   Comparing OG "${ogFilename}" with "${imgFilename}"`);
+      
     return imgFilename === ogFilename;
   });
 
