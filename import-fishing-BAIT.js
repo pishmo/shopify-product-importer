@@ -984,7 +984,7 @@ if (allImages.length > 0 && ogImageUrl) {
                 //    UPDATE PRODUCT
 
 
-async function updateShopifyProduct(shopifyProduct, filstarProduct) {
+async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
   try {
     const productGid = shopifyProduct.id;
     const productId = productGid.replace('gid://shopify/Product/', '');
