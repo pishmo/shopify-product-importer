@@ -16,30 +16,36 @@ const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
 const COLLECTION_MAPPING = {
-  front_drag: 'gid://shopify/Collection/739175301502',
-  rear_drag: 'gid://shopify/Collection/739175334270',
-  baitrunner: 'gid://shopify/Collection/739175399806',
-  multipliers: 'gid://shopify/Collection/739175432574',
-  other: 'gid://shopify/Collection/739175530878'
+  telescopes_with_guides: 'gid://shopify/Collection/739156001150',
+  telescopes_without_guides: 'gid://shopify/Collection/739156033918',
+  carp_rods: 'gid://shopify/Collection/739156099454',
+  match_feeder: 'gid://shopify/Collection/739156132222',
+  specialty_rods: 'gid://shopify/Collection/739156230526',
+  kits: 'gid://shopify/Collection/739156164990',
+  spinning: 'gid://shopify/Collection/739155968382'
 };
 
 
-const FILSTAR_REEL_CATEGORY_IDS = {
-  front_drag: ['19'],
-  rear_drag: ['24'],
-  baitrunner: ['30'],
-  multipliers: ['34'],
-  other: ['43']
+const FILSTAR_RODS_CATEGORY_IDS = {
+  telescopes_with_guides: ['33'],
+  telescopes_without_guides: ['38'],
+  carp_rods: ['44'],
+  match_feeder: ['47'],
+  specialty_rods: ['57'],
+  kits: ['56'],
+  spinning: ['28']
 };
 
 const REELS_PARENT_ID = '6';
 
 const stats = {
-  front_drag: { created: 0, updated: 0, images: 0 },
-  rear_drag: { created: 0, updated: 0, images: 0 },
-  baitrunner: { created: 0, updated: 0, images: 0 },
-  multipliers: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }
+  telescopes_with_guides: { created: 0, updated: 0, images: 0 },
+  telescopes_without_guides: { created: 0, updated: 0, images: 0 },
+  carp_rods: { created: 0, updated: 0, images: 0 },
+  match_feeder: { created: 0, updated: 0, images: 0 },
+  specialty_rods: { created: 0, updated: 0, images: 0 },
+  kits: { created: 0, updated: 0, images: 0 },
+  spinning: { created: 0, updated: 0, images: 0 }
 };
 
 
@@ -358,7 +364,7 @@ function getCategoryType(product) {
   for (const category of product.categories) {
     const categoryId = category.id?.toString();
     
-    for (const [type, ids] of Object.entries(FILSTAR_REEL_CATEGORY_IDS )) {
+    for (const [type, ids] of Object.entries(FILSTAR_RODS_CATEGORY_IDS )) {
       if (ids.includes(categoryId)) {
         return type;
       }
