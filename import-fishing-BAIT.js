@@ -1069,34 +1069,32 @@ const shopifyVariants = fullProduct.variants.edges.map(e => ({
 
 const filstarVariants = filstarProduct.variants || [];
 
-const variantsChanged = shopifyVariants.length !== filstarVariants.length ||
+// Провери дали има dropdown меню
+const hasDropdown = shopifyVariants.some(v => 
+  v.selectedOptions?.some(opt => opt.name !== 'Title')
+);
+
+const shouldHaveDropdown = filstarVariants.length > 1 || 
+  filstarVariants.some(v => v.attributes && v.attributes.length > 0);
+
+console.log(`  🐛 Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+
+const variantsChanged = 
+  shopifyVariants.length !== filstarVariants.length ||
+  hasDropdown !== shouldHaveDropdown ||  // ⬅️ НОВА ПРОВЕРКА
   shopifyVariants.some((sv, idx) => {
     const fv = filstarVariants[idx];
     return !fv || sv.sku !== fv.sku;
   });
 
-
-
-
-
-
-console.log(`  🐛 Shopify variants:`, shopifyVariants.length);
-console.log(`  🐛 Filstar variants:`, filstarVariants.length);
-console.log(`  🐛 Shopify options:`, fullProduct.options);
-console.log(`  🐛 First Shopify variant:`, shopifyVariants[0]);
-console.log(`  🐛 First Filstar variant:`, filstarVariants[0]);
-
-
-
+if (variantsChanged) {
+  console.log(`  ⚠️  Variants changed - recreating product`);
+  await deleteShopifyProduct(productGid);
+  await createShopifyProduct(filstarProduct);
+  return;
+}
 
     
-    if (variantsChanged) {
-      console.log(`  ⚠️  Variants changed - recreating product`);
-      await deleteShopifyProduct(productGid);
-      await createShopifyProduct(filstarProduct);
-      return;
-    }
-
     // Update product fields
     const updateMutation = `
       mutation productUpdate($input: ProductInput!) {
