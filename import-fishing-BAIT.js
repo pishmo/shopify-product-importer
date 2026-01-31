@@ -1125,10 +1125,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
     }
 
     console.log(`  ✅ Updated product fields`);
-
-    // Update variants
-
-    
+      
 // Update variants
 for (let i = 0; i < filstarVariants.length; i++) {
   const filstarVariant = filstarVariants[i];
