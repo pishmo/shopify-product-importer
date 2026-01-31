@@ -1127,6 +1127,9 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
     console.log(`  ✅ Updated product fields`);
       
 // Update variants
+
+
+// Update variants
 for (let i = 0; i < filstarVariants.length; i++) {
   const filstarVariant = filstarVariants[i];
   const shopifyVariant = shopifyVariants[i];
@@ -1135,58 +1138,60 @@ for (let i = 0; i < filstarVariants.length; i++) {
   console.log(`  🐛 Updating variant ${i}: SKU ${filstarVariant.sku}`);
   console.log(`  🐛 New price: ${filstarVariant.price}, New quantity: ${filstarVariant.quantity}`);
 
-  const variantMutation = `
-    mutation productVariantUpdate($input: ProductVariantInput!) {
-      productVariantUpdate(input: $input) {
-        productVariant {
-          id
-          price
-          inventoryQuantity
-          barcode
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  `;
+  const variantId = shopifyVariant.id.replace('gid://shopify/ProductVariant/', '');
 
-  const variantInput = {
-    id: shopifyVariant.id,
-    price: String(filstarVariant.price),
-    barcode: filstarVariant.barcode || '',
-    inventoryQuantities: [
-      {
-        availableQuantity: parseInt(filstarVariant.quantity) || 0,
-        locationId: LOCATION_ID
-      }
-    ]
-  };
-
+  // Update price via REST API
   const variantResponse = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`,
     {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'X-Shopify-Access-Token': ACCESS_TOKEN,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        query: variantMutation,
-        variables: { input: variantInput }
+        variant: {
+          id: variantId,
+          price: String(filstarVariant.price),
+          barcode: filstarVariant.barcode || ''
+        }
       })
     }
   );
 
   const variantResult = await variantResponse.json();
-  console.log(`  🐛 Variant update response:`, JSON.stringify(variantResult, null, 2));
+  console.log(`  🐛 Price update response:`, JSON.stringify(variantResult, null, 2));
 
-  if (variantResult.data?.productVariantUpdate?.userErrors?.length > 0) {
-    console.log(`  ❌ Variant update errors:`, variantResult.data.productVariantUpdate.userErrors);
+  // Update inventory via REST API
+  const inventoryItemId = shopifyVariant.inventoryItemId || await getInventoryItemId(variantId);
+  
+  if (inventoryItemId) {
+    const inventoryResponse = await fetch(
+      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': ACCESS_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          location_id: LOCATION_ID.replace('gid://shopify/Location/', ''),
+          inventory_item_id: inventoryItemId,
+          available: parseInt(filstarVariant.quantity) || 0
+        })
+      }
+    );
+
+    const inventoryResult = await inventoryResponse.json();
+    console.log(`  🐛 Inventory update response:`, JSON.stringify(inventoryResult, null, 2));
   }
-}  // ⬅️ ЗАТВАРЯЩА СКОБА ЗА FOR LOOP-А
 
+  await new Promise(resolve => setTimeout(resolve, 500));
+}
+
+
+
+    
 console.log(` ✅ Updated ${filstarVariants.length} variants`);
   } catch (error) {
     console.error(`❌ Error updating product: ${error.message}`);
