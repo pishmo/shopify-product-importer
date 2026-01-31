@@ -1192,7 +1192,7 @@ if (inventoryItemId) {
   );
 
   const inventoryResult = await inventoryResponse.json();
-  console.log(`  🐛 Inventory update response:`, JSON.stringify(inventoryResult, null, 2));
+ 
 }
 
 
