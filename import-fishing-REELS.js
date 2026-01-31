@@ -1266,11 +1266,10 @@ async function main() {
     // Групирай по категория
     const productsByCategory = {
 
-  groundbait: [],
-  boilies: [],
-  additives: [],
-  seeds: [],
-  pastes: [],
+  front_drag: [],
+  rear_drag: [],
+  baitrunner: [],
+  multipliers: [],
   other: []
        
     };
