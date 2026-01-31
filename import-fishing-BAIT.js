@@ -1162,21 +1162,27 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
         ]
       };
 
-      await fetch(
-        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Shopify-Access-Token': ACCESS_TOKEN,
-            'Content-Type': 'application/json'
-          },
-            body: JSON.stringify({
-            query: variantMutation,
-            variables: { input: variantInput }
-          })
-        }
-      );
-    }
+    const variantResponse = await fetch(
+  `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+  {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': ACCESS_TOKEN,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      query: variantMutation,
+      variables: { input: variantInput }
+    })
+  }
+);
+
+const variantResult = await variantResponse.json();
+console.log(`  🐛 Variant update response:`, JSON.stringify(variantResult, null, 2));
+
+if (variantResult.data?.productVariantUpdate?.userErrors?.length > 0) {
+  console.log(`  ❌ Variant update errors:`, variantResult.data.productVariantUpdate.userErrors);
+}
 
     console.log(`  ✅ Updated ${filstarVariants.length} variants`);
 
