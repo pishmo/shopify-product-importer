@@ -1258,12 +1258,14 @@ async function main() {
   console.log('?? Starting Filstar Bait API Import\n');
   console.log('?? Categories to import:');
   
-console.log('  - Захранка - Категория Id - (66)');
-console.log('  - Бойли и пелети - Категория Id - (69)');
-console.log('  - Добавки - Категория Id - (71)');
-console.log('  - Семена - Категория Id - (73)');
-console.log('  - Пасти - Категория Id - (75)');
-console.log('  - Други захранки - Категория Id - (77)');
+ console.log('  -  Телескопи с водачи - Категория Id - (33)');
+  console.log('  -  Телескопи без водачи- Категория Id - (38)');
+  console.log('  -  Шарански пръчки - Категория Id - (44)');
+  console.log('  -  Мач и Фидер - Категория Id - (47)');
+  console.log('  -  Специални пръчки - Категория Id - (57)');
+  console.log('  -  Комплекти - Категория Id - (56)');
+  console.log('  -  Спининг - Категория Id - (28)');
+  
 
 
   
