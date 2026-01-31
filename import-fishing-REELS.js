@@ -931,6 +931,8 @@ if (allImages.length > 0 && ogImageUrl) {
       
       // Провери дали filename е в assigned
       const hasVariant = assignedFilenames.has(imgFilename);
+
+console.log(`  🐛 [${idx}] ${imgFilename} → ${hasVariant ? 'ASSIGNED' : 'FREE'}`);
       
       if (hasVariant) {
         assignedImages.push(img);
@@ -945,6 +947,11 @@ if (allImages.length > 0 && ogImageUrl) {
       ...unassignedImages,
       ...assignedImages
     ];
+
+    console.log(`  📋 Final order:`);
+    finalOrder.forEach((img, idx) => {
+      console.log(`    [${idx}] ${getImageFilename(img.node.src)}`);
+    });
     
     console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
     await reorderProductImages(productGid, finalOrder);
