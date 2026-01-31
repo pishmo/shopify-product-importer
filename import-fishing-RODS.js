@@ -1294,12 +1294,15 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     // Групирай по категория
     const productsByCategory = {
 
-  groundbait: [],
-  boilies: [],
-  additives: [],
-  seeds: [],
-  pastes: [],
-  other: []
+  
+  telescopes_with_guides: [],
+  telescopes_without_guides: [],
+  carp_rods: [],
+  match_feeder: [],
+  specialty_rods: [],
+  kits: [],
+  spinning: []
+  
        
     };
     
