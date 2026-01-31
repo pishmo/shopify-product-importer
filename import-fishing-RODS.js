@@ -1262,15 +1262,27 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
 // MAIN функция
 
 async function main() {
-  console.log('🚀 Starting Filstar REELS Import\n');
+  console.log('🚀 Starting Filstar RODS Import\n');
   console.log('📋 Categories to import:');
-  
-  console.log('  -  Front Drag Reels - Категория Id - (19)');
-  console.log('  -  Rear Drag Reels - Категория Id - (24)');
-  console.log('  -  Baitrunner Reels - Категория Id - (30)');
-  console.log('  -  Multiplier Reels - Категория Id - (34)');
-  console.log('  -  Other Reels - Категория Id - (43)');
 
+
+  telescopes_with_guides: ['33'],
+  telescopes_without_guides: ['38'],
+  carp_rods: ['44'],
+  match_feeder: ['47'],
+  specialty_rods: ['57'],
+  kits: ['56'],
+  spinning: ['28']
+
+
+  
+  console.log('  -  Телескопи с водачи - Категория Id - (33)');
+  console.log('  -  Телескопи без водачи- Категория Id - (38)');
+  console.log('  -  Шарански пръчки - Категория Id - (44)');
+  console.log('  -  Мач и Фидер - Категория Id - (47)');
+  console.log('  -  Специални пръчки - Категория Id - (57)');
+  console.log('  -  Комплекти - Категория Id - (56)');
+  console.log('  -  Спининг - Категория Id - (28)');
   
   
   try {
@@ -1303,11 +1315,15 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     
     // Групирай по категория
     const productsByCategory = {
-  front_drag: [],
-  rear_drag: [],
-  baitrunner: [],
-  multipliers: [],
-  other: []
+
+  telescopes_with_guides: [],
+  telescopes_without_guides: [],
+  carp_rods: [],
+  match_feeder: [],
+  specialty_rods: [],
+  kits: [],
+  spinning: []
+       
     };
     
     accessoryProducts.forEach(product => {
