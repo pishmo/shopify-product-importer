@@ -908,16 +908,12 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
   
- const ogFilename = normalizeFilename(ogImageUrl);
- console.log(`  🐛 OG filename: ${ogFilename}`);
-
+  const ogFilename = normalizeFilename(ogImageUrl);
   const ogImageIndex = allImages.findIndex(img => {
   const imgFilename = normalizeFilename(img.node.src);
   return imgFilename === ogFilename;
       
   });
-
-  console.log(`  🐛 OG index: ${ogImageIndex}`);
   console.log(`  🐛 Total images: ${allImages.length}`);
   
   if (ogImageIndex !== -1) {
@@ -934,9 +930,7 @@ if (allImages.length > 0 && ogImageUrl) {
         }
       }
     }
-    
-    console.log(`  🐛 Assigned filenames:`, Array.from(assignedFilenames));
-    
+         
     // Раздели на assigned и unassigned (без OG)
     const unassignedImages = [];
     const assignedImages = [];
@@ -948,8 +942,6 @@ if (allImages.length > 0 && ogImageUrl) {
       
       // Провери дали filename е в assigned
       const hasVariant = assignedFilenames.has(imgFilename);
-
-console.log(`  🐛 [${idx}] ${imgFilename} → ${hasVariant ? 'ASSIGNED' : 'FREE'}`);
       
       if (hasVariant) {
         assignedImages.push(img);
@@ -964,12 +956,7 @@ console.log(`  🐛 [${idx}] ${imgFilename} → ${hasVariant ? 'ASSIGNED' : 'FRE
       ...unassignedImages,
       ...assignedImages
     ];
-
-    console.log(`  📋 Final order:`);
-    finalOrder.forEach((img, idx) => {
-      console.log(`    [${idx}] ${getImageFilename(img.node.src)}`);
-    });
-    
+       
     console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
     await reorderProductImages(productGid, finalOrder);
   }
