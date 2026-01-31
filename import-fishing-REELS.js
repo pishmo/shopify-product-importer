@@ -1243,8 +1243,6 @@ async function main() {
   console.log('  -  Other Reels - Категория Id - (43)');
 
   
- 
-  
   
   try {
     // Fetch всички продукти от Filstar
@@ -1256,7 +1254,13 @@ async function main() {
       return categoryType !== null;
     });
 
-
+// филтър ску
+const testSkus = ['947828'];
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => testSkus.includes(v.sku))
+);
+console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
+// край на филтъра
 
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
