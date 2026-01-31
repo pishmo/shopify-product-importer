@@ -343,7 +343,7 @@ function formatVariantName(variant, productName) {
   const result = parts.join(' / ');
  
   
-  return result || 'Default';
+  return result || '';
 }
 
 
