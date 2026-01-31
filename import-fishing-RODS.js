@@ -1265,17 +1265,6 @@ async function main() {
   console.log('🚀 Starting Filstar RODS Import\n');
   console.log('📋 Categories to import:');
 
-
-  telescopes_with_guides: ['33'],
-  telescopes_without_guides: ['38'],
-  carp_rods: ['44'],
-  match_feeder: ['47'],
-  specialty_rods: ['57'],
-  kits: ['56'],
-  spinning: ['28']
-
-
-  
   console.log('  -  Телескопи с водачи - Категория Id - (33)');
   console.log('  -  Телескопи без водачи- Категория Id - (38)');
   console.log('  -  Шарански пръчки - Категория Id - (44)');
