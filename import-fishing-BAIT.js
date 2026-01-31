@@ -1011,6 +1011,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
                 price
                 inventoryQuantity
                 barcode
+                inventoryItem { id  }                            
                 selectedOptions {
                   name
                   value
@@ -1061,14 +1062,18 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
     const fullProduct = productData.data.product;
 
     // Check if variants structure changed
-    const shopifyVariants = fullProduct.variants.edges.map(e => e.node);
-    const filstarVariants = filstarProduct.variants || [];
+const shopifyVariants = fullProduct.variants.edges.map(e => ({
+  ...e.node,
+  inventoryItemId: e.node.inventoryItem?.id.replace('gid://shopify/InventoryItem/', '')
+}));
 
-    const variantsChanged = shopifyVariants.length !== filstarVariants.length ||
-      shopifyVariants.some((sv, idx) => {
-        const fv = filstarVariants[idx];
-        return !fv || sv.sku !== fv.sku;
-      });
+const filstarVariants = filstarProduct.variants || [];
+
+const variantsChanged = shopifyVariants.length !== filstarVariants.length ||
+  shopifyVariants.some((sv, idx) => {
+    const fv = filstarVariants[idx];
+    return !fv || sv.sku !== fv.sku;
+  });
 
     if (variantsChanged) {
       console.log(`  ⚠️  Variants changed - recreating product`);
@@ -1163,28 +1168,33 @@ for (let i = 0; i < filstarVariants.length; i++) {
   console.log(`  🐛 Price update response:`, JSON.stringify(variantResult, null, 2));
 
   // Update inventory via REST API
-  const inventoryItemId = shopifyVariant.inventoryItemId || await getInventoryItemId(variantId);
-  
-  if (inventoryItemId) {
-    const inventoryResponse = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          location_id: LOCATION_ID.replace('gid://shopify/Location/', ''),
-          inventory_item_id: inventoryItemId,
-          available: parseInt(filstarVariant.quantity) || 0
-        })
-      }
-    );
+ 
+const inventoryItemId = shopifyVariant.inventoryItemId;
+console.log(`  🐛 Inventory item ID: ${inventoryItemId}`);
 
-    const inventoryResult = await inventoryResponse.json();
-    console.log(`  🐛 Inventory update response:`, JSON.stringify(inventoryResult, null, 2));
-  }
+if (inventoryItemId) {
+  const locationIdNumeric = LOCATION_ID.replace('gid://shopify/Location/', '');
+  
+  const inventoryResponse = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
+    {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        location_id: locationIdNumeric,
+        inventory_item_id: inventoryItemId,
+        available: parseInt(filstarVariant.quantity) || 0
+      })
+    }
+  );
+
+  const inventoryResult = await inventoryResponse.json();
+  console.log(`  🐛 Inventory update response:`, JSON.stringify(inventoryResult, null, 2));
+}
+
 
   await new Promise(resolve => setTimeout(resolve, 500));
 }
