@@ -1278,19 +1278,6 @@ console.log('  - Други захранки - Категория Id - (77)');
 
 
 
-
-// филтър ску
-const testSkus = ['944820','945678','961115'];
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => testSkus.includes(v.sku))
-);
-console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
-// край на филтъра
-
-
-
-
-
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
 
