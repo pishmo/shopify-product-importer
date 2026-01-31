@@ -908,17 +908,13 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
   
-  const ogFilename = getImageFilename(ogImageUrl);
+ const ogFilename = normalizeFilename(ogImageUrl);
+ console.log(`  🐛 OG filename: ${ogFilename}`);
 
-  console.log(`  🐛 OG filename: ${ogFilename}`);
-  console.log(`  🐛 OG URL: ${ogImageUrl}`);
-  
-    const ogImageIndex = allImages.findIndex(img => {
-    const imgFilename = getImageFilename(img.node.src);
-
-   console.log(`  🐛   Comparing OG "${ogFilename}" with "${imgFilename}"`);
+  const ogImageIndex = allImages.findIndex(img => {
+  const imgFilename = normalizeFilename(img.node.src);
+  return imgFilename === ogFilename;
       
-    return imgFilename === ogFilename;
   });
 
   console.log(`  🐛 OG index: ${ogImageIndex}`);
