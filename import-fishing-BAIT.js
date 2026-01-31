@@ -374,13 +374,13 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    telescopes_with_guides: 'Телескопи с водачи',
-    telescopes_without_guides: 'Телескопи без водачи',
-    carp_rods: 'Шарански пръчки',
-    match_feeder: 'Мач и Фидер',
-    specialty_rods: 'Специални пръчки',
-    kits: 'Комплекти',
-    spinning: 'Спининг'
+    groundbait: 'Захранка',
+    boilies: 'Бойли и пелети',
+    additives: 'Добавки',
+    seeds: 'Семена',
+    pastes: 'Пасти',
+    other: 'Други захранки'
+
    
   };
   
