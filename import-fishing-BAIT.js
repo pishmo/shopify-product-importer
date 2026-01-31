@@ -1061,6 +1061,17 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct) {
     const productData = await productResponse.json();
     const fullProduct = productData.data.product;
 
+
+
+console.log(`  🐛 Shopify variants:`, shopifyVariants.length);
+console.log(`  🐛 Filstar variants:`, filstarVariants.length);
+console.log(`  🐛 Shopify options:`, fullProduct.options);
+console.log(`  🐛 First Shopify variant:`, shopifyVariants[0]);
+console.log(`  🐛 First Filstar variant:`, filstarVariants[0]);
+
+
+
+    
     // Check if variants structure changed
 const shopifyVariants = fullProduct.variants.edges.map(e => ({
   ...e.node,
