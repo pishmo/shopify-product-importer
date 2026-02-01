@@ -279,19 +279,6 @@ async function scrapeOgImage(productSlug) {
 let cachedCategoryNames = [];
 function formatVariantName(variant, productName) {
 
-	  // НОВА ЛОГИКА:
-// Провери дали атрибутите са празни
-if (!variant.attributes || variant.attributes.length === 0) {
-  return '';
-}
-
-// Провери дали има САМО атрибут "МОДЕЛ"
-const hasOnlyModelAttribute = variant.attributes.length === 1 && 
-  variant.attributes[0].attribute_name.toUpperCase() === 'МОДЕЛ';
-
-if (hasOnlyModelAttribute) {
-  return '';
-}
 			
 	const parts = [];
   
@@ -357,7 +344,22 @@ if (hasOnlyModelAttribute) {
   }
   
   const result = parts.join(' / ');
- 
+
+
+	  // НОВА ЛОГИКА:
+// Провери дали атрибутите са празни
+if (!variant.attributes || variant.attributes.length === 0) {
+  return '';
+}
+
+// Провери дали има САМО атрибут "МОДЕЛ"
+const hasOnlyModelAttribute = variant.attributes.length === 1 && 
+  variant.attributes[0].attribute_name.toUpperCase() === 'МОДЕЛ';
+
+if (hasOnlyModelAttribute) {
+  return '';
+}
+	
   return result || '';
 }
 
