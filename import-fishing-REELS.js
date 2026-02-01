@@ -1289,6 +1289,8 @@ async function main() {
       return categoryType !== null;
     });
 
+
+    
 // филтър ску
 const testSkus = ['947828	'];  	
 accessoryProducts = accessoryProducts.filter(p => 
@@ -1297,10 +1299,10 @@ accessoryProducts = accessoryProducts.filter(p =>
 console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
 // край на филтъра
 
+
+
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
-
-
     
     // Групирай по категория
     const productsByCategory = {
