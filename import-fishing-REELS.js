@@ -982,7 +982,7 @@ if (allImages.length > 0 && ogImageUrl) {
 
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
- onsole.log(`🔄 Updating: ${filstarProduct.name}`);
+ console.log(`🔄 Updating: ${filstarProduct.name}`);
 	
   // НОВА ПРОВЕРКА: Брой опции
   const apiOptionsCount = shopifyProduct.options?.length || 0;
