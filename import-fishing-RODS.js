@@ -1311,13 +1311,13 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     
     // Групирай по категория
     const productsByCategory = {
-  telescopes_with_guides: ['33'],
-  telescopes_without_guides: ['38'],
-  carp_rods: ['44'],
-  match_feeder: ['47'],
-  specialty_rods: ['57'],
-  kits: ['56'],
-  spinning: ['28']
+  telescopes_with_guides: [],
+  telescopes_without_guides: [],
+  carp_rods: [],
+  match_feeder: [],
+  specialty_rods: [],
+  kits: [],
+  spinning: []
 	  
     };
     
