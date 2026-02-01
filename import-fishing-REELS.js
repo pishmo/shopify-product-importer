@@ -1267,7 +1267,7 @@ if (categoryType && stats[categoryType]) {
 
 // MAIN функция
 
-async function main() {
+  async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
   
@@ -1277,7 +1277,7 @@ async function main() {
   console.log('  -  Multiplier Reels - Категория Id - (34)');
   console.log('  -  Other Reels - Категория Id - (43)');
 
-  
+   
   
   try {
     // Fetch всички продукти от Filstar
@@ -1291,28 +1291,24 @@ async function main() {
 
 
     
-// филтър ску
-const testSkus = ['947828	'];  	
+ // филтър ску
+const testSkus = ['947828'];
 accessoryProducts = accessoryProducts.filter(p => 
   p.variants?.some(v => testSkus.includes(v.sku))
 );
 console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
 // край на филтъра
 
-
-
     
     console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
+
+
     
     // Групирай по категория
     const productsByCategory = {
-
-  front_drag: [],
-  rear_drag: [],
-  baitrunner: [],
-  multipliers: [],
-  other: []
-       
+       ceps: [],
+       prashki: []  
+	  
     };
     
     accessoryProducts.forEach(product => {
@@ -1328,7 +1324,9 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
       console.log(`  ${getCategoryName(type)}: ${products.length} products`);
     });
     console.log('');
-    
+
+
+
  
     
     // Обработи всяка категория
