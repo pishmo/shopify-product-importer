@@ -1306,11 +1306,11 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
     
     // Групирай по категория
     const productsByCategory = {
-  front_drag: ['19'],
-  rear_drag: ['24'],
-  baitrunner: ['30'],
-  multipliers: ['34'],
-  other: ['43']
+  front_drag: [],
+  rear_drag: [],
+  baitrunner: [],
+  multipliers: [],
+  other: []
 	  
     };
     
