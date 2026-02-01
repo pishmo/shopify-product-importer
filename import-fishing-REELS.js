@@ -274,6 +274,7 @@ async function scrapeOgImage(productSlug) {
 
 
 
+
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
 function formatVariantName(variant, productName) {
