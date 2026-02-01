@@ -982,7 +982,38 @@ if (allImages.length > 0 && ogImageUrl) {
 
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
-  try {
+ onsole.log(`🔄 Updating: ${filstarProduct.name}`);
+	
+  // НОВА ПРОВЕРКА: Брой опции
+  const apiOptionsCount = shopifyProduct.options?.length || 0;
+  const filstarVariantsCount = filstarProduct.variants?.length || 0;
+  
+  console.log(`📊 Options check:`);
+  console.log(`  - Shopify options: ${apiOptionsCount}`);
+  console.log(`  - Filstar variants: ${filstarVariantsCount}`);
+  
+  // Проверка дали има разлика
+  const needsOptionsRebuild = (apiOptionsCount > 1 && filstarVariantsCount === 1) || 
+                               (apiOptionsCount === 1 && filstarVariantsCount > 1);
+  
+  if (needsOptionsRebuild) {
+    console.log(`  ⚠️ OPTIONS MISMATCH! Shopify has ${apiOptionsCount} options but Filstar has ${filstarVariantsCount} variants`);
+  }
+  
+  // НОВА ПРОВЕРКА: Брой варианти
+  const shopifyVariantsCount = shopifyProduct.variants?.edges?.length || 0;
+  
+  console.log(`📊 Variants check:`);
+  console.log(`  - Shopify variants: ${shopifyVariantsCount}`);
+  console.log(`  - Filstar variants: ${filstarVariantsCount}`);
+  
+  if (shopifyVariantsCount !== filstarVariantsCount) {
+    console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
+  }
+	// край на проверката за опции и варианти
+	
+	
+	try {
     const productGid = shopifyProduct.id;
     const productId = productGid.replace('gid://shopify/Product/', '');
 
