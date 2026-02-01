@@ -271,17 +271,22 @@ async function scrapeOgImage(productSlug) {
   }
 }
 
-
-
-
+// FORMAT NAME
 
 // Глобална променлива за кеширане на категории
+
+
 let cachedCategoryNames = [];
 function formatVariantName(variant, productName) { 
   const parts = []; 
   
   // Помощна функция за форматиране на име на атрибут 
   function formatAttributeName(name) { 
+
+ return '';
+
+
+	  
     let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(); 
     if (formatted.includes(',')) { 
       if (!formatted.endsWith('.')) { 
@@ -341,6 +346,8 @@ function formatVariantName(variant, productName) {
   
   // Ако НЯМА нищо - върни празен стринг
   return '';
+
+
 }
 
 
