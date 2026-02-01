@@ -278,12 +278,12 @@ async function scrapeOgImage(productSlug) {
 
 let cachedCategoryNames = [];
 function formatVariantName(variant, productName) { 
-  const parts = []; 
+  const parts = [];  return '';
   
   // Помощна функция за форматиране на име на атрибут 
   function formatAttributeName(name) { 
 
- return '';
+
 
 
 	  
