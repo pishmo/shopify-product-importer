@@ -291,15 +291,29 @@ function formatVariantName(variant, productName) {
     return formatted;
   } 
   
-  // 1. АРТИКУЛ (първи, само стойност)
+  // 1. MODEL (ПЪРВИ - от variant.model или атрибут "АРТИКУЛ")
+  let model = variant.model; 
+  if (!model) { 
+    const artikulAttr = variant.attributes?.find(attr => 
+      attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
+    ); 
+    if (artikulAttr) { 
+      model = artikulAttr.value; 
+    } 
+  } 
+  if (model && model !== productName) { 
+    parts.push(model); 
+  } 
+  
+  // 2. АРТИКУЛ (само ако е различен от model)
   const artikulAttr = variant.attributes?.find(attr => 
     attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
   ); 
-  if (artikulAttr && artikulAttr.value) { 
+  if (artikulAttr && artikulAttr.value && artikulAttr.value !== model) { 
     parts.push(artikulAttr.value); 
   } 
   
-  // 2. РАЗМЕР 
+  // 3. РАЗМЕР 
   const sizeAttr = variant.attributes?.find(attr => 
     attr.attribute_name.toUpperCase() === 'РАЗМЕР' 
   ); 
@@ -307,7 +321,7 @@ function formatVariantName(variant, productName) {
     parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`); 
   } 
   
-  // 3. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер) 
+  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер) 
   if (variant.attributes && variant.attributes.length > 0) { 
     const otherAttrs = variant.attributes 
       .filter(attr => { 
@@ -325,11 +339,9 @@ function formatVariantName(variant, productName) {
     return result;
   }
   
-  // Ако НЯМА атрибути - върни variant.model (без форматиране)
-  return variant.model || '';
+  // Ако НЯМА нищо - върни празен стринг
+  return '';
 }
-
-
 
 
 // Функция за определяне на типа аксесоар
