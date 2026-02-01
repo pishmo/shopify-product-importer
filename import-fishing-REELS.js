@@ -275,17 +275,12 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 
-
 let cachedCategoryNames = [];
 function formatVariantName(variant, productName) { 
   const parts = [];  
   
   // Помощна функция за форматиране на име на атрибут 
   function formatAttributeName(name) { 
-
-
-
-
 	  
     let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(); 
     if (formatted.includes(',')) { 
@@ -347,11 +342,10 @@ function formatVariantName(variant, productName) {
   // Ако НЯМА нищо - върни празен стринг
   return '';
 
-
 }
 
 
-// Функция за определяне на типа аксесоар
+// Функция за определяне на типа на категорията
 function getCategoryType(product) {
   if (!product.categories || product.categories.length === 0) {
     return null;
