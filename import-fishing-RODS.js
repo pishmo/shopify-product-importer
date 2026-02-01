@@ -1282,8 +1282,6 @@ async function main() {
   console.log('  -  Комплекти - Категория Id - (56)');
   console.log('  -  Спининг - Категория Id - (28)');
   
-
-
   
   
   try {
@@ -1296,27 +1294,34 @@ async function main() {
       return categoryType !== null;
     });
 
+
     
-    console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
+ // филтър ску
+const testSkus = ['947828'];
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => testSkus.includes(v.sku))
+);
+console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
+// край на филтъра
+
+    
+    console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 
 
     
     // Групирай по категория
     const productsByCategory = {
-
-  
-  telescopes_with_guides: [],
-  telescopes_without_guides: [],
-  carp_rods: [],
-  match_feeder: [],
-  specialty_rods: [],
-  kits: [],
-  spinning: []
-  
-       
+  telescopes_with_guides: ['33'],
+  telescopes_without_guides: ['38'],
+  carp_rods: ['44'],
+  match_feeder: ['47'],
+  specialty_rods: ['57'],
+  kits: ['56'],
+  spinning: ['28']
+	  
     };
     
-     accessoryProducts.forEach(product => {
+    accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
       if (categoryType) {
         productsByCategory[categoryType].push(product);
@@ -1329,7 +1334,9 @@ async function main() {
       console.log(`  ${getCategoryName(type)}: ${products.length} products`);
     });
     console.log('');
-    
+
+
+
  
     
     // Обработи всяка категория
