@@ -1300,7 +1300,7 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
 // край на филтъра
 
     
-    console.log(`🎯 Found ${accessoryProducts.length} accessory products to process\n`);
+    console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 
 
     
