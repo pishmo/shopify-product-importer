@@ -393,7 +393,7 @@ function getCategoryName(categoryType) {
    
   };
   
-  return names[categoryType] || 'Аксесоари';
+  return names[categoryType] || 'Макари';
 }
 
 
