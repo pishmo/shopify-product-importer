@@ -277,90 +277,56 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 let cachedCategoryNames = [];
-function formatVariantName(variant, productName) {
-
-			
-	const parts = [];
+function formatVariantName(variant, productName) { 
+  const parts = []; 
   
-  // Помощна функция за форматиране на име на атрибут
-  function formatAttributeName(name) {
-    // Главна буква + малки
-  let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  // Помощна функция за форматиране на име на атрибут 
+  function formatAttributeName(name) { 
+    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(); 
+    if (formatted.includes(',')) { 
+      if (!formatted.endsWith('.')) { 
+        formatted = formatted + '. '; 
+      } 
+    } 
+    return formatted;
+  } 
   
-  // Ако има запетая в името, добави точка и интервал след последната дума
-  if (formatted.includes(',')) {
-    // Ако вече завършва с точка, не добавяй още една
-    if (!formatted.endsWith('.')) {
-      formatted = formatted + '. ';
-    }
-  }
-  
-  return formatted;
-}
-  
-  // 1. MODEL (от variant.model или атрибут "АРТИКУЛ")
-  let model = variant.model;
-  
-  if (!model) {
-    console.log(`  🐛 No variant.model, checking attributes...`);
-    const artikulAttr = variant.attributes?.find(attr => 
-      attr.attribute_name.toUpperCase() === 'АРТИКУЛ'
-    );
-    if (artikulAttr) {
-      model = artikulAttr.value;
-    }
-  }
-  
-  if (model && model !== productName) {
-    parts.push(model);
-  }
-  
-  // 2. АРТИКУЛ (само стойност, без "Артикул:")
+  // 1. АРТИКУЛ (първи, само стойност)
   const artikulAttr = variant.attributes?.find(attr => 
-    attr.attribute_name.toUpperCase() === 'АРТИКУЛ'
-  );
-  if (artikulAttr && artikulAttr.value && artikulAttr.value !== model) {
-    parts.push(artikulAttr.value);
-  }
+    attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
+  ); 
+  if (artikulAttr && artikulAttr.value) { 
+    parts.push(artikulAttr.value); 
+  } 
   
-  // 3. РАЗМЕР
+  // 2. РАЗМЕР 
   const sizeAttr = variant.attributes?.find(attr => 
-    attr.attribute_name.toUpperCase() === 'РАЗМЕР'
-  );
-  if (sizeAttr && sizeAttr.value) {
-    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`);
+    attr.attribute_name.toUpperCase() === 'РАЗМЕР' 
+  ); 
+  if (sizeAttr && sizeAttr.value) { 
+    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`); 
+  } 
+  
+  // 3. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер) 
+  if (variant.attributes && variant.attributes.length > 0) { 
+    const otherAttrs = variant.attributes 
+      .filter(attr => { 
+        const name = attr.attribute_name.toUpperCase(); 
+        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value; 
+      }) 
+      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`); 
+    parts.push(...otherAttrs); 
+  } 
+  
+  const result = parts.join(' / '); 
+  
+  // Ако има форматиран резултат - върни го
+  if (result && result.trim() !== '') {
+    return result;
   }
   
-  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер)
-  if (variant.attributes && variant.attributes.length > 0) {
-    const otherAttrs = variant.attributes
-      .filter(attr => {
-        const name = attr.attribute_name.toUpperCase();
-        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value;
-      })
-      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`);
-    
-    parts.push(...otherAttrs);
-  }
-  
-  const result = parts.join(' / ');
-
-
-	  // НОВА ЛОГИКА:
-// Провери дали атрибутите са празни
-if (!variant.attributes || variant.attributes.length === 0) {
-  return '';
-}
-
-// Провери дали има САМО атрибут "МОДЕЛ"
-const hasOnlyModelAttribute = variant.attributes.length === 1 && 
-  variant.attributes[0].attribute_name.toUpperCase() === 'МОДЕЛ';
-
-if (hasOnlyModelAttribute) {
-  return '';
-}
-	
-  return result || '';
+  // Ако НЯМА атрибути - върни variant.model (без форматиране)
+  return variant.model || '';
 }
 
 
