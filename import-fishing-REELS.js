@@ -985,9 +985,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   console.log(`  - Filstar variants: ${filstarVariantsCount}`);
   
   if (shopifyVariantsCount !== filstarVariantsCount) {
+  console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
+	  
   await deleteShopifyProduct(shopifyProduct.id);  // ⬅️ Използвай shopifyProduct.id
   await createShopifyProduct(filstarProduct, categoryType);
-  console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
+  
   return;   
   }
 	
