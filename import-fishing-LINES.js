@@ -277,7 +277,7 @@ async function scrapeOgImage(productSlug) {
 
 let cachedCategoryNames = [];
 function formatVariantName(variant, productName) { 
-  const parts = [];  
+const parts = [];  
   
   // Помощна функция за форматиране на име на атрибут 
   function formatAttributeName(name) { 
@@ -291,46 +291,41 @@ function formatVariantName(variant, productName) {
     return formatted;
   } 
   
-  // 1. MODEL (ПЪРВИ - от variant.model или атрибут "АРТИКУЛ")
-  let model = variant.model; 
-  if (!model) { 
-    const artikulAttr = variant.attributes?.find(attr => 
-      attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
-    ); 
-    if (artikulAttr) { 
-      model = artikulAttr.value; 
-    } 
-  } 
-  if (model && model !== productName) { 
-    parts.push(model); 
-  } 
+ // 1. Дължина
+  const length = filtered.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
+  if (length) {
+    parts.push(`${length}м.`);
+  }
   
-  // 2. АРТИКУЛ (само ако е различен от model)
-  const artikulAttr = variant.attributes?.find(attr => 
-    attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
-  ); 
-  if (artikulAttr && artikulAttr.value && artikulAttr.value !== model) { 
-    parts.push(artikulAttr.value); 
-  } 
+  // 2. Диаметър
+  const diameter = filtered.find(a => a.attribute_name.includes('РАЗМЕР') && a.attribute_name.includes('MM'))?.value;
+  if (diameter) {
+    parts.push(`ø${diameter}мм.`);
+  }
   
-  // 3. РАЗМЕР 
-  const sizeAttr = variant.attributes?.find(attr => 
-    attr.attribute_name.toUpperCase() === 'РАЗМЕР' 
-  ); 
-  if (sizeAttr && sizeAttr.value) { 
-    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`); 
-  } 
+  // 3. Японска номерация
+  const japaneseSize = filtered.find(a => a.attribute_name.includes('ЯПОНСКА НОМЕРАЦИЯ'))?.value;
+  if (japaneseSize) {
+    parts.push(japaneseSize);
+  }
   
-  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер) 
-  if (variant.attributes && variant.attributes.length > 0) { 
-    const otherAttrs = variant.attributes 
-      .filter(attr => { 
-        const name = attr.attribute_name.toUpperCase(); 
-        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value; 
-      }) 
-      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`); 
-    parts.push(...otherAttrs); 
-  } 
+  // 4. Тест (kg/LB)
+  const testKg = filtered.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('KG'))?.value;
+  const testLb = filtered.find(a => a.attribute_name.includes('ТЕСТ') && a.attribute_name.includes('LB'))?.value;
+  if (testKg && testLb) {
+    parts.push(`${testKg}кг. / ${testLb}LB`);
+  } else if (testKg) {
+    parts.push(`${testKg}кг.`);
+  } else if (testLb) {
+    parts.push(`${testLb}LB`);
+  }
+  
+  // 5. Цвят накрая
+  const color = filtered.find(a => a.attribute_name.includes('ЦВЯТ'))?.value;
+  if (color) {
+    parts.push(color);
+  }
+  
   
   const result = parts.join(' / '); 
   
