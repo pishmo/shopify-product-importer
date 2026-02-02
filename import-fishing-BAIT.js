@@ -1252,11 +1252,13 @@ if (categoryType && stats[categoryType]) {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
   
-  console.log('  -  Front Drag Reels - Категория Id - (19)');
-  console.log('  -  Rear Drag Reels - Категория Id - (24)');
-  console.log('  -  Baitrunner Reels - Категория Id - (30)');
-  console.log('  -  Multiplier Reels - Категория Id - (34)');
-  console.log('  -  Other Reels - Категория Id - (43)');
+console.log('  - Захранка - Категория Id - (66)');
+console.log('  - Бойли и пелети - Категория Id - (69)');
+console.log('  - Добавки - Категория Id - (71)');
+console.log('  - Семена - Категория Id - (73)');
+console.log('  - Пасти - Категория Id - (75)');
+console.log('  - Други захранки - Категория Id - (77)');
+
      
   try {
     // Fetch всички продукти от Filstar
@@ -1272,10 +1274,12 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
-  front_drag: [],
-  rear_drag: [],
-  baitrunner: [],
-  multipliers: [],
+  
+  groundbait: [],
+  boilies: [],
+  additives: [],
+  seeds: [],
+  pastes: [],
   other: []
 	  
     };
