@@ -16,22 +16,22 @@ const LOCATION_ID = 'gid://shopify/Location/109713850750';
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-  carp_fishing: ['37'] 
+   boxes_and_bags: ['61']
 };
 
 const ACCESSORIES_PARENT_ID = '11';
 
 // Shopify collection IDs
-const COLLECTION_MAPPING  = {
+const SHOPIFY_ACCESSORIES_COLLECTIONS = {
   
-  carp_fishing: 'gid://shopify/Collection/739661152638'
+   boxes_and_bags: 'gid://shopify/Collection/739661316478'
  
 };
 
 // Статистика
 const stats = {
   
-  carp_fishing: { created: 0, updated: 0, images: 0 }
+  boxes_and_bags: { created: 0, updated: 0, images: 0 }
   
 };
 
@@ -1246,7 +1246,7 @@ if (categoryType && stats[categoryType]) {
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+  console.log('  - Аксесоари Кутии и калъфи - Категория Id - (61)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1262,7 +1262,7 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
- carp_fishing: []
+ boxes_and_bags: []
 	  
     };
     
