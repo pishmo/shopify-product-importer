@@ -1,4 +1,4 @@
-// import-fishing-RODS.js - Импорт на ПРЪЧКИ от Filstar API
+// import-fishing-REELS.js - Импорт на Въдици от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -12,40 +12,30 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
-
-
-
 const COLLECTION_MAPPING = {
-  telescopes_with_guides: 'gid://shopify/Collection/739156001150',
-  telescopes_without_guides: 'gid://shopify/Collection/739156033918',
-  carp_rods: 'gid://shopify/Collection/739156099454',
-  match_feeder: 'gid://shopify/Collection/739156132222',
-  specialty_rods: 'gid://shopify/Collection/739156230526',
-  kits: 'gid://shopify/Collection/739156164990',
-  spinning: 'gid://shopify/Collection/739155968382'
+  front_drag: 'gid://shopify/Collection/739175301502',
+  rear_drag: 'gid://shopify/Collection/739175334270',
+  baitrunner: 'gid://shopify/Collection/739175399806',
+  multipliers: 'gid://shopify/Collection/739175432574',
+  other: 'gid://shopify/Collection/739175530878'
 };
 
-
-const FILSTAR_RODS_CATEGORY_IDS = {
-  telescopes_with_guides: ['33'],
-  telescopes_without_guides: ['38'],
-  carp_rods: ['44'],
-  match_feeder: ['47'],
-  specialty_rods: ['57'],
-  kits: ['56'],
-  spinning: ['28']
+const FILSTAR_REEL_CATEGORY_IDS = {
+  front_drag: ['19'],
+  rear_drag: ['24'],
+  baitrunner: ['30'],
+  multipliers: ['34'],
+  other: ['43']
 };
 
 const REELS_PARENT_ID = '6';
 
 const stats = {
-  telescopes_with_guides: { created: 0, updated: 0, images: 0 },
-  telescopes_without_guides: { created: 0, updated: 0, images: 0 },
-  carp_rods: { created: 0, updated: 0, images: 0 },
-  match_feeder: { created: 0, updated: 0, images: 0 },
-  specialty_rods: { created: 0, updated: 0, images: 0 },
-  kits: { created: 0, updated: 0, images: 0 },
-  spinning: { created: 0, updated: 0, images: 0 }
+  front_drag: { created: 0, updated: 0, images: 0 },
+  rear_drag: { created: 0, updated: 0, images: 0 },
+  baitrunner: { created: 0, updated: 0, images: 0 },
+  multipliers: { created: 0, updated: 0, images: 0 },
+  other: { created: 0, updated: 0, images: 0 }
 };
 
 
@@ -277,96 +267,81 @@ async function scrapeOgImage(productSlug) {
   }
 }
 
-
+// FORMAT NAME
 
 // Глобална променлива за кеширане на категории
+
 let cachedCategoryNames = [];
-function formatVariantName(variant, productName) {
-  const parts = [];
+function formatVariantName(variant, productName) { 
+  const parts = [];  
   
-  // Помощна функция за форматиране на име на атрибут
-  function formatAttributeName(name) {
-    // Главна буква + малки
-  let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  // Помощна функция за форматиране на име на атрибут 
+  function formatAttributeName(name) { 
+	  
+    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(); 
+    if (formatted.includes(',')) { 
+      if (!formatted.endsWith('.')) { 
+        formatted = formatted + '. '; 
+      } 
+    } 
+    return formatted;
+  } 
   
-  // Ако има запетая в името, добави точка и интервал след последната дума
-  if (formatted.includes(',')) {
-    // Ако вече завършва с точка, не добавяй още една
-    if (!formatted.endsWith('.')) {
-      formatted = formatted + '. ';
-    }
-  }
-  
-  return formatted;
-}
-  
-  // 1. MODEL (от variant.model или атрибут "АРТИКУЛ")
-  let model = variant.model;
-  
-  if (!model) {
-    console.log(`  🐛 No variant.model, checking attributes...`);
+  // 1. MODEL (ПЪРВИ - от variant.model или атрибут "АРТИКУЛ")
+  let model = variant.model; 
+  if (!model) { 
     const artikulAttr = variant.attributes?.find(attr => 
-      attr.attribute_name.toUpperCase() === 'АРТИКУЛ'
-    );
-    if (artikulAttr) {
-      model = artikulAttr.value;
-    }
-  }
+      attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
+    ); 
+    if (artikulAttr) { 
+      model = artikulAttr.value; 
+    } 
+  } 
+  if (model && model !== productName) { 
+    parts.push(model); 
+  } 
   
-  if (model && model !== productName) {
-    parts.push(model);
-  }
-  
-  // 2. АРТИКУЛ (само стойност, без "Артикул:")
+  // 2. АРТИКУЛ (само ако е различен от model)
   const artikulAttr = variant.attributes?.find(attr => 
-    attr.attribute_name.toUpperCase() === 'АРТИКУЛ'
-  );
-  if (artikulAttr && artikulAttr.value && artikulAttr.value !== model) {
-    parts.push(artikulAttr.value);
-  }
+    attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
+  ); 
+  if (artikulAttr && artikulAttr.value && artikulAttr.value !== model) { 
+    parts.push(artikulAttr.value); 
+  } 
   
-  // 3. РАЗМЕР
+  // 3. РАЗМЕР 
   const sizeAttr = variant.attributes?.find(attr => 
-    attr.attribute_name.toUpperCase() === 'РАЗМЕР'
-  );
-  if (sizeAttr && sizeAttr.value) {
-    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`);
+    attr.attribute_name.toUpperCase() === 'РАЗМЕР' 
+  ); 
+  if (sizeAttr && sizeAttr.value) { 
+    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`); 
+  } 
+  
+  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер) 
+  if (variant.attributes && variant.attributes.length > 0) { 
+    const otherAttrs = variant.attributes 
+      .filter(attr => { 
+        const name = attr.attribute_name.toUpperCase(); 
+        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value; 
+      }) 
+      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`); 
+    parts.push(...otherAttrs); 
+  } 
+  
+  const result = parts.join(' / '); 
+  
+  // Ако има форматиран резултат - върни го
+  if (result && result.trim() !== '') {
+    return result;
   }
   
-  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер)
-  if (variant.attributes && variant.attributes.length > 0) {
-    const otherAttrs = variant.attributes
-      .filter(attr => {
-        const name = attr.attribute_name.toUpperCase();
-        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value;
-      })
-      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`);
-    
-    parts.push(...otherAttrs);
-  }
-  
-  const result = parts.join(' / ');
- 
-  // НОВА ЛОГИКА:
-// Провери дали атрибутите са празни
-if (!variant.attributes || variant.attributes.length === 0) {
+  // Ако НЯМА нищо - върни празен стринг
   return '';
-}
 
-// Провери дали има САМО атрибут "МОДЕЛ"
-const hasOnlyModelAttribute = variant.attributes.length === 1 && 
-  variant.attributes[0].attribute_name.toUpperCase() === 'МОДЕЛ';
-
-if (hasOnlyModelAttribute) {
-  return '';
-}
-
-  return result || '';
 }
 
 
-
-// Функция за определяне на типа аксесоар
+// Функция за определяне на типа на категорията
 function getCategoryType(product) {
   if (!product.categories || product.categories.length === 0) {
     return null;
@@ -375,7 +350,7 @@ function getCategoryType(product) {
   for (const category of product.categories) {
     const categoryId = category.id?.toString();
     
-    for (const [type, ids] of Object.entries(FILSTAR_RODS_CATEGORY_IDS )) {
+    for (const [type, ids] of Object.entries(FILSTAR_REEL_CATEGORY_IDS )) {
       if (ids.includes(categoryId)) {
         return type;
       }
@@ -389,17 +364,15 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    telescopes_with_guides: 'Телескопи с водачи',
-    telescopes_without_guides: 'Телескопи без водачи',
-    carp_rods: 'Шарански пръчки',
-    match_feeder: 'Мач и Фидер',
-    specialty_rods: 'Специални пръчки',
-    kits: 'Комплекти',
-    spinning: 'Спининг'
+    front_drag: 'Front Drag Reels',
+    rear_drag: 'Rear Drag Reels',
+    baitrunner: 'Baitrunner Reels',
+    multipliers: 'Multiplier Reels',
+    other: 'Other Reels'
    
   };
   
-  return names[categoryType] || 'Аксесоари';
+  return names[categoryType] || 'Макари';
 }
 
 
@@ -625,6 +598,7 @@ async function reorderProductImages(productGid, images) {
     return false;
   }
 }
+
 
 // Функция за създаване на нов продукт      CREATE PRODUCT
 
@@ -992,13 +966,34 @@ if (allImages.length > 0 && ogImageUrl) {
 }
 
 
-
-
                 //    UPDATE PRODUCT
 
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
-  try {
+ console.log(`🔄 Updating: ${filstarProduct.name}`);
+  
+  // НОВА ПРОВЕРКА: Брой варианти
+  const shopifyVariantsCount = shopifyProduct.variants?.edges?.length || 0;
+  const filstarVariantsCount = filstarProduct.variants?.length || 0;
+  
+  console.log(`📊 Variants check:`);
+  console.log(`  - Shopify variants: ${shopifyVariantsCount}`);
+  console.log(`  - Filstar variants: ${filstarVariantsCount}`);
+  
+  if (shopifyVariantsCount !== filstarVariantsCount) {
+  console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
+	  
+  await deleteShopifyProduct(shopifyProduct.id);  // ⬅️ Използвай shopifyProduct.id
+  await createShopifyProduct(filstarProduct, categoryType);
+  
+  return;   
+  }
+	
+	
+// край на проверката за опции и варианти
+	
+	
+	try {
     const productGid = shopifyProduct.id;
     const productId = productGid.replace('gid://shopify/Product/', '');
 
@@ -1082,44 +1077,25 @@ const shopifyVariants = fullProduct.variants.edges.map(e => ({
 
 const filstarVariants = filstarProduct.variants || [];
 
-// Провери брой опции
-const shopifyOptionsCount = fullProduct.options?.filter(opt => opt.name !== 'Title').length || 0;
-const filstarHasOptions = filstarVariants.some(v => {
-  const formattedName = formatVariantName(v, filstarProduct.name);
-  return formattedName && formattedName.trim() !== '';
-});
-const expectedOptionsCount = filstarHasOptions ? 1 : 0;
+// Провери дали има dropdown меню САМО ако е 1 вариант
+let dropdownMismatch = false;
 
-if (shopifyOptionsCount !== expectedOptionsCount) {
-  console.log(`  ⚠️  Options count changed (${shopifyOptionsCount} → ${expectedOptionsCount}) - recreating`);
-  await deleteShopifyProduct(productGid);
-  await createShopifyProduct(filstarProduct, categoryType);
-  return;
+if (filstarVariants.length === 1) {
+  const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
+  const shouldHaveDropdown = variantName && variantName.trim() !== '';
+  
+  const hasDropdown = shopifyVariants.some(v => 
+    v.selectedOptions?.some(opt => opt.name !== 'Title')
+  );
+  
+  console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+  
+  dropdownMismatch = hasDropdown !== shouldHaveDropdown;
 }
-
-// Провери брой варианти
-if (shopifyVariants.length !== filstarVariants.length) {
-  console.log(`  ⚠️  Variants count changed (${shopifyVariants.length} → ${filstarVariants.length}) - recreating`);
-  await deleteShopifyProduct(productGid);
-  await createShopifyProduct(filstarProduct, categoryType);
-  return;
-}
-
-
-    
-// Провери дали има dropdown меню
-const hasDropdown = shopifyVariants.some(v => 
-  v.selectedOptions?.some(opt => opt.name !== 'Title')
-);
-
-const shouldHaveDropdown = filstarVariants.length > 1 || 
-  filstarVariants.some(v => v.attributes && v.attributes.length > 0);
-
-console.log(`  🐛 Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
 
 const variantsChanged = 
   shopifyVariants.length !== filstarVariants.length ||
-  hasDropdown !== shouldHaveDropdown ||  // ⬅️ НОВА ПРОВЕРКА
+  dropdownMismatch ||  // ⬅️ ПРОВЕРКА ЗА DROPDOWN
   shopifyVariants.some((sv, idx) => {
     const fv = filstarVariants[idx];
     return !fv || sv.sku !== fv.sku;
@@ -1249,9 +1225,6 @@ if (inventoryItemId) {
 
   await new Promise(resolve => setTimeout(resolve, 500));
 }
-
-
-
     
 console.log(` ✅ Updated ${filstarVariants.length} variants`);
   } catch (error) {
@@ -1267,23 +1240,18 @@ if (categoryType && stats[categoryType]) {
 }
 
 
-
 // MAIN функция
 
-async function main() {
-  console.log('?? Starting Filstar Bait API Import\n');
-  console.log('?? Categories to import:');
+  async function main() {
+  console.log('🚀 Starting Filstar REELS Import\n');
+  console.log('📋 Categories to import:');
   
- console.log('  -  Телескопи с водачи - Категория Id - (33)');
-  console.log('  -  Телескопи без водачи- Категория Id - (38)');
-  console.log('  -  Шарански пръчки - Категория Id - (44)');
-  console.log('  -  Мач и Фидер - Категория Id - (47)');
-  console.log('  -  Специални пръчки - Категория Id - (57)');
-  console.log('  -  Комплекти - Категория Id - (56)');
-  console.log('  -  Спининг - Категория Id - (28)');
-  
-  
-  
+  console.log('  -  Front Drag Reels - Категория Id - (19)');
+  console.log('  -  Rear Drag Reels - Категория Id - (24)');
+  console.log('  -  Baitrunner Reels - Категория Id - (30)');
+  console.log('  -  Multiplier Reels - Категория Id - (34)');
+  console.log('  -  Other Reels - Категория Id - (43)');
+     
   try {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
@@ -1293,31 +1261,16 @@ async function main() {
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
-
-
-    
- // филтър ску
-const testSkus = ['947828'];
-accessoryProducts = accessoryProducts.filter(p => 
-  p.variants?.some(v => testSkus.includes(v.sku))
-);
-console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
-// край на филтъра
-
     
     console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
-
-
     
     // Групирай по категория
-    const productsByCategory = {
-  telescopes_with_guides: [],
-  telescopes_without_guides: [],
-  carp_rods: [],
-  match_feeder: [],
-  specialty_rods: [],
-  kits: [],
-  spinning: []
+const productsByCategory = {
+  front_drag: [],
+  rear_drag: [],
+  baitrunner: [],
+  multipliers: [],
+  other: []
 	  
     };
     
@@ -1334,15 +1287,8 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
       console.log(`  ${getCategoryName(type)}: ${products.length} products`);
     });
     console.log('');
-
-
-
- 
     
     // Обработи всяка категория
-
-
-
     
     for (const [categoryType, products] of Object.entries(productsByCategory)) {
       if (products.length === 0) continue;
@@ -1353,36 +1299,32 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
       
       const totalInCategory = products.length;
       
-      for (let i = 0; i < products.length; i++) {
-        const product = products[i];
-        const productNumber = i + 1;
-               
-        console.log(`\n${'-'.repeat(60)}`);
-        console.log(`[${productNumber}/${totalInCategory}] Processing: ${product.name}`);
-        console.log(`${'-'.repeat(60)}`);
-        
-        if (!product.variants || product.variants.length === 0) {
-          console.log(`⏭️  Skipping - no variants`);
-          continue;
-        }
-        
-        const firstSku = product.variants[0].sku;
-        const existingProduct = await findProductBySku(firstSku);
-  if (existingProduct) {
-  console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
+for (let i = 0; i < products.length; i++) {
+  const product = products[i];
+  const productNumber = i + 1;
+         
+  console.log(`\n${'-'.repeat(60)}`);
+  console.log(`[${productNumber}/${totalInCategory}] Processing: ${product.name}`);
+  console.log(`${'-'.repeat(60)}`);
   
-  // Провери дали има падащо меню
-  const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
-  await updateShopifyProduct(existingProduct, product, categoryType);
-    
-}         
-else {
-          console.log(` ✓ Product not found, creating new without variants...`);
-          await createShopifyProduct(product, categoryType);
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+  if (!product.variants || product.variants.length === 0) {
+    console.log(`⏭️  Skipping - no variants`);
+    continue;
+  }
+  
+  const firstSku = product.variants[0].sku;
+  const existingProduct = await findProductBySku(firstSku);
+  
+  if (existingProduct) {
+    console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
+    await updateShopifyProduct(existingProduct, product, categoryType);
+  } else {
+    console.log(` ✓ Product not found, creating new...`);
+    await createShopifyProduct(product, categoryType);
+  }
+  
+  await new Promise(resolve => setTimeout(resolve, 1000));
+}
     
     }
     
