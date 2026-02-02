@@ -12,29 +12,33 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
+
+// Колекции за влакна
 const COLLECTION_MAPPING = {
-  front_drag: 'gid://shopify/Collection/739175301502',
-  rear_drag: 'gid://shopify/Collection/739175334270',
-  baitrunner: 'gid://shopify/Collection/739175399806',
-  multipliers: 'gid://shopify/Collection/739175432574',
-  other: 'gid://shopify/Collection/739175530878'
+
+  monofilament: 'gid://shopify/Collection/738965946750',
+  braided: 'gid://shopify/Collection/738965979518',
+  fluorocarbon: 'gid://shopify/Collection/738987442558',
+  other: 'gid://shopify/Collection/739068576126' 
 };
 
-const FILSTAR_REEL_CATEGORY_IDS = {
-  front_drag: ['19'],
-  rear_drag: ['24'],
-  baitrunner: ['30'],
-  multipliers: ['34'],
-  other: ['43']
+// Filstar категории за влакна
+const FILSTAR_LINE_CATEGORY_IDS = {
+  monofilament: ['41'],
+  braided: ['105'],
+  fluorocarbon: ['107'],
+  other: ['109']
 };
 
-const REELS_PARENT_ID = '6';
+const LINES_PARENT_ID = '4';
 
+
+
+// Статистика
 const stats = {
-  front_drag: { created: 0, updated: 0, images: 0 },
-  rear_drag: { created: 0, updated: 0, images: 0 },
-  baitrunner: { created: 0, updated: 0, images: 0 },
-  multipliers: { created: 0, updated: 0, images: 0 },
+  monofilament: { created: 0, updated: 0, images: 0 },
+  braided: { created: 0, updated: 0, images: 0 },
+  fluorocarbon: { created: 0, updated: 0, images: 0 },
   other: { created: 0, updated: 0, images: 0 }
 };
 
