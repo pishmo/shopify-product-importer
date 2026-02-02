@@ -1082,14 +1082,15 @@ const filstarVariants = filstarProduct.variants || [];
 let dropdownMismatch = false;
 
 if (filstarVariants.length === 1) {
-  const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
-  const shouldHaveDropdown = variantName && variantName.trim() !== '';
-  
-  const hasDropdown = shopifyVariants.some(v => 
-    v.selectedOptions?.some(opt => opt.name !== 'Title')
-  );
-  
-  console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+ const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
+const shouldHaveDropdown = !!(variantName && variantName.trim() !== '');
+
+const hasDropdown = shopifyVariants.some(v => 
+  v.selectedOptions?.some(opt => opt.name !== 'Title')
+);
+
+console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+
   
   dropdownMismatch = hasDropdown !== shouldHaveDropdown;
 }
