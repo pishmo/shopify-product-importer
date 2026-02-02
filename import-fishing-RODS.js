@@ -373,11 +373,15 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    front_drag: 'Front Drag Reels',
-    rear_drag: 'Rear Drag Reels',
-    baitrunner: 'Baitrunner Reels',
-    multipliers: 'Multiplier Reels',
-    other: 'Other Reels'
+    
+    telescopes_with_guides: 'Телескопи с водачи',
+    telescopes_without_guides: 'Телескопи без водачи',
+    carp_rods: 'Шарански пръчки',
+    match_feeder: 'Мач и Фидер',
+    specialty_rods: 'Специални пръчки',
+    kits: 'Комплекти',
+    spinning: 'Спининг'
+	
    
   };
   
