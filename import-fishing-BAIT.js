@@ -12,32 +12,38 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
+
+
+// Shopify колекции за захранки
 const COLLECTION_MAPPING = {
-  front_drag: 'gid://shopify/Collection/739175301502',
-  rear_drag: 'gid://shopify/Collection/739175334270',
-  baitrunner: 'gid://shopify/Collection/739175399806',
-  multipliers: 'gid://shopify/Collection/739175432574',
-  other: 'gid://shopify/Collection/739175530878'
+  groundbait: 'gid://shopify/Collection/739410641278',
+  boilies: 'gid://shopify/Collection/739410674046',
+  additives: 'gid://shopify/Collection/739410739582',
+  seeds: 'gid://shopify/Collection/739410772350',
+  pastes: 'gid://shopify/Collection/739410805118',
+  other: 'gid://shopify/Collection/739410837886'
 };
 
-const FILSTAR_REEL_CATEGORY_IDS = {
-  front_drag: ['19'],
-  rear_drag: ['24'],
-  baitrunner: ['30'],
-  multipliers: ['34'],
-  other: ['43']
+// Filstar категории за захранки
+const FILSTAR_BAIT_CATEGORY_IDS = {
+  groundbait: ['66'],
+  boilies: ['69'],
+  additives: ['71'],
+  seeds: ['73'],
+  pastes: ['75'],
+  other: ['77']
 };
 
-const REELS_PARENT_ID = '6';
+const BAITS_PARENT_ID = '8';
 
 const stats = {
-  front_drag: { created: 0, updated: 0, images: 0 },
-  rear_drag: { created: 0, updated: 0, images: 0 },
-  baitrunner: { created: 0, updated: 0, images: 0 },
-  multipliers: { created: 0, updated: 0, images: 0 },
+  groundbait: { created: 0, updated: 0, images: 0 },
+  boilies: { created: 0, updated: 0, images: 0 },
+  additives: { created: 0, updated: 0, images: 0 },
+  seeds: { created: 0, updated: 0, images: 0 },
+  pastes: { created: 0, updated: 0, images: 0 },
   other: { created: 0, updated: 0, images: 0 }
 };
-
 
 // 2 част
 
