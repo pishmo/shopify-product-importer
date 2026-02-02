@@ -978,6 +978,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   
   // НОВА ПРОВЕРКА: Брой варианти
   const shopifyVariantsCount = shopifyProduct.variants?.edges?.length || 0;
+  const filstarVariantsCount = filstarProduct.variants?.length || 0;
   
   console.log(`📊 Variants check:`);
   console.log(`  - Shopify variants: ${shopifyVariantsCount}`);
