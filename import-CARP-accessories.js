@@ -1082,7 +1082,7 @@ const filstarVariants = filstarProduct.variants || [];
 let dropdownMismatch = false;
 
 if (filstarVariants.length === 1) {
-const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
+ const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
 const shouldHaveDropdown = !!(variantName && variantName.trim() !== '');
 
 const hasDropdown = shopifyVariants.some(v => 
@@ -1090,10 +1090,12 @@ const hasDropdown = shopifyVariants.some(v =>
 );
 
 console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+
   
   dropdownMismatch = hasDropdown !== shouldHaveDropdown;
 }
 
+		
 const variantsChanged = 
   shopifyVariants.length !== filstarVariants.length ||
   dropdownMismatch ||  // ⬅️ ПРОВЕРКА ЗА DROPDOWN
