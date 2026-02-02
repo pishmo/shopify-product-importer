@@ -1265,7 +1265,21 @@ if (categoryType && stats[categoryType]) {
       const categoryType = getCategoryType(product);
       return categoryType !== null;
     });
-    
+
+
+
+
+// филтър ску
+const testSkus = ['959600'];
+accessoryProducts = accessoryProducts.filter(p => 
+  p.variants?.some(v => testSkus.includes(v.sku))
+);
+console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
+// край на филтъра
+
+
+
+	  
     console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
     
     // Групирай по категория
