@@ -1091,21 +1091,25 @@ const shopifyVariants = fullProduct.variants.edges.map(e => ({
 
 const filstarVariants = filstarProduct.variants || [];
 
+// Провери дали има dropdown меню САМО ако е 1 вариант
+let dropdownMismatch = false;
 
-    
-// Провери дали има dropdown меню
-const hasDropdown = shopifyVariants.some(v => 
-  v.selectedOptions?.some(opt => opt.name !== 'Title')
-);
-
-const shouldHaveDropdown = filstarVariants.length > 1 || 
-  filstarVariants.some(v => v.attributes && v.attributes.length > 0);
-
-console.log(`  🐛 Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+if (filstarVariants.length === 1) {
+  const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
+  const shouldHaveDropdown = variantName && variantName.trim() !== '';
+  
+  const hasDropdown = shopifyVariants.some(v => 
+    v.selectedOptions?.some(opt => opt.name !== 'Title')
+  );
+  
+  console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+  
+  dropdownMismatch = hasDropdown !== shouldHaveDropdown;
+}
 
 const variantsChanged = 
   shopifyVariants.length !== filstarVariants.length ||
-  hasDropdown !== shouldHaveDropdown ||  // ⬅️ НОВА ПРОВЕРКА
+  dropdownMismatch ||  // ⬅️ ПРОВЕРКА ЗА DROPDOWN
   shopifyVariants.some((sv, idx) => {
     const fv = filstarVariants[idx];
     return !fv || sv.sku !== fv.sku;
