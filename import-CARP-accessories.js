@@ -347,7 +347,7 @@ function getCategoryType(product) {
   for (const category of product.categories) {
     const categoryId = category.id?.toString();
     
-    for (const [type, ids] of Object.entries(FILSTAR_REEL_CATEGORY_IDS )) {
+    for (const [type, ids] of Object.entries(ILSTAR_ACCESSORIES_CATEGORY_IDS)) {
       if (ids.includes(categoryId)) {
         return type;
       }
@@ -361,11 +361,7 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    front_drag: 'Front Drag Reels',
-    rear_drag: 'Rear Drag Reels',
-    baitrunner: 'Baitrunner Reels',
-    multipliers: 'Multiplier Reels',
-    other: 'Other Reels'
+    carp_fishing: 'Шарански Риболов'
    
   };
   
