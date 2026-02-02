@@ -1250,11 +1250,11 @@ if (categoryType && stats[categoryType]) {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
   
-  console.log('  -  Front Drag Reels - Категория Id - (19)');
-  console.log('  -  Rear Drag Reels - Категория Id - (24)');
-  console.log('  -  Baitrunner Reels - Категория Id - (30)');
-  console.log('  -  Multiplier Reels - Категория Id - (34)');
-  console.log('  -  Other Reels - Категория Id - (43)');
+  console.log('  - Влакно Монофилно - Категория Id - (41)');
+  console.log('  - Влакно плетено - Категория Id - (105)');
+  console.log('  - влакно Флуорокарбон - Id - (107)'); 
+  console.log('  - Влакно Други - Категория Id - (109)\n');
+  
      
   try {
     // Fetch всички продукти от Filstar
@@ -1270,11 +1270,10 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
-  front_drag: [],
-  rear_drag: [],
-  baitrunner: [],
-  multipliers: [],
-  other: []
+      monofilament: [],
+      braided: [],
+      fluorocarbon: [],
+      other: []
 	  
     };
     
