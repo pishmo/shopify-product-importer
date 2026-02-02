@@ -1,4 +1,4 @@
-name: Import Fishing Clothing
+name: Import Fishing CLOTHING
 
 on:
  # schedule:
@@ -21,7 +21,7 @@ jobs:
           npm install sharp
           npm install form-data
       
-      - name: Run fishing lines import
+      - name: Run fishing CLOTHING import
         env:
           SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
           SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
