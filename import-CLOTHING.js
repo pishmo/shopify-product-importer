@@ -1268,11 +1268,15 @@ if (categoryType && stats[categoryType]) {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
   
-  console.log('  -  Front Drag Reels - Категория Id - (19)');
-  console.log('  -  Rear Drag Reels - Категория Id - (24)');
-  console.log('  -  Baitrunner Reels - Категория Id - (30)');
-  console.log('  -  Multiplier Reels - Категория Id - (34)');
-  console.log('  -  Other Reels - Категория Id - (43)');
+  console.log('  - Обувки - Категория Id - (90)');
+  console.log('  - Панталовни - Категория Id - (86)');
+  console.log('  - Якета Id - (59)'); 
+  console.log('  - Шапки Id - (88)'); 
+  console.log('  - Ръкавици Id - (89)');
+  console.log('  - Очила Id - (92)');
+  console.log('  - Комплекти Id - (87)');
+  console.log('  - Други Id - (95)\n');
+  
      
   try {
     // Fetch всички продукти от Filstar
@@ -1288,11 +1292,15 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
-  front_drag: [],
-  rear_drag: [],
-  baitrunner: [],
-  multipliers: [],
-  other: []
+    shoes: [],
+    tshirts: [],
+    pants: [],
+    jackets: [],
+    hats: [],
+    gloves: [],
+    sunglasses: [],
+    sets: [],
+    other: []
 	  
     };
     
