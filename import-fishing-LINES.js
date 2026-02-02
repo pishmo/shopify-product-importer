@@ -1252,7 +1252,7 @@ if (categoryType && stats[categoryType]) {
   
   console.log('  - Влакно Монофилно - Категория Id - (41)');
   console.log('  - Влакно плетено - Категория Id - (105)');
-  console.log('  - влакно Флуорокарбон - Id - (107)'); 
+  console.log('  - Влакно Флуорокарбон - Id - (107)'); 
   console.log('  - Влакно Други - Категория Id - (109)\n');
   
      
