@@ -314,17 +314,34 @@ function formatVariantName(variant, productName) {
     parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`); 
   } 
   
-  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер) 
-  if (variant.attributes && variant.attributes.length > 0) { 
-    const otherAttrs = variant.attributes 
-      .filter(attr => { 
-        const name = attr.attribute_name.toUpperCase(); 
-        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value; 
-      }) 
-      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`); 
-    parts.push(...otherAttrs); 
-  } 
+ // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул, Размер и категория)
+if (variant.attributes && variant.attributes.length > 0) {
+  const otherAttrs = variant.attributes
+    .filter(attr => {
+      const name = attr.attribute_name.toUpperCase();
+      
+      // Филтрираме стандартните атрибути
+      if (name === 'АРТИКУЛ' || name === 'РАЗМЕР') {
+        return false;
+      }
+      
+      // Филтрираме атрибути, които съвпадат с категорията
+      // Проверяваме дали името на атрибута съвпада с някоя от категориите
+      const matchesCategory = cachedCategoryNames.some(categoryName => 
+        categoryName.toUpperCase() === name
+      );
+      
+      if (matchesCategory) {
+        return false;
+      }
+      
+      return attr.value; // Включваме само ако има стойност
+    })
+    .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`);
   
+  parts.push(...otherAttrs);
+}
+
   const result = parts.join(' / '); 
   
   // Ако има форматиран резултат - върни го
