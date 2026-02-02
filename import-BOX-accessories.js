@@ -1088,7 +1088,7 @@ const shouldHaveDropdown = !!(variantName && variantName.trim() !== '');
 const hasDropdown = shopifyVariants.some(v => 
   v.selectedOptions?.some(opt => opt.name !== 'Title')
 );
-console.log(`  🔍 Shopify variant options:`, JSON.stringify(shopifyVariants[0].selectedOptions));
+
 console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
 
   
