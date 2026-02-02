@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  import:  import-fishing-CLOTHING 
+  import:  import-fishing-CLOTHING:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
