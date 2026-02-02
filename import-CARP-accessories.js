@@ -12,30 +12,27 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
-const COLLECTION_MAPPING = {
-  front_drag: 'gid://shopify/Collection/739175301502',
-  rear_drag: 'gid://shopify/Collection/739175334270',
-  baitrunner: 'gid://shopify/Collection/739175399806',
-  multipliers: 'gid://shopify/Collection/739175432574',
-  other: 'gid://shopify/Collection/739175530878'
+
+// Filstar category IDs за аксесоари
+const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
+  
+  carp_fishing: ['37'] 
 };
 
-const FILSTAR_REEL_CATEGORY_IDS = {
-  front_drag: ['19'],
-  rear_drag: ['24'],
-  baitrunner: ['30'],
-  multipliers: ['34'],
-  other: ['43']
+const ACCESSORIES_PARENT_ID = '11';
+
+// Shopify collection IDs
+const SHOPIFY_ACCESSORIES_COLLECTIONS = {
+  
+  carp_fishing: 'gid://shopify/Collection/739661152638'
+ 
 };
 
-const REELS_PARENT_ID = '6';
-
+// Статистика
 const stats = {
-  front_drag: { created: 0, updated: 0, images: 0 },
-  rear_drag: { created: 0, updated: 0, images: 0 },
-  baitrunner: { created: 0, updated: 0, images: 0 },
-  multipliers: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }
+  
+  carp_fishing: { created: 0, updated: 0, images: 0 }
+  
 };
 
 
@@ -1245,12 +1242,7 @@ if (categoryType && stats[categoryType]) {
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  
-  console.log('  -  Front Drag Reels - Категория Id - (19)');
-  console.log('  -  Rear Drag Reels - Категория Id - (24)');
-  console.log('  -  Baitrunner Reels - Категория Id - (30)');
-  console.log('  -  Multiplier Reels - Категория Id - (34)');
-  console.log('  -  Other Reels - Категория Id - (43)');
+  console.log('  - Аксесоари Други - Шарански Риболов -  Категория Id - (37)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1266,11 +1258,7 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
-  front_drag: [],
-  rear_drag: [],
-  baitrunner: [],
-  multipliers: [],
-  other: []
+ carp_fishing: []
 	  
     };
     
