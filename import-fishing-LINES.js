@@ -368,11 +368,11 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    front_drag: 'Front Drag Reels',
-    rear_drag: 'Rear Drag Reels',
-    baitrunner: 'Baitrunner Reels',
-    multipliers: 'Multiplier Reels',
-    other: 'Other Reels'
+  monofilament: 'Влакно Монофилно',
+  braided: 'Влакно Плетено',
+  fluorocarbon: 'Влакно Флуорокарбон',
+  other: 'Елакно Други'
+  
    
   };
   
