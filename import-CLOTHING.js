@@ -386,11 +386,16 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    front_drag: 'Front Drag Reels',
-    rear_drag: 'Rear Drag Reels',
-    baitrunner: 'Baitrunner Reels',
-    multipliers: 'Multiplier Reels',
-    other: 'Other Reels'
+    
+    shoes: 'Обувки',
+    tshirts: 'Тениски',
+    pants: 'Панталони',
+    jackets: 'Якета',
+    hats: 'Шапки',
+    gloves: 'Ръкавици',
+    sunglasses: 'Слънчеви очила',
+    sets: 'Комплекти и костюми',
+    other: 'Друго облекло'
    
   };
   
