@@ -373,7 +373,7 @@ function getCategoryName(categoryType) {
    
   };
   
-  return names[categoryType] || 'Макари';
+  return names[categoryType] || 'Шарански Риболов';
 }
 
 
