@@ -1257,9 +1257,7 @@ if (categoryType && stats[categoryType]) {
   console.log('  -  Baitrunner Reels - Категория Id - (30)');
   console.log('  -  Multiplier Reels - Категория Id - (34)');
   console.log('  -  Other Reels - Категория Id - (43)');
-
-   
-  
+     
   try {
     // Fetch всички продукти от Filstar
     const allProducts = await fetchAllProducts();
@@ -1346,7 +1344,6 @@ for (let i = 0; i < products.length; i++) {
   
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
-
     
     }
     
