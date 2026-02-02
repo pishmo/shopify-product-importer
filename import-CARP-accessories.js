@@ -1238,7 +1238,7 @@ if (categoryType && stats[categoryType]) {
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Други - Шарански Риболов -  Категория Id - (37)');
+  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
      
   try {
     // Fetch всички продукти от Filstar
