@@ -970,8 +970,6 @@ if (allImages.length > 0 && ogImageUrl) {
 }
 
 
-
-
                 //    UPDATE PRODUCT
 
 
@@ -1228,9 +1226,6 @@ if (inventoryItemId) {
 
   await new Promise(resolve => setTimeout(resolve, 500));
 }
-
-
-
     
 console.log(` ✅ Updated ${filstarVariants.length} variants`);
   } catch (error) {
@@ -1284,7 +1279,7 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
 
     
     // Групирай по категория
-    const productsByCategory = {
+const productsByCategory = {
   front_drag: [],
   rear_drag: [],
   baitrunner: [],
