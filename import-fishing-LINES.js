@@ -272,26 +272,27 @@ async function scrapeOgImage(productSlug) {
 }
 
 // FORMAT NAME
-
 // Глобална променлива за кеширане на категории
-
 let cachedCategoryNames = [];
-function formatVariantName(variant, productName) { 
-const parts = [];  
+
+function formatVariantName(variant, productName) {
+  const parts = [];
   
-  // Помощна функция за форматиране на име на атрибут 
-  function formatAttributeName(name) { 
-	  
-    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(); 
-    if (formatted.includes(',')) { 
-      if (!formatted.endsWith('.')) { 
-        formatted = formatted + '. '; 
-      } 
-    } 
+  // Помощна функция за форматиране на име на атрибут
+  function formatAttributeName(name) {
+    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    if (formatted.includes(',')) {
+      if (!formatted.endsWith('.')) {
+        formatted = formatted + '. ';
+      }
+    }
     return formatted;
-  } 
+  }
   
- // 1. Дължина
+  // Филтрираме атрибутите с валидни стойности
+  const filtered = variant.attributes?.filter(a => a.value && a.value.trim() !== '') || [];
+  
+  // 1. Дължина
   const length = filtered.find(a => a.attribute_name.includes('ДЪЛЖИНА'))?.value;
   if (length) {
     parts.push(`${length}м.`);
@@ -326,8 +327,7 @@ const parts = [];
     parts.push(color);
   }
   
-  
-  const result = parts.join(' / '); 
+  const result = parts.join(' / ');
   
   // Ако има форматиран резултат - върни го
   if (result && result.trim() !== '') {
@@ -336,7 +336,6 @@ const parts = [];
   
   // Ако НЯМА нищо - върни празен стринг
   return '';
-
 }
 
 
