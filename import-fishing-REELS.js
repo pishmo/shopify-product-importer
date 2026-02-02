@@ -1246,9 +1246,6 @@ if (categoryType && stats[categoryType]) {
 }
 
 
-
-
-
 // MAIN функция
 
   async function main() {
@@ -1311,15 +1308,8 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
       console.log(`  ${getCategoryName(type)}: ${products.length} products`);
     });
     console.log('');
-
-
-
- 
     
     // Обработи всяка категория
-
-
-
     
     for (const [categoryType, products] of Object.entries(productsByCategory)) {
       if (products.length === 0) continue;
@@ -1330,36 +1320,33 @@ console.log(`?? Filtered to ${accessoryProducts.length} test products\n`);
       
       const totalInCategory = products.length;
       
-      for (let i = 0; i < products.length; i++) {
-        const product = products[i];
-        const productNumber = i + 1;
-               
-        console.log(`\n${'-'.repeat(60)}`);
-        console.log(`[${productNumber}/${totalInCategory}] Processing: ${product.name}`);
-        console.log(`${'-'.repeat(60)}`);
-        
-        if (!product.variants || product.variants.length === 0) {
-          console.log(`⏭️  Skipping - no variants`);
-          continue;
-        }
-        
-        const firstSku = product.variants[0].sku;
-        const existingProduct = await findProductBySku(firstSku);
-  if (existingProduct) {
-  console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
+for (let i = 0; i < products.length; i++) {
+  const product = products[i];
+  const productNumber = i + 1;
+         
+  console.log(`\n${'-'.repeat(60)}`);
+  console.log(`[${productNumber}/${totalInCategory}] Processing: ${product.name}`);
+  console.log(`${'-'.repeat(60)}`);
   
-  // Провери дали има падащо меню
-  const hasDropdown = existingProduct.options?.some(opt => opt.name !== 'Title');
-  await updateShopifyProduct(existingProduct, product, categoryType);
-    
-}         
-else {
-          console.log(` ✓ Product not found, creating new without variants...`);
-          await createShopifyProduct(product, categoryType);
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+  if (!product.variants || product.variants.length === 0) {
+    console.log(`⏭️  Skipping - no variants`);
+    continue;
+  }
+  
+  const firstSku = product.variants[0].sku;
+  const existingProduct = await findProductBySku(firstSku);
+  
+  if (existingProduct) {
+    console.log(` ✓ Found existing product (ID: ${existingProduct.id})`);
+    await updateShopifyProduct(existingProduct, product, categoryType);
+  } else {
+    console.log(` ✓ Product not found, creating new...`);
+    await createShopifyProduct(product, categoryType);
+  }
+  
+  await new Promise(resolve => setTimeout(resolve, 1000));
+}
+
     
     }
     
