@@ -1260,7 +1260,7 @@ if (categoryType && stats[categoryType]) {
     });
 
 // филтър ску
-const testSkus = ['934015'];
+const testSkus = ['963059'];
 accessoryProducts = accessoryProducts.filter(p => 
   p.variants?.some(v => testSkus.includes(v.sku))
 );
