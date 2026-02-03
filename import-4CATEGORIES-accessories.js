@@ -24,7 +24,7 @@ const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
 const ACCESSORIES_PARENT_ID = '11';
 
 // Shopify collection IDs - САМО 4 КАТЕГОРИИ
-const SHOPIFY_ACCESSORIES_COLLECTIONS = {
+const COLLECTION_MAPPING  = {
   pike_and_catfish: 'gid://shopify/Collection/739661185406',
   pole_and_match: 'gid://shopify/Collection/739661218174',
   knives: 'gid://shopify/Collection/739661250942',
