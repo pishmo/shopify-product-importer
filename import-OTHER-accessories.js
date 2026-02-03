@@ -13,11 +13,6 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
-
-COLLECTION_MAPPING  
-
-
-
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
