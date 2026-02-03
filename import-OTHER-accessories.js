@@ -273,7 +273,7 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 
-let cachedCategoryNames = ['КУТИИ, КОШЧЕТА И КАЛЪФИ'];
+let cachedCategoryNames = ['Aксесоари други'];
 function formatVariantName(variant, productName) { 
   const parts = [];  
   
