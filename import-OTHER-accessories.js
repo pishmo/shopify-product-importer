@@ -27,7 +27,7 @@ const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
 const ACCESSORIES_PARENT_ID = '11';
 
 // Shopify collection IDs
-const SHOPIFY_ACCESSORIES_COLLECTIONS = {
+const COLLECTION_MAPPING  = {
   
    other: 'gid://shopify/Collection/739661447550'
  
