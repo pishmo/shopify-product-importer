@@ -270,7 +270,7 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 
-let cachedCategoryNames = ['РИБОЛОВ С ЩЕКА И МАЧ', 'Риболов на щука и сом', 'Ножове', 'Столове, чадъри и палатки'] ;
+let cachedCategoryNames = ['ЖИВАРНИЦИ И КЕПЧЕТА', 'Прашки'] ;
 function formatVariantName(variant, productName) { 
   const parts = [];  
   
