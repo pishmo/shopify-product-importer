@@ -374,7 +374,7 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-     boxes_and_bags: 'Кутии и калъфи',
+    other: 'Други аксесоари'
    
   };
   
