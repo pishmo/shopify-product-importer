@@ -23,7 +23,7 @@ const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
 
 
 // Shopify collection IDs - САМО 2 КАТЕГОРИИ
-const SHOPIFY_ACCESSORIES_COLLECTIONS = {
+const COLLECTION_MAPPING   = {
 
   
   ceps: 'gid://shopify/Collection/739661087102',
