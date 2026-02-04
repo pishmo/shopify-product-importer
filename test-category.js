@@ -1,95 +1,141 @@
-// test-accessories-categories.js - Тест за извличане на ВСЕ полета от API
+// update-product-weights.js - Масово обновяване на тегло за всички продукти
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
-const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const API_VERSION = '2024-10';
-const FILSTAR_API_BASE = 'https://filstar.com/api';
+const DEFAULT_WEIGHT_GRAMS = 1000; // 1 kg
 
-const TEST_SKUS = [
-  '925637'
-];
+async function shopifyGraphQL(query, variables = {}) {
+  const response = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': ACCESS_TOKEN
+      },
+      body: JSON.stringify({ query, variables })
+    }
+  );
+  return response.json();
+}
 
-async function fetchAllProducts() {
-  console.log('📦 Fetching all products from Filstar...\n');
+async function getAllProducts() {
+  console.log('📦 Fetching all products from Shopify...\n');
   let allProducts = [];
-  let page = 1;
-  let hasMore = true;
+  let hasNextPage = true;
+  let cursor = null;
   
-  while (hasMore) {
-    console.log(`  Fetching page ${page}...`);
-    const response = await fetch(
-      `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`,
-      {
-        headers: {
-          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-          'Content-Type': 'application/json'
+  while (hasNextPage) {
+    const query = `
+      query getProducts($cursor: String) {
+        products(first: 50, after: $cursor) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          edges {
+            node {
+              id
+              title
+              variants(first: 100) {
+                edges {
+                  node {
+                    id
+                    sku
+                    weight
+                    weightUnit
+                  }
+                }
+              }
+            }
+          }
         }
       }
-    );
+    `;
     
-    const data = await response.json();
-    if (data && data.length > 0) {
-      allProducts = allProducts.concat(data);
-      console.log(`  ✓ Page ${page}: ${data.length} products`);
-      page++;
-      hasMore = data.length > 0;
-      if (page > 10) hasMore = false;
-    } else {
-      hasMore = false;
-    }
+    const result = await shopifyGraphQL(query, { cursor });
+    const products = result.data.products.edges;
     
+    allProducts = allProducts.concat(products);
+    hasNextPage = result.data.products.pageInfo.hasNextPage;
+    cursor = result.data.products.pageInfo.endCursor;
+    
+    console.log(`  ✓ Fetched ${products.length} products (total: ${allProducts.length})`);
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   
-  console.log(`\n✅ Total products fetched: ${allProducts.length}\n`);
+  console.log(`\n✅ Total products: ${allProducts.length}\n`);
   return allProducts;
 }
 
-async function testAccessoriesCategories() {
-  const allProducts = await fetchAllProducts();
-  
-  console.log('🧪 Searching for test SKUs...\n');
-  
-  for (const sku of TEST_SKUS) {
-    console.log(`📍 Looking for SKU: ${sku}`);
-    
-    const product = allProducts.find(p => 
-      p.variants?.some(v => v.sku === sku)
-    );
-    
-    if (product) {
-      console.log(`\n✅ PRODUCT FOUND: ${product.name}\n`);
-      
-      // Покажи ВСИЧКИ полета на продукта
-      console.log('📦 FULL PRODUCT OBJECT:');
-      console.log(JSON.stringify(product, null, 2));
-      console.log('\n' + '='.repeat(80) + '\n');
-      
-      // Специално внимание на снимките
-      console.log('🖼️  IMAGES:');
-      if (product.images) {
-        console.log(`   Total images: ${product.images.length}`);
-        product.images.forEach((img, i) => {
-          console.log(`   [${i}] ${JSON.stringify(img, null, 2)}`);
-        });
-      } else {
-        console.log('   No images field');
+async function updateVariantWeight(variantId, weightGrams) {
+  const mutation = `
+    mutation updateVariant($input: ProductVariantInput!) {
+      productVariantUpdate(input: $input) {
+        productVariant {
+          id
+          weight
+          weightUnit
+        }
+        userErrors {
+          field
+          message
+        }
       }
-      console.log('');
-      
-      // Специално внимание на вариантите
-      console.log('🔧 VARIANTS:');
-      product.variants.forEach((v, i) => {
-        console.log(`\n   [${i}] VARIANT ${i}:`);
-        console.log(JSON.stringify(v, null, 2));
-      });
-      
-    } else {
-      console.log(`   ❌ Not found\n`);
     }
-  }
+  `;
+  
+  const variables = {
+    input: {
+      id: variantId,
+      weight: weightGrams,
+      weightUnit: "GRAMS"
+    }
+  };
+  
+  return shopifyGraphQL(mutation, variables);
 }
 
-testAccessoriesCategories();
+async function updateAllWeights() {
+  console.log('🚀 Starting weight update process...\n');
+  
+  const products = await getAllProducts();
+  let updatedCount = 0;
+  let skippedCount = 0;
+  
+  for (const productEdge of products) {
+    const product = productEdge.node;
+    console.log(`\n📦 Processing: ${product.title}`);
+    
+    for (const variantEdge of product.variants.edges) {
+      const variant = variantEdge.node;
+      
+      // Обнови само ако теглото е 0 или липсва
+      if (!variant.weight || variant.weight === 0) {
+        console.log(`  ⚙️  Updating variant ${variant.sku || 'no-sku'}: 0g → ${DEFAULT_WEIGHT_GRAMS}g`);
+        
+        const result = await updateVariantWeight(variant.id, DEFAULT_WEIGHT_GRAMS);
+        
+        if (result.data.productVariantUpdate.userErrors.length > 0) {
+          console.log(`  ❌ Error:`, result.data.productVariantUpdate.userErrors);
+        } else {
+          console.log(`  ✅ Updated`);
+          updatedCount++;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500)); // Rate limiting
+      } else {
+        console.log(`  ⏭️  Skipped variant ${variant.sku || 'no-sku'}: already has weight ${variant.weight}g`);
+        skippedCount++;
+      }
+    }
+  }
+  
+  console.log(`\n\n✅ DONE!`);
+  console.log(`   Updated: ${updatedCount} variants`);
+  console.log(`   Skipped: ${skippedCount} variants`);
+}
+
+updateAllWeights();
