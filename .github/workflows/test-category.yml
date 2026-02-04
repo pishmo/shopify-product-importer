@@ -14,7 +14,10 @@ jobs:
         with:
           node-version: '18'
       
-      - run: npm install node-fetch@2
+      - run: 
+          npm install node-fetch@2
+          npm install sharp
+          npm install form-data
       
       - name: Run test
         env:
