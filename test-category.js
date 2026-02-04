@@ -1,4 +1,4 @@
-// test-accessories-categories.js - Тест за извличане на ВСЕ полета от API
+// update-all-products-weight.js - Апдейт на тегло 1кг за всички продукти
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
@@ -11,33 +11,41 @@ const TEST_SKUS = [
   '925637'
 ];
 
-async function fetchAllProducts() {
-  console.log('📦 Fetching all products from Filstar...\n');
+async function fetchAllShopifyProducts() {
+  console.log('📦 Fetching all products from Shopify...\n');
   let allProducts = [];
+  let pageInfo = null;
   let page = 1;
-  let hasMore = true;
   
-  while (hasMore) {
-    console.log(`  Fetching page ${page}...`);
-    const response = await fetch(
-      `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`,
-      {
-        headers: {
-          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
+  while (true) {
+    const url = pageInfo 
+      ? `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250&page_info=${pageInfo}`
+      : `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Content-Type': 'application/json'
       }
-    );
+    });
     
     const data = await response.json();
-    if (data && data.length > 0) {
-      allProducts = allProducts.concat(data);
-      console.log(`  ✓ Page ${page}: ${data.length} products`);
+    
+    if (data.products && data.products.length > 0) {
+      allProducts = allProducts.concat(data.products);
+      console.log(`  Page ${page}: ${data.products.length} products (Total: ${allProducts.length})`);
       page++;
-      hasMore = data.length > 0;
-      if (page > 10) hasMore = false;
+      
+      // Check for next page
+      const linkHeader = response.headers.get('Link');
+      if (linkHeader && linkHeader.includes('rel="next"')) {
+        const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
+        pageInfo = nextMatch ? nextMatch[1] : null;
+      } else {
+        break;
+      }
     } else {
-      hasMore = false;
+      break;
     }
     
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -47,49 +55,76 @@ async function fetchAllProducts() {
   return allProducts;
 }
 
-async function testAccessoriesCategories() {
-  const allProducts = await fetchAllProducts();
+async function updateProductWeight(productId, variantId, currentWeight) {
+  const url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`;
   
-  console.log('🧪 Searching for test SKUs...\n');
-  
-  for (const sku of TEST_SKUS) {
-    console.log(`📍 Looking for SKU: ${sku}`);
-    
-    const product = allProducts.find(p => 
-      p.variants?.some(v => v.sku === sku)
-    );
-    
-    if (product) {
-      console.log(`\n✅ PRODUCT FOUND: ${product.name}\n`);
-      
-      // Покажи ВСИЧКИ полета на продукта
-      console.log('📦 FULL PRODUCT OBJECT:');
-      console.log(JSON.stringify(product, null, 2));
-      console.log('\n' + '='.repeat(80) + '\n');
-      
-      // Специално внимание на снимките
-      console.log('🖼️  IMAGES:');
-      if (product.images) {
-        console.log(`   Total images: ${product.images.length}`);
-        product.images.forEach((img, i) => {
-          console.log(`   [${i}] ${JSON.stringify(img, null, 2)}`);
-        });
-      } else {
-        console.log('   No images field');
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'X-Shopify-Access-Token': ACCESS_TOKEN,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      variant: {
+        id: variantId,
+        weight: 1.0,
+        weight_unit: 'kg'
       }
-      console.log('');
-      
-      // Специално внимание на вариантите
-      console.log('🔧 VARIANTS:');
-      product.variants.forEach((v, i) => {
-        console.log(`\n   [${i}] VARIANT ${i}:`);
-        console.log(JSON.stringify(v, null, 2));
-      });
-      
-    } else {
-      console.log(`   ❌ Not found\n`);
-    }
+    })
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to update variant ${variantId}: ${error}`);
   }
+  
+  return await response.json();
 }
 
-testAccessoriesCategories();
+async function updateAllProductsWeight() {
+  const allProducts = await fetchAllShopifyProducts();
+  
+  console.log('🔄 Starting weight update to 1kg...\n');
+  
+  let updated = 0;
+  let skipped = 0;
+  let errors = 0;
+  
+  for (let i = 0; i < allProducts.length; i++) {
+    const product = allProducts[i];
+    
+    for (const variant of product.variants) {
+      try {
+        // Update only if weight is not already 1kg
+        if (variant.weight !== 1.0 || variant.weight_unit !== 'kg') {
+          await updateProductWeight(product.id, variant.id, variant.weight);
+          updated++;
+          
+          // Log every 100 updates
+          if (updated % 100 === 0) {
+            console.log(`  ✓ Updated ${updated} variants...`);
+          }
+        } else {
+          skipped++;
+        }
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 250));
+        
+      } catch (error) {
+        errors++;
+        console.log(`  ❌ Error updating variant ${variant.id}: ${error.message}`);
+      }
+    }
+  }
+  
+  console.log('\n' + '='.repeat(80));
+  console.log('📊 SUMMARY:');
+  console.log(`   Total products: ${allProducts.length}`);
+  console.log(`   ✅ Updated: ${updated}`);
+  console.log(`   ⏭️  Skipped (already 1kg): ${skipped}`);
+  console.log(`   ❌ Errors: ${errors}`);
+  console.log('='.repeat(80) + '\n');
+}
+
+updateAllProductsWeight();
