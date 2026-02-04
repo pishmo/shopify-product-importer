@@ -1,5 +1,5 @@
 // update-product-weights.js - Масово обновяване на тегло за всички продукти
-const fetch = require('node-fetch');
+
 
 const fetch = require('node-fetch');
 const sharp = require('sharp');
