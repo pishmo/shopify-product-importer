@@ -1,9 +1,16 @@
 // update-product-weights.js - Масово обновяване на тегло за всички продукти
 const fetch = require('node-fetch');
 
+const fetch = require('node-fetch');
+const sharp = require('sharp');
+const fs = require('fs').promises;
+const path = require('path');
+
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
-const API_VERSION = '2024-10';
+const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
+const API_VERSION = '2025-01';
+
 const DEFAULT_WEIGHT_GRAMS = 1000; // 1 kg
 
 async function shopifyGraphQL(query, variables = {}) {
