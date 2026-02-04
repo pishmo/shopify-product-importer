@@ -1,6 +1,6 @@
 // update-product-weights.js - Масово обновяване на тегло за всички продукти
 
-// import-fishing-BAIT.js - Импорт на Захранки от Filstar API
+
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
