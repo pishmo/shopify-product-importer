@@ -735,20 +735,26 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     }
 
     // 4. Създаваме обекта, ползвайки готовия списък tags
-    const productData = {
+   const productData = {
       product: {
         title: filstarProduct.name,
         body_html: filstarProduct.description || filstarProduct.short_description || '',
         vendor: vendor,
         product_type: productType,
         
-        tags: tags, // <--- Тук слагаме променливата, която напълнихме горе
+        // 👇 ВАЖНО: Трябва да пише 'tags', а НЕ 'filstarProduct.tags'
+        tags: tags, 
         
         status: 'active',
         variants: variants
       }
     };
-    
+
+
+
+
+
+	  
     if (needsOptions) {
       productData.product.options = [{ name: 'Вариант' }];
     }
