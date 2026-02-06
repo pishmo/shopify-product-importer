@@ -1132,7 +1132,8 @@ if (variantsChanged) {
       id: productGid,
       title: filstarProduct.name,
       descriptionHtml: filstarProduct.description || '',
-      vendor: filstarProduct.vendor || 'FILSTAR',
+      
+	  vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
       tags: filstarProduct.tags || [],
       status: 'ACTIVE'
