@@ -1,0 +1,26 @@
+name: Scan Filstar Subcategories
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan-subcategories:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          npm install node-fetch@2
+      
+      - name: Run Scan Script
+        env:
+          FILSTAR_API_TOKEN: ${{ secrets.FILSTAR_API_TOKEN }}
+        run: node scan-subcategories.js
