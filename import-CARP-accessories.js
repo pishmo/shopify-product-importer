@@ -1228,10 +1228,9 @@ if (variantsChanged) {
 
 // --- ТУК ЗАПОЧВА НОВАТА ЛОГИКА (ПРЕДИ productInput) ---
     
-    // 1. Подготвяме масив за таговете
+// --- ТУК СМЯТАМЕ ТАГОВЕТЕ (Това е новата логика) ---
     let finalTags = [];
     
-    // Взимаме старите тагове от Филстар (ако има)
     if (filstarProduct.tags) {
         if (Array.isArray(filstarProduct.tags)) {
             finalTags = [...filstarProduct.tags];
@@ -1240,31 +1239,25 @@ if (variantsChanged) {
         }
     }
 
-    // 2. Извикваме функцията за подкатегорията
-    // (Увери се, че си добавил функцията getSubcategoryTag най-долу във файла!)
     const subcatTag = getSubcategoryTag(filstarProduct);
-    
-    // 3. Ако функцията върне таг (напр. "subcat:Ракети"), го добавяме
     if (subcatTag) {
-        // Проверяваме дали вече го няма, за да не го дублираме
         if (!finalTags.includes(subcatTag)) {
             finalTags.push(subcatTag);
             console.log(`   🏷️  Adding subcategory tag: ${subcatTag}`);
         }
     }
-    // --- КРАЙ НА НОВАТА ЛОГИКА ---
 
-
-    // СЕГА ВЕЧЕ СЪЗДАВАМЕ ОБЕКТА
-  		
+    // --- ТУК ГИ ИЗПРАЩАМЕ (Това е поправката в обекта) ---
     const productInput = {
       id: productGid,
       title: filstarProduct.name,
       descriptionHtml: filstarProduct.description || '',
-      
-	  vendor: filstarProduct.manufacturer || 'Unknown',
+      vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
-      tags: filstarProduct.tags || [],
+      
+      // 👇 ЕТО ТУК Е РАЗКОВНИЧЕТО:
+      tags: finalTags, 
+      
       status: 'ACTIVE'
     };
 		
