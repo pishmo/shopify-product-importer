@@ -15,7 +15,7 @@ async function fetchAllProducts() {
     process.stdout.write(`\r⏳ Page ${page}...`);
     try {
       const response = await fetch(
-        `${FILSTAR_API_BASE}/products?page=${page}&limit=250`, // По-голям лимит за по-бързо
+        `${FILSTAR_API_BASE}/products?page=${page}&limit=1000`, // По-голям лимит за по-бързо
         {
           headers: {
             'Authorization': `Bearer ${FILSTAR_TOKEN}`,
