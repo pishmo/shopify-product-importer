@@ -1256,20 +1256,7 @@ if (variantsChanged) {
 
 
     // СЕГА ВЕЧЕ СЪЗДАВАМЕ ОБЕКТА
-    const productInput = {
-      id: productGid,
-      title: filstarProduct.name,
-      descriptionHtml: filstarProduct.description || '',
-      
-      vendor: filstarProduct.manufacturer || 'Unknown', // Това го оправихме преди малко
-      productType: filstarProduct.category || '',
-      
-      tags: finalTags, // <--- ВАЖНО: Тук вече подаваме ГОТОВИЯ масив, а не стария
-      
-      status: 'ACTIVE'
-    };
-
-		
+  		
     const productInput = {
       id: productGid,
       title: filstarProduct.name,
