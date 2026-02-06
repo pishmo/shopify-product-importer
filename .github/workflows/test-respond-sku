@@ -1,5 +1,4 @@
-
-name: Import BOX Accessories from Filstar
+name: test-responf-sku
 
 on:
   # schedule:
@@ -7,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  import-BOX-accessories:
+ test-responf-sku :
     runs-on: ubuntu-latest
     
     steps:
@@ -25,9 +24,9 @@ jobs:
           npm install sharp
           npm install form-data
       
-      - name: Run BOX Accessories Import
+      - name: test-responf-sku
         env:
           SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
           SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
           FILSTAR_API_TOKEN: ${{ secrets.FILSTAR_API_TOKEN }}
-        run: node import-BOX-accessories.js
+        run: node test-responf-sku.js
