@@ -1206,6 +1206,52 @@ if (variantsChanged) {
       }
     `;
 
+
+
+// --- ТУК ЗАПОЧВА НОВАТА ЛОГИКА (ПРЕДИ productInput) ---
+    
+    // 1. Подготвяме масив за таговете
+    let finalTags = [];
+    
+    // Взимаме старите тагове от Филстар (ако има)
+    if (filstarProduct.tags) {
+        if (Array.isArray(filstarProduct.tags)) {
+            finalTags = [...filstarProduct.tags];
+        } else if (typeof filstarProduct.tags === 'string') {
+            finalTags = filstarProduct.tags.split(',').map(t => t.trim());
+        }
+    }
+
+    // 2. Извикваме функцията за подкатегорията
+    // (Увери се, че си добавил функцията getSubcategoryTag най-долу във файла!)
+    const subcatTag = getSubcategoryTag(filstarProduct);
+    
+    // 3. Ако функцията върне таг (напр. "subcat:Ракети"), го добавяме
+    if (subcatTag) {
+        // Проверяваме дали вече го няма, за да не го дублираме
+        if (!finalTags.includes(subcatTag)) {
+            finalTags.push(subcatTag);
+            console.log(`   🏷️  Adding subcategory tag: ${subcatTag}`);
+        }
+    }
+    // --- КРАЙ НА НОВАТА ЛОГИКА ---
+
+
+    // СЕГА ВЕЧЕ СЪЗДАВАМЕ ОБЕКТА
+    const productInput = {
+      id: productGid,
+      title: filstarProduct.name,
+      descriptionHtml: filstarProduct.description || '',
+      
+      vendor: filstarProduct.manufacturer || 'Unknown', // Това го оправихме преди малко
+      productType: filstarProduct.category || '',
+      
+      tags: finalTags, // <--- ВАЖНО: Тук вече подаваме ГОТОВИЯ масив, а не стария
+      
+      status: 'ACTIVE'
+    };
+
+		
     const productInput = {
       id: productGid,
       title: filstarProduct.name,
@@ -1216,7 +1262,7 @@ if (variantsChanged) {
       tags: filstarProduct.tags || [],
       status: 'ACTIVE'
     };
-
+		
     const updateResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
       {
