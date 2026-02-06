@@ -622,6 +622,63 @@ async function reorderProductImages(productGid, images) {
 }
 
 
+
+// --- ПОМОЩНА ФУНКЦИЯ ЗА ПОДКАТЕГОРИИ ---
+
+
+
+function getSubcategoryTag(filstarProduct) {
+  // 1. Проверки за валидност
+  if (!filstarProduct.categories || filstarProduct.categories.length === 0) return null;
+  if (!filstarProduct.variants || filstarProduct.variants.length === 0) return null;
+
+  // 2. Взимаме името на категорията на продукта (напр. "Шарански Риболов")
+  const categoryNameRaw = filstarProduct.categories[0].name.trim(); 
+  
+  // 3. Проверяваме дали тази категория е в нашия списък WANTED_SUBCATEGORIES
+  // (търсим без значение малки/големи букви)
+  const configKey = Object.keys(WANTED_SUBCATEGORIES).find(
+      key => key.toLowerCase() === categoryNameRaw.toLowerCase()
+  );
+
+  if (!configKey) return null; // Категорията не е в списъка за обработка
+
+  // 4. Търсим атрибут, чието име съвпада с името на категорията
+  // (обикновено са в първия вариант)
+  const variant = filstarProduct.variants[0];
+  if (!variant.attributes) return null;
+
+  const matchingAttribute = variant.attributes.find(attr => 
+      attr.attribute_name.trim().toLowerCase() === categoryNameRaw.toLowerCase()
+  );
+
+  if (matchingAttribute) {
+      const foundValue = matchingAttribute.value.trim(); // напр. "Аларми и индикатори"
+      
+      // 5. Проверяваме дали намерената стойност е в списъка с разрешени
+      const allowedSubcats = WANTED_SUBCATEGORIES[configKey];
+      
+      const isAllowed = allowedSubcats.some(
+          allowed => allowed.toLowerCase() === foundValue.toLowerCase()
+      );
+
+      if (isAllowed) {
+          // Връщаме готовия таг
+          return `subcat:${foundValue}`;
+      }
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
 // Функция за създаване на нов продукт      CREATE PRODUCT
 
 
