@@ -1,4 +1,4 @@
-// test-accessories-categories.js - Тест за извличане на ВСЕ полета от API
+// test-repond-sku.js - Тест за извличане на ВСЕ полета na SKU от API
 const fetch = require('node-fetch');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
