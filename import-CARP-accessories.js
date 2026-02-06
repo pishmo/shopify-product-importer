@@ -13,6 +13,27 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
+// --- НАСТРОЙКИ ЗА ПОДКАТЕГОРИИ ---
+
+const WANTED_SUBCATEGORIES = {
+  "Шарански Риболов": [
+      "PVA материали",
+      "Аларми и индикатори",
+      "Готови монтажи",
+      "Инструменти",
+      "Материали за монтажи",
+      "Ракети",
+      "Стопери и рингове",
+      "Фидери",
+      "Шарански стойки"
+     
+  ]
+};
+
+
+
+
+
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
