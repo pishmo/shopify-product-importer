@@ -1,4 +1,4 @@
-name: test-responf-sku
+name: test-respond-sku
 
 on:
   # schedule:
