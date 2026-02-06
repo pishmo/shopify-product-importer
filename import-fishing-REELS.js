@@ -1125,16 +1125,20 @@ if (variantsChanged) {
       }
     `;
 
+
+		
     const productInput = {
       id: productGid,
       title: filstarProduct.name,
       descriptionHtml: filstarProduct.description || '',
-      filstarProduct.manufacturer || 'Unknown',
+      vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
       tags: filstarProduct.tags || [],
       status: 'ACTIVE'
     };
 
+
+	
     const updateResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
       {
