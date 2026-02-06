@@ -719,13 +719,31 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
       return variantData;
     });
     
+  
+	// --- ЗАМЕСТВАШ ГО С ТОВА: ---
+    
+    // 1. Подготвяме базовите тагове
+    const tags = ['Filstar', categoryType, vendor];
+
+    // 2. Проверяваме за подкатегория
+    const subcatTag = getSubcategoryTag(filstarProduct);
+
+    // 3. Ако има, добавяме я към списъка
+    if (subcatTag) {
+        tags.push(subcatTag);
+        console.log(`   🏷️  Adding subcategory tag: ${subcatTag}`);
+    }
+
+    // 4. Създаваме обекта, ползвайки готовия списък tags
     const productData = {
       product: {
         title: filstarProduct.name,
         body_html: filstarProduct.description || filstarProduct.short_description || '',
         vendor: vendor,
         product_type: productType,
-        tags: ['Filstar', categoryType, vendor],
+        
+        tags: tags, // <--- Тук слагаме променливата, която напълнихме горе
+        
         status: 'active',
         variants: variants
       }
