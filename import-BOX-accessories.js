@@ -12,8 +12,6 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
-
-
 // --- НАСТРОЙКИ ЗА ПОДКАТЕГОРИИ ---
 
 const WANTED_SUBCATEGORIES = {
@@ -25,11 +23,6 @@ const WANTED_SUBCATEGORIES = {
       "Кофи и кошчета"
   ]
 };
-
-
-
-
-
 
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
