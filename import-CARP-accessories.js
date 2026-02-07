@@ -722,35 +722,37 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
   
 	// --- ЗАМЕСТВАШ ГО С ТОВА: ---
     
-    // 1. Подготвяме базовите тагове
-    const tags = ['Filstar', categoryType, vendor];
+   // 1. Подготвяме базовите тагове (като масив)
+    const tagsArray = ['Filstar', categoryType, vendor];
 
     // 2. Проверяваме за подкатегория
     const subcatTag = getSubcategoryTag(filstarProduct);
 
     // 3. Ако има, добавяме я към списъка
     if (subcatTag) {
-        tags.push(subcatTag);
-        console.log(`   🏷️  Adding subcategory tag: ${subcatTag}`);
+        tagsArray.push(subcatTag);
+        console.log(`   🏷️  [CREATE] Adding subcategory tag: ${subcatTag}`);
     }
 
-    // 4. Създаваме обекта, ползвайки готовия списък tags
-   const productData = {
+    // 4. ВАЖНО: Превръщаме масива в ТЕКСТ (String)
+    // От ['Filstar', 'Шаран'] става "Filstar, Шаран"
+    const tagsString = tagsArray.join(', ');
+
+    // 5. Създаваме обекта
+    const productData = {
       product: {
         title: filstarProduct.name,
         body_html: filstarProduct.description || filstarProduct.short_description || '',
         vendor: vendor,
         product_type: productType,
         
-        // 👇 ВАЖНО: Трябва да пише 'tags', а НЕ 'filstarProduct.tags'
-        tags: tags, 
+        // 👇 ТУК подаваме готовия ТЕКСТ
+        tags: tagsString, 
         
         status: 'active',
         variants: variants
       }
     };
-
-
 
 
 
