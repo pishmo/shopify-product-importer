@@ -654,11 +654,6 @@ function getSubcategoryTag(filstarProduct) {
 
 
 
-
-
-
-
-
 // Функция за създаване на нов продукт      CREATE PRODUCT
 
 
@@ -699,18 +694,44 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
       return variantData;
     });
     
+  
+	// --- ЗАМЕСТВАШ ГО С ТОВА: ---
+    
+   // 1. Подготвяме базовите тагове (като масив)
+    const tagsArray = ['Filstar', categoryType, vendor];
+
+    // 2. Проверяваме за подкатегория
+    const subcatTag = getSubcategoryTag(filstarProduct);
+
+    // 3. Ако има, добавяме я към списъка
+    if (subcatTag) {
+        tagsArray.push(subcatTag);
+        console.log(`   🏷️  [CREATE] Adding subcategory tag: ${subcatTag}`);
+    }
+
+    // 4. ВАЖНО: Превръщаме масива в ТЕКСТ (String)
+    // От ['Filstar', 'Шаран'] става "Filstar, Шаран"
+    const tagsString = tagsArray.join(', ');
+
+    // 5. Създаваме обекта
     const productData = {
       product: {
         title: filstarProduct.name,
         body_html: filstarProduct.description || filstarProduct.short_description || '',
         vendor: vendor,
         product_type: productType,
-        tags: ['Filstar', categoryType, vendor],
+        
+        // 👇 ТУК подаваме готовия ТЕКСТ
+        tags: tagsString, 
+        
         status: 'active',
         variants: variants
       }
     };
-    
+
+
+
+	  
     if (needsOptions) {
       productData.product.options = [{ name: 'Вариант' }];
     }
@@ -1153,6 +1174,7 @@ console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: 
   dropdownMismatch = hasDropdown !== shouldHaveDropdown;
 }
 
+		
 const variantsChanged = 
   shopifyVariants.length !== filstarVariants.length ||
   dropdownMismatch ||  // ⬅️ ПРОВЕРКА ЗА DROPDOWN
@@ -1185,16 +1207,43 @@ if (variantsChanged) {
       }
     `;
 
+
+
+// --- ТУК ЗАПОЧВА НОВАТА ЛОГИКА (ПРЕДИ productInput) ---
+    
+// --- ТУК СМЯТАМЕ ТАГОВЕТЕ (Това е новата логика) ---
+    let finalTags = [];
+    
+    if (filstarProduct.tags) {
+        if (Array.isArray(filstarProduct.tags)) {
+            finalTags = [...filstarProduct.tags];
+        } else if (typeof filstarProduct.tags === 'string') {
+            finalTags = filstarProduct.tags.split(',').map(t => t.trim());
+        }
+    }
+
+    const subcatTag = getSubcategoryTag(filstarProduct);
+    if (subcatTag) {
+        if (!finalTags.includes(subcatTag)) {
+            finalTags.push(subcatTag);
+            console.log(`   🏷️  Adding subcategory tag: ${subcatTag}`);
+        }
+    }
+
+    // --- ТУК ГИ ИЗПРАЩАМЕ (Това е поправката в обекта) ---
     const productInput = {
       id: productGid,
       title: filstarProduct.name,
       descriptionHtml: filstarProduct.description || '',
       vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
-      tags: filstarProduct.tags || [],
+      
+      // 👇 ЕТО ТУК Е РАЗКОВНИЧЕТО:
+      tags: finalTags, 
+      
       status: 'ACTIVE'
     };
-
+		
     const updateResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
       {
