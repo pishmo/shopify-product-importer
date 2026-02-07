@@ -1363,7 +1363,7 @@ if (categoryType && stats[categoryType]) {
 // MAIN функция
 
   async function main() {
-  console.log('🚀 Starting Filstar REELS Import\n');
+  console.log('🚀 Starting Filstar BOX Import\n');
   console.log('📋 Categories to import:');
   console.log('  - Аксесоари Кутии и калъфи - Категория Id - (61)');
      
