@@ -601,6 +601,64 @@ async function reorderProductImages(productGid, images) {
 }
 
 
+
+
+// --- ПОМОЩНА ФУНКЦИЯ ЗА ПОДКАТЕГОРИИ ---
+
+
+// --- ПОМОЩНА ФУНКЦИЯ ЗА ПОДКАТЕГОРИИ (С НОРМАЛИЗИРАНЕ) ---
+function getSubcategoryTag(filstarProduct) {
+  // 1. Проверки за валидност - да не гръмне ако няма инфо
+  if (!filstarProduct.categories || filstarProduct.categories.length === 0) return null;
+  if (!filstarProduct.variants || filstarProduct.variants.length === 0) return null;
+
+  // 2. Взимаме името на категорията на продукта (напр. "Шарански Риболов")
+  const categoryNameRaw = filstarProduct.categories[0].name.trim();
+
+  // 3. Търсим дали тази категория я има в настройките (без значение малки/големи букви)
+  const configKey = Object.keys(WANTED_SUBCATEGORIES).find(
+      key => key.toLowerCase() === categoryNameRaw.toLowerCase()
+  );
+
+  if (!configKey) return null; // Категорията не е в списъка за обработка
+
+  // 4. Търсим атрибут във вариантите, който съвпада с името на категорията
+  const variant = filstarProduct.variants[0];
+  if (!variant.attributes) return null;
+
+  const matchingAttribute = variant.attributes.find(attr => 
+      attr.attribute_name.trim().toLowerCase() === categoryNameRaw.toLowerCase()
+  );
+
+  if (matchingAttribute) {
+      const apiValue = matchingAttribute.value.trim(); // Това идва от API-то (може да е "ракети" или "РАКЕТИ")
+      
+      // Взимаме твоя "чист" списък от настройките
+      const allowedList = WANTED_SUBCATEGORIES[configKey]; 
+      
+      // 5. МАГИЯТА: Намираме коя дума от ТВОЯ списък отговаря на думата от API-то
+      const cleanValue = allowedList.find(
+          allowedItem => allowedItem.toLowerCase() === apiValue.toLowerCase()
+      );
+
+      if (cleanValue) {
+          // Връщаме ТВОЯТА красива дума (напр. "Ракети"), а не грозната от API-то
+          return `subcat:${cleanValue}`;
+      }
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
 // Функция за създаване на нов продукт      CREATE PRODUCT
 
 
