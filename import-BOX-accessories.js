@@ -1377,7 +1377,11 @@ if (categoryType && stats[categoryType]) {
       return categoryType !== null;
     });
 
-	
+
+
+
+	  
+
     console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
     
     // Групирай по категория
