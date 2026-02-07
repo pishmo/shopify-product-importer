@@ -25,8 +25,8 @@ const WANTED_SUBCATEGORIES = {
       "Ракети",
       "Стопери и рингове",
       "Фидери",
-      "Шарански стойки"
-     
+      "Шарански стойки".
+      "Други"
   ]
 };
 
@@ -1391,8 +1391,6 @@ if (categoryType && stats[categoryType]) {
       return categoryType !== null;
     });
 
-
-accessoryProducts = accessoryProducts.filter(p => p.variants.some(v => ['963845', '963232', '963125', '934610'].includes(v.sku)));
 
 
 	  
