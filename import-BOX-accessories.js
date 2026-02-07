@@ -1378,19 +1378,6 @@ if (categoryType && stats[categoryType]) {
     });
 
 
-
-// -----------------------------------------------------------
-    // 🔥 ФИЛТЪР САМО ЗА ТЕСТ (Сложи SKU-тата тук в кавички)
-    // -----------------------------------------------------------
-    const testSKUs = ['960304']; // <-- ТУК ПИШЕШ SKU-тата
-    
-    if (testSKUs.length > 0) {
-        accessoryProducts = accessoryProducts.filter(p => 
-            p.variants && p.variants.length > 0 && testSKUs.includes(p.variants[0].sku)
-        );
-        console.log(`⚠️  TEST MODE: Filtering for SKUs: ${testSKUs.join(', ')}`);
-    }
-    // -----
 	  
 
     console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
