@@ -1391,6 +1391,11 @@ if (categoryType && stats[categoryType]) {
       return categoryType !== null;
     });
 
+
+accessoryProducts = accessoryProducts.filter(p => p.variants.some(v => ['963845', '963232', '963125', '934610'].includes(v.sku)));
+
+
+	  
     console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
     
     // Групирай по категория
