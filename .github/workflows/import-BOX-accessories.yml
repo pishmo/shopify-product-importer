@@ -1,8 +1,8 @@
 name: Import BOX Accessories from Filstar
 
 on:
-  # schedule:
-  #   - cron: '0 23 * * *'  # 12:00 AM EET (22:00 UTC)
+  schedule:
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 jobs:
