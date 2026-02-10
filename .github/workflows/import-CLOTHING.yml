@@ -1,8 +1,8 @@
 name: Import Fishing CLOTHING
 
 on:
- # schedule:
- #   - cron: '0 8 * * *'  # Всеки ден в 8:00 сутринта (2 часа след въдиците)
+  schedule:
+    - cron: '0 3 * * *'  # Всеки ден в 8:00 сутринта (2 часа след въдиците)
   workflow_dispatch:
 
 jobs:
