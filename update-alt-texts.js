@@ -1,13 +1,14 @@
-
-// update-alt-texts.js   Слагане на ALT текст на всички снимки
-
 require('dotenv').config();
-// Проверка дали имаме fetch (за Node 18+ е вграден, за по-стари го зареждаме)
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = require('node-fetch');
 
-const SHOP = process.env.SHOPIFY_SHOP_URL;
+// --- ТВОИТЕ НАСТРОЙКИ ---
+const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
-const API_VERSION = '2024-01'; 
+const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN; // Не се ползва тук, но го оставям да го имаш
+const API_VERSION = '2025-01';
+const FILSTAR_API_BASE = 'https://filstar.com/api';
+const FILSTAR_BASE_URL = 'https://filstar.com';
+const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 const DELAY_MS = 300; // Пауза да не товарим API-то
 
@@ -16,7 +17,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Основна функция за заявки към Shopify
 async function shopifyRequest(query, variables = {}) {
-  const response = await fetch(`https://${SHOP}/admin/api/${API_VERSION}/graphql.json`, {
+  // ВНИМАНИЕ: Тук ползваме твоята променлива SHOPIFY_DOMAIN
+  const url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`;
+  
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -37,15 +41,16 @@ async function updateAltTextForProduct(product) {
   const productId = product.id;
   const productTitle = product.title;
   
-  // Взимаме само картинките (media nodes)
+  // Взимаме само картинките
   const mediaNodes = product.media.edges.map(edge => edge.node);
 
   if (mediaNodes.length === 0) return;
 
   // Подготвяме масива за update
+  // Слагаме заглавието на ВСИЧКИ снимки на този продукт
   const mediaInput = mediaNodes.map(media => ({
     id: media.id,
-    alt: productTitle // Слагаме заглавието като Alt текст
+    alt: productTitle 
   }));
 
   const mutation = `
@@ -83,6 +88,12 @@ async function updateAltTextForProduct(product) {
 // Основна функция, която върти цикъла
 async function runBatchUpdate() {
   console.log("🚀 Започва обновяване на ALT текстовете...");
+  console.log(`🎯 Цел: ${SHOPIFY_DOMAIN}`);
+
+  if (!SHOPIFY_DOMAIN || !ACCESS_TOKEN) {
+    console.error("❌ ГРЕШКА: Липсват SHOPIFY_SHOP_DOMAIN или SHOPIFY_ACCESS_TOKEN в настройките!");
+    process.exit(1);
+  }
   
   let cursor = null;
   let hasNextPage = true;
@@ -121,7 +132,6 @@ async function runBatchUpdate() {
       
       if (products.length === 0) break;
 
-      // Обхождаме всеки продукт в тази порция
       for (const product of products) {
         await updateAltTextForProduct(product);
         await sleep(DELAY_MS);
@@ -130,7 +140,6 @@ async function runBatchUpdate() {
       totalProcessed += products.length;
       console.log(`--- Обработени до момента: ${totalProcessed} продукта ---`);
 
-      // Подготовка за следващата страница
       cursor = data.products.pageInfo.endCursor;
       hasNextPage = data.products.pageInfo.hasNextPage;
 
@@ -143,5 +152,4 @@ async function runBatchUpdate() {
   console.log("🏁 Готово! Всички снимки са с нови ALT текстове.");
 }
 
-// Стартиране
 runBatchUpdate();
