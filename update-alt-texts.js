@@ -2,15 +2,19 @@
 // update-alt-texts.js   Слагане на ALT текст на всички снимки
 
 require('dotenv').config();
-const fetch = require('node-fetch'); // Увери се, че имаш node-fetch (или ползвай вградения във Node 18+)
+// Проверка дали имаме fetch (за Node 18+ е вграден, за по-стари го зареждаме)
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const SHOP = process.env.SHOPIFY_SHOP_URL;
 const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
-const API_VERSION = '2024-01'; // Или версията, която ползваш
+const API_VERSION = '2024-01'; 
 
-// Настройка за забавяне (да не гърми API-то)
-const DELAY_MS = 300; 
+const DELAY_MS = 300; // Пауза да не товарим API-то
 
+// Помощна функция за пауза
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Основна функция за заявки към Shopify
 async function shopifyRequest(query, variables = {}) {
   const response = await fetch(`https://${SHOP}/admin/api/${API_VERSION}/graphql.json`, {
     method: 'POST',
@@ -28,20 +32,20 @@ async function shopifyRequest(query, variables = {}) {
   return json.data;
 }
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
+// Функция за обновяване на един продукт
 async function updateAltTextForProduct(product) {
   const productId = product.id;
   const productTitle = product.title;
+  
+  // Взимаме само картинките (media nodes)
   const mediaNodes = product.media.edges.map(edge => edge.node);
 
   if (mediaNodes.length === 0) return;
 
-  // Подготвяме масива за update. 
-  // Слагаме заглавието на ВСИЧКИ снимки на този продукт.
+  // Подготвяме масива за update
   const mediaInput = mediaNodes.map(media => ({
     id: media.id,
-    alt: productTitle 
+    alt: productTitle // Слагаме заглавието като Alt текст
   }));
 
   const mutation = `
@@ -76,6 +80,7 @@ async function updateAltTextForProduct(product) {
   }
 }
 
+// Основна функция, която върти цикъла
 async function runBatchUpdate() {
   console.log("🚀 Започва обновяване на ALT текстовете...");
   
@@ -119,7 +124,7 @@ async function runBatchUpdate() {
       // Обхождаме всеки продукт в тази порция
       for (const product of products) {
         await updateAltTextForProduct(product);
-        await sleep(DELAY_MS); // Пауза между продуктите
+        await sleep(DELAY_MS);
       }
 
       totalProcessed += products.length;
