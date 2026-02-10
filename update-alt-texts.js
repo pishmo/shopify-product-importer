@@ -1,5 +1,5 @@
 
-
+// update-alt-texts.js   Слагане на ALT текст на всички снимки
 
 require('dotenv').config();
 const fetch = require('node-fetch'); // Увери се, че имаш node-fetch (или ползвай вградения във Node 18+)
