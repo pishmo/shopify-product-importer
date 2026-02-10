@@ -1,12 +1,12 @@
 name: Update Alt Texts
 
 on:
-  workflow_dispatch: # Позволява ръчно стартиране от бутона в GitHub
+  workflow_dispatch:
 
 jobs:
   update-alts:
     runs-on: ubuntu-latest
-    timeout-minutes: 360 # Даваме му до 6 часа време (за всеки случай)
+    timeout-minutes: 360
 
     steps:
     - name: Checkout code
@@ -18,11 +18,12 @@ jobs:
         node-version: '18'
 
     - name: Install dependencies
-      run: npm install
+      run: |
+        npm install
+        npm install dotenv
 
     - name: Run Update Alt Texts Script
       env:
-        # Тук взимаме тайните от настройките на GitHub
         SHOPIFY_SHOP_URL: ${{ secrets.SHOPIFY_SHOP_URL }}
         SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
       run: node update-alt-texts.js
