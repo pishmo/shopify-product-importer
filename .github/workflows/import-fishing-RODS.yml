@@ -1,12 +1,12 @@
 name: Import Fishing RODS
 
 on:
-  # schedule:
-   # - cron: '0 4 * * *'  # Всеки ден в 4:00 сутринта
-  workflow_dispatch:
+  schedule:
+    - cron: '30 16 * * *'  # 16:30 UTC = 18:30 BG време
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
-  import-fishing-RODS:  # ✅ Без интервали, с тирета
+  import-fishing-RODS:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
