@@ -1,12 +1,9 @@
 name: Import KEEPNETS-CATAPULTS (Кепове и Прашки)
 
 on:
-  # Schedule (commented out - uncomment to enable)
-  # schedule:
-  #   - cron: '0 3 * * 1'  # Every Monday at 3:00 AM UTC (5:00 AM EET)
-  
-  # Manual trigger
-  workflow_dispatch:
+  schedule:
+    - cron: '30 8 * * *'  # 08:30 UTC = 10:30 BG време
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
   import-keepnets-catapults:
