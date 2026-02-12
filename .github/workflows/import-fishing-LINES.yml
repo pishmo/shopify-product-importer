@@ -1,9 +1,9 @@
 name: Import Fishing LINES
 
 on:
-  # schedule:
-   # - cron: '0 10 * * *'  # Всеки ден в 10:00 сутринта (2 часа след въдиците)
-  workflow_dispatch:
+  schedule:
+    - cron: '30 12 * * *'  # 12:30 UTC = 14:30 BG време
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
   import-fishing-LINES:
