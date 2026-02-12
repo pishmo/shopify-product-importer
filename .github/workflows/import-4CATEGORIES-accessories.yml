@@ -1,11 +1,11 @@
 name: Import 4CATEGORIES accessories
+
 on:
-  workflow_dispatch:
-     schedule:
-     - cron: '0 6 * * *'  # Всеки ден в 2:00 UTC (4:00 EET)
+  schedule:
+    - cron: '30 6 * * *'  # 06:30 UTC = 08:30 BG време
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
-
   Import-4CATEGORIES-accessories:
     runs-on: ubuntu-latest
      
