@@ -2,8 +2,8 @@ name: Import OTHER Accessories
 
 on:
   schedule:
-    - cron: '0 5 * * *'  # Всеки ден в 8:00 сутринта (2 часа след въдиците)
-  workflow_dispatch:
+    - cron: '30 4 * * *'  # 04:30 UTC = 06:30 BG време
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
   import-OTHER-accessories:
@@ -16,9 +16,11 @@ jobs:
         with:
           node-version: '18'
       
-      - run: npm install node-fetch sharp cheerio form-data
+      - name: Install dependencies
+        run: npm install node-fetch sharp cheerio form-data
       
-      - run: node import-OTHER-accessories.js
+      - name: Run OTHER Accessories import
+        run: node import-OTHER-accessories.js
         env:
           SHOPIFY_SHOP_DOMAIN: ${{ secrets.SHOPIFY_SHOP_DOMAIN }}
           SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
