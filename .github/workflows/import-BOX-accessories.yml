@@ -2,8 +2,8 @@ name: Import BOX Accessories from Filstar
 
 on:
   schedule:
-    - cron: '0 23 * * *'
-  workflow_dispatch:
+    - cron: '0 23 * * *'  # 23:00 UTC = 01:00 BG (зимата) / 02:00 BG (лятото)
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
   import-BOX-accessories:
