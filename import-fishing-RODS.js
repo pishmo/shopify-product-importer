@@ -1,4 +1,4 @@
-// import-fishing-REELS.js - Импорт на Въдици от Filstar API
+// import-fishing-RODS.js - Импорт на Въдици от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
