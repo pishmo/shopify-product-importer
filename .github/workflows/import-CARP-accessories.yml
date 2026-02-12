@@ -3,7 +3,7 @@ name: Import CARP Accessories from Filstar
 on:
   schedule:
     - cron: '30 0 * * *'  # 00:30 UTC = 02:30 BG време
-  workflow_dispatch:
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
   import-CARP-accessories:
