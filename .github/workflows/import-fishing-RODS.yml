@@ -2,7 +2,7 @@ name: Import Fishing RODS
 
 on:
   schedule:
-    - cron: '0 20 * * *'  # 20:00 UTC = 22:00 българско време
+    - cron: '30 20 * * *'  # 20:30 UTC = 22:30 българско време (зимно)
   workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
