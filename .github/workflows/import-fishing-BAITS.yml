@@ -1,10 +1,9 @@
-# .github/workflows/import-fishing-BAIT.yml
 name: Import Fishing BAIT from Filstar
 
 on:
-  # schedule:
-  #  - cron: '0 12 * * *'  # Всеки ден в 12:00 сутринта (12 часа след въдиците)
-  workflow_dispatch:
+  schedule:
+    - cron: '30 10 * * *'  # 10:30 UTC = 12:30 BG време
+  workflow_dispatch:      # Бутон за ръчно пускане
 
 jobs:
   import-BAIT:
@@ -22,7 +21,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          npm install node-fetch
+          npm install node-fetch@2
           npm install sharp
           npm install form-data
       
