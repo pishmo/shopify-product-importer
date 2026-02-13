@@ -61,7 +61,7 @@ const stats = {
 
 
 
-const fs = require('fs');
+
 
 // Зареждане на промоциите
 let promoData = {};
