@@ -1,4 +1,4 @@
-// import-KAMPING.js - Импорт на Къмпиг от Filstar API
+// import-KAMPING.js - Импорт на Къмпинг от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -13,31 +13,29 @@ const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 
-// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
-const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  pike_and_catfish: ['45'],
-  pole_and_match: ['50'],
-  knives: ['59'],
-  chairs_umbrellas_tents: ['63']
+
+
+// Shopify колекции за захранки
+const COLLECTION_MAPPING = {
+  kamping: 'gid://shopify/Collection/739661414782'
 };
 
-const ACCESSORIES_PARENT_ID = '11';
-
-// Shopify collection IDs - САМО 4 КАТЕГОРИИ
-const COLLECTION_MAPPING  = {
-  pike_and_catfish: 'gid://shopify/Collection/739661185406',
-  pole_and_match: 'gid://shopify/Collection/739661218174',
-  knives: 'gid://shopify/Collection/739661250942',
-  chairs_umbrellas_tents: 'gid://shopify/Collection/739661414782'
+// Filstar категории за захранки
+const FILSTAR_BAIT_CATEGORY_IDS = {
+  kamping: ['63']
 };
 
-// Статистика - САМО 4 КАТЕГОРИИ
+const BAITS_PARENT_ID = '11';
+
+
+
+
+// Статистика
 const stats = {
-  pike_and_catfish: { created: 0, updated: 0, images: 0 },
-  pole_and_match: { created: 0, updated: 0, images: 0 },
-  knives: { created: 0, updated: 0, images: 0 },
-  chairs_umbrellas_tents: { created: 0, updated: 0, images: 0 }
+  kamping: { created: 0, updated: 0, images: 0 }
 };
+
+
 
 // 2 част
 
@@ -271,7 +269,7 @@ async function scrapeOgImage(productSlug) {
 
 // Глобална променлива за кеширане на категории
 
-let cachedCategoryNames = ['РИБОЛОВ С ЩЕКА И МАЧ', 'Риболов на щука и сом', 'Ножове', 'Столове, чадъри и палатки'] ;
+let cachedCategoryNames = ['Aксесоари други'];
 function formatVariantName(variant, productName) { 
   const parts = [];  
   
@@ -372,10 +370,7 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    pike_and_catfish: 'Аксесоари щука и сом',
-    pole_and_match: 'Аксесоари щека и мач',
-    knives: 'Ножове',
-    chairs_umbrellas_tents: 'Столове и палатки'  
+    other: 'Други аксесоари'
    
   };
   
@@ -1253,12 +1248,7 @@ if (categoryType && stats[categoryType]) {
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  
-  console.log('  - Аксесоари щука и сом - Категория Id - (45)');
-  console.log('  - Аксесоари щека и мач - Категория Id - (50)');
-  console.log('  - Ножове - Категория Id - (59)'); 
-  console.log('  - Столове и палатки - Категория Id - (63)\n');
-
+  console.log('  - Аксесоари Други - Категория Id - (68)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1276,10 +1266,7 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
-      pike_and_catfish: [],
-      pole_and_match: [],
-      knives: [],
-      chairs_umbrellas_tents: []
+  other: []
 	  
     };
     
