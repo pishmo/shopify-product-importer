@@ -60,6 +60,31 @@ const stats = {
 // 2 част
 
 
+
+const fs = require('fs');
+
+// Зареждане на промоциите
+let promoData = {};
+try {
+    if (fs.existsSync('./promo.json')) {
+        promoData = JSON.parse(fs.readFileSync('./promo.json', 'utf8'));
+        console.log(`✅ Loaded promo.json with ${Object.keys(promoData).length} items.`);
+        
+        // 🔥 ВАЖНО ЗА ТЕСТА: Добавяме ръчно твоето тестово SKU, ако го няма във файла
+        promoData['944055'] = "850.00"; // Тестова промо цена
+    } else {
+        console.log('❌ promo.json not found!');
+    }
+} catch (error) {
+    console.log('❌ Error loading promo.json:', error);
+}
+
+
+
+
+
+
+
 // Изтриване на продукт
 async function deleteShopifyProduct(productId) {
   const numericId = productId.replace('gid://shopify/Product/', '');
