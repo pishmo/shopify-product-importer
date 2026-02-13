@@ -1248,7 +1248,7 @@ if (categoryType && stats[categoryType]) {
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Други - Категория Id - (68)');
+  console.log('  - Къмпинг - Категория Id - (63)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1266,7 +1266,7 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
-  other: []
+  kamping: []
 	  
     };
     
