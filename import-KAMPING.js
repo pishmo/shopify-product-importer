@@ -1,4 +1,4 @@
-// import-4CATEGORIES-accessories.js - Импорт на 4 групи Аксесоари Други от Filstar API
+// import-KAMPING.js - Импорт на Къмпиг от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
