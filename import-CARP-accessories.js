@@ -62,23 +62,25 @@ const stats = {
 
 
 
-
-// Зареждане на промоциите
+// --- ЗАРЕЖДАНЕ НА ПРОМОЦИИ (Безопасен начин) ---
+const fsSync = require('fs'); // Ползваме ново име, за да не гърми
 let promoData = {};
+
 try {
-    if (fs.existsSync('./promo.json')) {
-        promoData = JSON.parse(fs.readFileSync('./promo.json', 'utf8'));
+    if (fsSync.existsSync('./promo.json')) {
+        promoData = JSON.parse(fsSync.readFileSync('./promo.json', 'utf8'));
         console.log(`✅ Loaded promo.json with ${Object.keys(promoData).length} items.`);
-        
-        // 🔥 ВАЖНО ЗА ТЕСТА: Добавяме ръчно твоето тестово SKU, ако го няма във файла
-        promoData['944055'] = "850.00"; // Тестова промо цена
     } else {
         console.log('❌ promo.json not found!');
     }
-} catch (error) {
-    console.log('❌ Error loading promo.json:', error);
-}
+    
+    // 🔥 ТЕСТ: Насилствено добавяме SKU-то
+    promoData['944055'] = "850.00"; 
 
+} catch (error) {
+    console.log('⚠️ Error loading promo.json:', error);
+}
+// ------------------------------------------------
 
 
 
