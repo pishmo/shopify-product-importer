@@ -73,10 +73,7 @@ try {
     } else {
         console.log('❌ promo.json not found!');
     }
-    
-    // 🔥 ТЕСТ: Насилствено добавяме SKU-то
-    promoData['944055'] = "850.00"; 
-
+     
 } catch (error) {
     console.log('⚠️ Error loading promo.json:', error);
 }
