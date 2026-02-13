@@ -1126,18 +1126,21 @@ if (variantsChanged) {
     `;
 
 
+
+// Намери този блок в твоята функция и го промени така:
+
+const productInput = {
+  id: productGid,
+  title: filstarProduct.name,
+  // descriptionHtml: filstarProduct.description || '', // ✅ ТОЗИ РЕД СЕ МАХА ИЛИ КОМЕНТИРА
+  vendor: filstarProduct.manufacturer || 'Unknown',
+  productType: filstarProduct.category || '',
+  tags: fullProduct.tags || [], // ✅ Ползваме таговете от Shopify, за да не ги трием
+  status: 'ACTIVE'
+};
+
+
 		
-    const productInput = {
-      id: productGid,
-      title: filstarProduct.name,
-      descriptionHtml: filstarProduct.description || '',
-      vendor: filstarProduct.manufacturer || 'Unknown',
-      productType: filstarProduct.category || '',
-      tags: filstarProduct.tags || [],
-      status: 'ACTIVE'
-    };
-
-
 	
     const updateResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
