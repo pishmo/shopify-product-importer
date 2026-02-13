@@ -968,10 +968,7 @@ if (allImages.length > 0 && ogImageUrl) {
 }
 
 
-                //    UPDATE PRODUCT
-
-
-async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
+ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
  console.log(`🔄 Updating: ${filstarProduct.name}`);
   
   // НОВА ПРОВЕРКА: Брой варианти
@@ -984,7 +981,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   
   if (shopifyVariantsCount !== filstarVariantsCount) {
   console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
-	  
+      
   await deleteShopifyProduct(shopifyProduct.id);  // ⬅️ Използвай shopifyProduct.id
   await createShopifyProduct(filstarProduct, categoryType);
   
@@ -1134,7 +1131,7 @@ if (variantsChanged) {
       descriptionHtml: filstarProduct.description || '',
       vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
-      tags: filstarProduct.tags || [],
+      tags: fullProduct.tags || [], // ✅ ПРОМЕНЕНО: Използва вече съществуващите тагове от Shopify
       status: 'ACTIVE'
     };
 
@@ -1217,8 +1214,8 @@ if (inventoryItemId) {
         location_id: locationIdNumeric,
         inventory_item_id: inventoryItemId,
         available: parseInt(filstarVariant.quantity) || 0
-      })
-    }
+      }
+    })
   );
 
   const inventoryResult = await inventoryResponse.json();
@@ -1241,7 +1238,6 @@ if (categoryType && stats[categoryType]) {
 }
 
 }
-
 
 // MAIN функция
 
