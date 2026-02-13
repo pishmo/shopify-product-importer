@@ -968,8 +968,9 @@ if (allImages.length > 0 && ogImageUrl) {
 }
 
 
- async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
- console.log(`🔄 Updating: ${filstarProduct.name}`);
+// Апдейт на продукти
+async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
+  console.log(`🔄 Updating: ${filstarProduct.name}`);
   
   // НОВА ПРОВЕРКА: Брой варианти
   const shopifyVariantsCount = shopifyProduct.variants?.edges?.length || 0;
@@ -980,17 +981,15 @@ if (allImages.length > 0 && ogImageUrl) {
   console.log(`  - Filstar variants: ${filstarVariantsCount}`);
   
   if (shopifyVariantsCount !== filstarVariantsCount) {
-  console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
-      
-  await deleteShopifyProduct(shopifyProduct.id);  // ⬅️ Използвай shopifyProduct.id
-  await createShopifyProduct(filstarProduct, categoryType);
-  
-  return;   
+    console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
+        
+    await deleteShopifyProduct(shopifyProduct.id);  // ⬅️ Използвай shopifyProduct.id
+    await createShopifyProduct(filstarProduct, categoryType);
+    
+    return;   
   }
 	
-	
 // край на проверката за опции и варианти
-	
 	
 	try {
     const productGid = shopifyProduct.id;
@@ -1069,46 +1068,44 @@ if (allImages.length > 0 && ogImageUrl) {
     const fullProduct = productData.data.product;
     
     // Check if variants structure changed
-const shopifyVariants = fullProduct.variants.edges.map(e => ({
-  ...e.node,
-  inventoryItemId: e.node.inventoryItem?.id.replace('gid://shopify/InventoryItem/', '')
-}));
+    const shopifyVariants = fullProduct.variants.edges.map(e => ({
+      ...e.node,
+      inventoryItemId: e.node.inventoryItem?.id.replace('gid://shopify/InventoryItem/', '')
+    }));
 
-const filstarVariants = filstarProduct.variants || [];
+    const filstarVariants = filstarProduct.variants || [];
 
-// Провери дали има dropdown меню САМО ако е 1 вариант
-let dropdownMismatch = false;
+    // Провери дали има dropdown меню САМО ако е 1 вариант
+    let dropdownMismatch = false;
 
-if (filstarVariants.length === 1) {
- const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
-const shouldHaveDropdown = !!(variantName && variantName.trim() !== '');
+    if (filstarVariants.length === 1) {
+      const variantName = formatVariantName(filstarVariants[0], filstarProduct.name);
+      const shouldHaveDropdown = !!(variantName && variantName.trim() !== '');
 
-const hasDropdown = shopifyVariants.some(v => 
-  v.selectedOptions?.some(opt => opt.name !== 'Title')
-);
+      const hasDropdown = shopifyVariants.some(v => 
+        v.selectedOptions?.some(opt => opt.name !== 'Title')
+      );
 
-console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+      console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: ${shouldHaveDropdown}`);
+      
+      dropdownMismatch = hasDropdown !== shouldHaveDropdown;
+    }
 
-  
-  dropdownMismatch = hasDropdown !== shouldHaveDropdown;
-}
+    const variantsChanged = 
+      shopifyVariants.length !== filstarVariants.length ||
+      dropdownMismatch ||  // ⬅️ ПРОВЕРКА ЗА DROPDOWN
+      shopifyVariants.some((sv, idx) => {
+        const fv = filstarVariants[idx];
+        return !fv || sv.sku !== fv.sku;
+      });
 
-const variantsChanged = 
-  shopifyVariants.length !== filstarVariants.length ||
-  dropdownMismatch ||  // ⬅️ ПРОВЕРКА ЗА DROPDOWN
-  shopifyVariants.some((sv, idx) => {
-    const fv = filstarVariants[idx];
-    return !fv || sv.sku !== fv.sku;
-  });
+    if (variantsChanged) {
+      console.log(`  ⚠️  Variants changed - recreating product`);
+      await deleteShopifyProduct(productGid);
+      await createShopifyProduct(filstarProduct, categoryType); 
+      return;
+    }
 
-if (variantsChanged) {
-  console.log(`  ⚠️  Variants changed - recreating product`);
-  await deleteShopifyProduct(productGid);
-  await createShopifyProduct(filstarProduct, categoryType); 
-  return;
-}
-
-    
     // Update product fields
     const updateMutation = `
       mutation productUpdate($input: ProductInput!) {
@@ -1131,7 +1128,7 @@ if (variantsChanged) {
       descriptionHtml: filstarProduct.description || '',
       vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
-      tags: fullProduct.tags || [], // ✅ ПРОМЕНЕНО: Използва вече съществуващите тагове от Shopify
+      tags: fullProduct.tags || [], // ✅ Вземаме съществуващите тагове
       status: 'ACTIVE'
     };
 
@@ -1158,86 +1155,75 @@ if (variantsChanged) {
 
     console.log(`  ✅ Updated product fields`);
       
-// Update variants
+    // Update variants
+    for (let i = 0; i < filstarVariants.length; i++) {
+      const filstarVariant = filstarVariants[i];
+      const shopifyVariant = shopifyVariants[i];
+      if (!shopifyVariant) continue;
 
+      console.log(`  🐛 Updating variant ${i}: SKU ${filstarVariant.sku}`);
+      console.log(`  🐛 New price: ${filstarVariant.price}, New quantity: ${filstarVariant.quantity}`);
 
-// Update variants
-for (let i = 0; i < filstarVariants.length; i++) {
-  const filstarVariant = filstarVariants[i];
-  const shopifyVariant = shopifyVariants[i];
-  if (!shopifyVariant) continue;
+      const variantId = shopifyVariant.id.replace('gid://shopify/ProductVariant/', '');
 
-  console.log(`  🐛 Updating variant ${i}: SKU ${filstarVariant.sku}`);
-  console.log(`  🐛 New price: ${filstarVariant.price}, New quantity: ${filstarVariant.quantity}`);
-
-  const variantId = shopifyVariant.id.replace('gid://shopify/ProductVariant/', '');
-
-  // Update price via REST API
-  const variantResponse = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`,
-    {
-      method: 'PUT',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        variant: {
-          id: variantId,
-          price: String(filstarVariant.price),
-          barcode: filstarVariant.barcode || ''
+      // Update price via REST API
+      const variantResponse = await fetch(
+        `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`,
+        {
+          method: 'PUT',
+          headers: {
+            'X-Shopify-Access-Token': ACCESS_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            variant: {
+              id: variantId,
+              price: String(filstarVariant.price),
+              barcode: filstarVariant.barcode || ''
+            }
+          })
         }
-      })
-    }
-  );
+      );
 
-  const variantResult = await variantResponse.json();
+      // Update inventory via REST API
+      const inventoryItemId = shopifyVariant.inventoryItemId;
 
-
-  // Update inventory via REST API
- 
-const inventoryItemId = shopifyVariant.inventoryItemId;
-
-
-if (inventoryItemId) {
-  const locationIdNumeric = LOCATION_ID.replace('gid://shopify/Location/', '');
-  
-  const inventoryResponse = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
-    {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        location_id: locationIdNumeric,
-        inventory_item_id: inventoryItemId,
-        available: parseInt(filstarVariant.quantity) || 0
+      if (inventoryItemId) {
+        const locationIdNumeric = LOCATION_ID.replace('gid://shopify/Location/', '');
+        
+        const inventoryResponse = await fetch(
+          `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Shopify-Access-Token': ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              location_id: locationIdNumeric,
+              inventory_item_id: inventoryItemId,
+              available: parseInt(filstarVariant.quantity) || 0
+            }) // <--- ФИКСИРАНО: Правилно затворен stringify
+          }
+        );
       }
-    })
-  );
 
-  const inventoryResult = await inventoryResponse.json();
- 
-}
-
-
-  await new Promise(resolve => setTimeout(resolve, 500));
-}
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
     
-console.log(` ✅ Updated ${filstarVariants.length} variants`);
+    console.log(` ✅ Updated ${filstarVariants.length} variants`);
   } catch (error) {
     console.error(`❌ Error updating product: ${error.message}`);
   }
 
-// Обнови статистиката
-
-if (categoryType && stats[categoryType]) {
-  stats[categoryType].updated++;
+  // Обнови статистиката
+  if (categoryType && stats[categoryType]) {
+    stats[categoryType].updated++;
+  }
 }
 
-}
+
+
 
 // MAIN функция
 
