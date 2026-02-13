@@ -8,7 +8,7 @@ const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
 const TEST_SKUS = [
-  '944055'
+  '942156'
 ];
 
 async function fetchAllProducts() {
