@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-const TEST_SKUS = ['942156']; // Можеш да добавиш и '944055' за сравнение
+const TEST_SKUS = ['942156','944055']; // Можеш да добавиш и '944055' за сравнение
 
 async function fetchAllProducts() {
     console.log('📦 Извличане на продукти от Filstar за анализ...\n');
