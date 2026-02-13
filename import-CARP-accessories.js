@@ -1379,9 +1379,6 @@ if (categoryType && stats[categoryType]) {
     });
 
 
-// ТЕСТОВ ФИЛТЪР (работи за code или id)
-accessoryProducts = accessoryProducts.filter(p => String(p.code || p.id || '').trim() === '944055');
-	  
 	  
 console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
