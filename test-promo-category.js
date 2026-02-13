@@ -1,59 +1,61 @@
-// test-promo-category.js - Тест за извличане на продукти от категория Промо (ID 117)
+// test-promo-pagination.js - Пълно извличане на категория Промо с пагинация
 const fetch = require('node-fetch');
 
-// Твоите данни за достъп (увери се, че са в environment variables или ги попълни за теста)
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
 const FILSTAR_API_BASE = 'https://filstar.com/api';
+const PROMO_CATEGORY_ID = '117';
 
-const PROMO_CATEGORY_ID = '117'; // ID-то на категория "Промо"
+async function fetchAllPromoProducts() {
+  let allPromoProducts = [];
+  let page = 1;
+  let hasMore = true;
 
-async function testPromoCategory() {
-  console.log(`🔍 1. Опит за извличане на продукти от категория ID: ${PROMO_CATEGORY_ID}...`);
+  console.log(`🚀 Стартиране на извличане за категория ${PROMO_CATEGORY_ID}...`);
 
-  try {
-    // Опитваме да подадем категорията като параметър
-    const url = `${FILSTAR_API_BASE}/products?category_id=${PROMO_CATEGORY_ID}&limit=50`;
+  while (hasMore) {
+    console.log(`  Reading page ${page}...`);
+    const url = `${FILSTAR_API_BASE}/products?category_id=${PROMO_CATEGORY_ID}&limit=1000&page=${page}`;
     
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${FILSTAR_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Грешка при заявката: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (!data || data.length === 0) {
-      console.log('⚠️ Не бяха върнати продукти за тази категория или филтърът не работи.');
-      return;
-    }
-
-    console.log(`✅ Намерени ${data.length} продукта в заявката.\n`);
-    console.log('--- 📊 АНАЛИЗ НА ПЪРВИТЕ 3 ПРОДУКТА ---');
-
-    // Анализираме първите няколко продукта за цени
-    data.slice(0, 3).forEach((product, index) => {
-      console.log(`\n📦 [${index + 1}] Име: ${product.name}`);
-      
-      product.variants.forEach((v) => {
-        console.log(`   🔹 SKU: ${v.sku}`);
-        console.log(`   🔹 Цена в API: ${v.price}`);
-        
-        // Търсим дали тук няма да се появят нови полета, които липсваха в общия списък
-        const keys = Object.keys(v);
-        if (keys.length > 9) {
-          console.log(`   ⚠️ Открити допълнителни полета: ${keys.filter(k => !['id', 'sku', 'barcode', 'price', 'quantity', 'model', 'position', 'image', 'attributes'].includes(k))}`);
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${FILSTAR_TOKEN}`,
+          'Content-Type': 'application/json'
         }
       });
-    });
 
-  } catch (error) {
-    console.error(`❌ Възникна грешка: ${error.message}`);
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        allPromoProducts = allPromoProducts.concat(data);
+        page++;
+        // Ако върнатите продукти са по-малко от лимита, значи сме на последната страница
+        if (data.length < 1000) hasMore = false;
+      } else {
+        hasMore = false;
+      }
+    } catch (error) {
+      console.error(`❌ Грешка на страница ${page}:`, error.message);
+      hasMore = false;
+    }
   }
+
+  console.log(`\n✅ Общо намерени продукти в Промо: ${allPromoProducts.length}`);
+  
+  // Да проверим SKU-тата, които търсихме по-рано
+  const targetSkus = ['942156', '944055'];
+  targetSkus.forEach(sku => {
+    const found = allPromoProducts.find(p => p.variants.some(v => v.sku === sku));
+    if (found) {
+      const variant = found.variants.find(v => v.sku === sku);
+      console.log(`\n📍 Анализ за SKU ${sku}:`);
+      console.log(`   Име: ${found.name}`);
+      console.log(`   Цена в API: ${variant.price}`);
+      console.log(`   Всички полета във варианта: ${Object.keys(variant).join(', ')}`);
+    } else {
+      console.log(`\n❌ SKU ${sku} не беше намерено в категория Промо.`);
+    }
+  });
 }
 
-testPromoCategory();
+fetchAllPromoProducts();
