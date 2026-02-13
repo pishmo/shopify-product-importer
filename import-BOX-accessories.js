@@ -1059,7 +1059,7 @@ if (allImages.length > 0 && ogImageUrl) {
 
                 //    UPDATE PRODUCT
 
-
+//    UPDATE PRODUCT
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
  console.log(`🔄 Updating: ${filstarProduct.name}`);
   
@@ -1073,16 +1073,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   
   if (shopifyVariantsCount !== filstarVariantsCount) {
   console.log(`  ⚠️ VARIANTS MISMATCH! Shopify has ${shopifyVariantsCount} but Filstar has ${filstarVariantsCount}`);
-	  
+      
   await deleteShopifyProduct(shopifyProduct.id);  // ⬅️ Използвай shopifyProduct.id
   await createShopifyProduct(filstarProduct, categoryType);
   
   return;   
   }
 	
-	
 // край на проверката за опции и варианти
-	
 	
 	try {
     const productGid = shopifyProduct.id;
@@ -1185,7 +1183,6 @@ console.log(`  🐛 Single variant - Has dropdown: ${hasDropdown}, Should have: 
   dropdownMismatch = hasDropdown !== shouldHaveDropdown;
 }
 
-		
 const variantsChanged = 
   shopifyVariants.length !== filstarVariants.length ||
   dropdownMismatch ||  // ⬅️ ПРОВЕРКА ЗА DROPDOWN
@@ -1218,30 +1215,36 @@ if (variantsChanged) {
       }
     `;
 
+// --- ТУК СМЯТАМЕ ТАГОВЕТЕ (Поправката е тук) ---
 
-
-// --- ТУК ЗАПОЧВА НОВАТА ЛОГИКА (ПРЕДИ productInput) ---
+    // 1. Първо вземаме всички текущи тагове от Shopify, за да не ги изтрием
+    let finalTags = fullProduct.tags ? [...fullProduct.tags] : [];
     
-// --- ТУК СМЯТАМЕ ТАГОВЕТЕ (Това е новата логика) ---
-    let finalTags = [];
-    
+    // 2. Добавяме таговете, които идват от Filstar (ако ги има)
     if (filstarProduct.tags) {
+        let filstarTags = [];
         if (Array.isArray(filstarProduct.tags)) {
-            finalTags = [...filstarProduct.tags];
+            filstarTags = filstarProduct.tags;
         } else if (typeof filstarProduct.tags === 'string') {
-            finalTags = filstarProduct.tags.split(',').map(t => t.trim());
+            filstarTags = filstarProduct.tags.split(',').map(t => t.trim());
         }
+        
+        filstarTags.forEach(tag => {
+            if (!finalTags.includes(tag)) finalTags.push(tag);
+        });
     }
 
+    // 3. Добавяме тага за подкатегория
     const subcatTag = getSubcategoryTag(filstarProduct);
     if (subcatTag) {
         if (!finalTags.includes(subcatTag)) {
             finalTags.push(subcatTag);
-            console.log(`   🏷️  Adding subcategory tag: ${subcatTag}`);
+            console.log(`    🏷️  Adding subcategory tag: ${subcatTag}`);
         }
     }
 
-    // --- ТУК ГИ ИЗПРАЩАМЕ (Това е поправката в обекта) ---
+// --- ТУК ГИ ИЗПРАЩАМЕ ---
+
     const productInput = {
       id: productGid,
       title: filstarProduct.name,
@@ -1249,8 +1252,7 @@ if (variantsChanged) {
       vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
       
-      // 👇 ЕТО ТУК Е РАЗКОВНИЧЕТО:
-      tags: finalTags, 
+      tags: finalTags, // ✅ Вече съдържа старите + новите
       
       status: 'ACTIVE'
     };
@@ -1280,8 +1282,6 @@ if (variantsChanged) {
       
 // Update variants
 
-
-// Update variants
 for (let i = 0; i < filstarVariants.length; i++) {
   const filstarVariant = filstarVariants[i];
   const shopifyVariant = shopifyVariants[i];
@@ -1313,13 +1313,10 @@ for (let i = 0; i < filstarVariants.length; i++) {
 
   const variantResult = await variantResponse.json();
 
-
   // Update inventory via REST API
- 
-const inventoryItemId = shopifyVariant.inventoryItemId;
+  const inventoryItemId = shopifyVariant.inventoryItemId;
 
-
-if (inventoryItemId) {
+  if (inventoryItemId) {
   const locationIdNumeric = LOCATION_ID.replace('gid://shopify/Location/', '');
   
   const inventoryResponse = await fetch(
@@ -1339,9 +1336,7 @@ if (inventoryItemId) {
   );
 
   const inventoryResult = await inventoryResponse.json();
- 
-}
-
+ }
 
   await new Promise(resolve => setTimeout(resolve, 500));
 }
@@ -1351,15 +1346,11 @@ console.log(` ✅ Updated ${filstarVariants.length} variants`);
     console.error(`❌ Error updating product: ${error.message}`);
   }
 
-// Обнови статистиката
-
 if (categoryType && stats[categoryType]) {
   stats[categoryType].updated++;
 }
 
 }
-
-
 // MAIN функция
 
   async function main() {
