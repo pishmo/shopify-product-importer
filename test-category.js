@@ -1,130 +1,59 @@
-// update-all-products-weight.js - Апдейт на тегло 1кг за всички продукти
+// test-promo-category.js - Тест за извличане на продукти от категория Промо (ID 117)
 const fetch = require('node-fetch');
 
-const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
-const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+// Твоите данни за достъп (увери се, че са в environment variables или ги попълни за теста)
 const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
-const API_VERSION = '2024-10';
 const FILSTAR_API_BASE = 'https://filstar.com/api';
 
-const TEST_SKUS = [
-  '925637'
-];
+const PROMO_CATEGORY_ID = '117'; // ID-то на категория "Промо"
 
-async function fetchAllShopifyProducts() {
-  console.log('📦 Fetching all products from Shopify...\n');
-  let allProducts = [];
-  let pageInfo = null;
-  let page = 1;
-  
-  while (true) {
-    const url = pageInfo 
-      ? `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250&page_info=${pageInfo}`
-      : `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products.json?limit=250`;
+async function testPromoCategory() {
+  console.log(`🔍 1. Опит за извличане на продукти от категория ID: ${PROMO_CATEGORY_ID}...`);
+
+  try {
+    // Опитваме да подадем категорията като параметър
+    const url = `${FILSTAR_API_BASE}/products?category_id=${PROMO_CATEGORY_ID}&limit=50`;
     
     const response = await fetch(url, {
       headers: {
-        'X-Shopify-Access-Token': ACCESS_TOKEN,
+        'Authorization': `Bearer ${FILSTAR_TOKEN}`,
         'Content-Type': 'application/json'
       }
     });
-    
+
+    if (!response.ok) {
+      throw new Error(`Грешка при заявката: ${response.status}`);
+    }
+
     const data = await response.json();
-    
-    if (data.products && data.products.length > 0) {
-      allProducts = allProducts.concat(data.products);
-      console.log(`  Page ${page}: ${data.products.length} products (Total: ${allProducts.length})`);
-      page++;
+
+    if (!data || data.length === 0) {
+      console.log('⚠️ Не бяха върнати продукти за тази категория или филтърът не работи.');
+      return;
+    }
+
+    console.log(`✅ Намерени ${data.length} продукта в заявката.\n`);
+    console.log('--- 📊 АНАЛИЗ НА ПЪРВИТЕ 3 ПРОДУКТА ---');
+
+    // Анализираме първите няколко продукта за цени
+    data.slice(0, 3).forEach((product, index) => {
+      console.log(`\n📦 [${index + 1}] Име: ${product.name}`);
       
-      // Check for next page
-      const linkHeader = response.headers.get('Link');
-      if (linkHeader && linkHeader.includes('rel="next"')) {
-        const nextMatch = linkHeader.match(/<[^>]*page_info=([^>&]+)[^>]*>;\s*rel="next"/);
-        pageInfo = nextMatch ? nextMatch[1] : null;
-      } else {
-        break;
-      }
-    } else {
-      break;
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-  
-  console.log(`\n✅ Total products fetched: ${allProducts.length}\n`);
-  return allProducts;
-}
-
-async function updateProductWeight(productId, variantId, currentWeight) {
-  const url = `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`;
-  
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'X-Shopify-Access-Token': ACCESS_TOKEN,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      variant: {
-        id: variantId,
-        weight: 1.0,
-        weight_unit: 'kg'
-      }
-    })
-  });
-  
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to update variant ${variantId}: ${error}`);
-  }
-  
-  return await response.json();
-}
-
-async function updateAllProductsWeight() {
-  const allProducts = await fetchAllShopifyProducts();
-  
-  console.log('🔄 Starting weight update to 1kg...\n');
-  
-  let updated = 0;
-  let skipped = 0;
-  let errors = 0;
-  
-  for (let i = 0; i < allProducts.length; i++) {
-    const product = allProducts[i];
-    
-    for (const variant of product.variants) {
-      try {
-        // Update only if weight is not already 1kg
-        if (variant.weight !== 1.0 || variant.weight_unit !== 'kg') {
-          await updateProductWeight(product.id, variant.id, variant.weight);
-          updated++;
-          
-          // Log every 100 updates
-          if (updated % 100 === 0) {
-            console.log(`  ✓ Updated ${updated} variants...`);
-          }
-        } else {
-          skipped++;
+      product.variants.forEach((v) => {
+        console.log(`   🔹 SKU: ${v.sku}`);
+        console.log(`   🔹 Цена в API: ${v.price}`);
+        
+        // Търсим дали тук няма да се появят нови полета, които липсваха в общия списък
+        const keys = Object.keys(v);
+        if (keys.length > 9) {
+          console.log(`   ⚠️ Открити допълнителни полета: ${keys.filter(k => !['id', 'sku', 'barcode', 'price', 'quantity', 'model', 'position', 'image', 'attributes'].includes(k))}`);
         }
-        
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 250));
-        
-      } catch (error) {
-        errors++;
-        console.log(`  ❌ Error updating variant ${variant.id}: ${error.message}`);
-      }
-    }
+      });
+    });
+
+  } catch (error) {
+    console.error(`❌ Възникна грешка: ${error.message}`);
   }
-  
-  console.log('\n' + '='.repeat(80));
-  console.log('📊 SUMMARY:');
-  console.log(`   Total products: ${allProducts.length}`);
-  console.log(`   ✅ Updated: ${updated}`);
-  console.log(`   ⏭️  Skipped (already 1kg): ${skipped}`);
-  console.log(`   ❌ Errors: ${errors}`);
-  console.log('='.repeat(80) + '\n');
 }
 
-updateAllProductsWeight();
+testPromoCategory();
