@@ -1379,11 +1379,9 @@ if (categoryType && stats[categoryType]) {
     });
 
 
-// 🛑 START TEST FILTER (Универсален)
-    // Вземаме продукта директно от allProducts, за да прескочим всякакви филтри за категория
-    // Ако искаш няколко, ползвай: ['944055', '920232'].includes(String(p.id))
-    accessoryProducts = allProducts.filter(p => String(p.id) === '944055'); 
-    // 🛑 END TEST FILTER
+// ТЕСТОВ ФИЛТЪР (работи за code или id)
+accessoryProducts = accessoryProducts.filter(p => String(p.code || p.id || '').trim() === '944055');
+	  
 	  
 console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
