@@ -1378,11 +1378,16 @@ if (categoryType && stats[categoryType]) {
       return categoryType !== null;
     });
 
-accessoryProducts = accessoryProducts.filter(product => ['944055'].includes(String(product.code)));
+//филтър
+const testSkus = ['944055'];
+accessoryProducts = accessoryProducts.filter(p => testSkus.includes(String(p.id)));
+// филтър
+
 
 	  
-    console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
-    
+console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
+	  
+  
     // Групирай по категория
 const productsByCategory = {
  carp_fishing: []
