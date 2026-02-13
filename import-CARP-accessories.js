@@ -1378,12 +1378,11 @@ if (categoryType && stats[categoryType]) {
       return categoryType !== null;
     });
 
-//филтър
-const testSkus = ['944055'];
-accessoryProducts = accessoryProducts.filter(p => testSkus.includes(String(p.id)));
-// филтър
 
 
+
+accessoryProducts = accessoryProducts.filter(p => String(p.id) === '944055');
+	  
 	  
 console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
