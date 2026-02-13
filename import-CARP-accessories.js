@@ -1378,7 +1378,7 @@ if (categoryType && stats[categoryType]) {
       return categoryType !== null;
     });
 
-
+accessoryProducts = accessoryProducts.filter(product => ['944055'].includes(String(product.code)));
 
 	  
     console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
@@ -1407,10 +1407,7 @@ const productsByCategory = {
     
     for (const [categoryType, products] of Object.entries(productsByCategory)) {
       if (products.length === 0) continue;
-		
-      if (!['944055'].includes(String(filstarProduct.code))) continue; 
- 
-		
+		    		
 	  console.log(`\n${'='.repeat(60)}`);
 		
       console.log(`📂 Processing category: ${getCategoryName(categoryType)}`);
