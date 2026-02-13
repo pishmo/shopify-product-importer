@@ -1,12 +1,11 @@
 name: Test Filstar Promo Category
 
-# Позволява ръчно стартиране от раздела "Actions"
 on:
   workflow_dispatch:
 
 jobs:
   run-test:
-    runs-base: ubuntu-latest
+    runs-on: ubuntu-latest # Тук беше грешката
 
     steps:
       - name: Checkout repository
@@ -22,7 +21,6 @@ jobs:
         run: npm install
 
       - name: Run Promo Category Test
-        # Използваме твоите съществуващи ключове от Secrets
         env:
           FILSTAR_API_TOKEN: ${{ secrets.FILSTAR_API_TOKEN }}
           FILSTAR_API_BASE: "https://filstar.com/api"
