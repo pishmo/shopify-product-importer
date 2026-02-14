@@ -94,33 +94,31 @@ function normalizeFilename(filename) {
 
 
 // Функция за извличане на чист filename от URL
+
+
+
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
   
-  // 1. Вземаме само името на файла и чистим query параметри
+  // 1. Извличаме името от URL и махаме параметрите (?v=...)
   let fullFilename = src.split('/').pop().split('?')[0];
 
-  // 2. ИЗВАЖДАМЕ РАЗШИРЕНИЕТО (напр. jpg, png)
-  const extension = fullFilename.split('.').pop();
-  let nameWithoutExt = fullFilename.substring(0, fullFilename.lastIndexOf('.'));
+  // 2. Вземаме разширението (винаги последното след точката)
+  const parts = fullFilename.split('.');
+  const ext = parts.length > 1 ? parts.pop().toLowerCase() : 'jpg';
+  let name = parts.join('.'); // Останалото е името
 
-  // 3. ПРЕМАХВАМЕ SHOPIFY UUID (_8d1a1ff2-0c37...)
-  const shopifyUuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
-  nameWithoutExt = nameWithoutExt.replace(shopifyUuidPattern, '');
+  // 3. ЧИСТЕНЕ: Махаме Shopify UUID и Timestamp-ове
+  // Търсим дълги поредици от букви и цифри (UUID) или дати (2024...)
+  const noisePattern = /(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{10,15}-\d+)/i;
+  name = name.replace(noisePattern, '');
 
-  // 4. ПРЕМАХВАМЕ FILSTAR TIMESTAMPS (-20240716153312-465)
-  const timestampPattern = /-\d{14}-\d+/; 
-  nameWithoutExt = nameWithoutExt.replace(timestampPattern, '');
+  // 4. Махаме артефакти като -jpg или _png в самото име
+  name = name.replace(/[-_](jpg|jpeg|png|webp)$/i, '');
 
-  // 5. ПРЕМАХВАМЕ остатъчни разширения вътре в името (-jpg, _png)
-  // Това оправя случая "име-jpg.jpeg"
-  nameWithoutExt = nameWithoutExt.replace(/[-_](jpg|jpeg|png|gif|webp)/i, '');
-
-  // 6. СГЛОБЯВАМЕ ОБРАТНО С ПРАВИЛНОТО РАЗШИРЕНИЕ
-  return (nameWithoutExt + '.' + extension).toLowerCase();
+  // Връщаме името С разширение
+  return (name + '.' + ext).toLowerCase();
 }
-
-
 
 
 function imageExists(existingImages, newImageUrl) {
