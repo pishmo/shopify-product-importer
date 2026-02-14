@@ -1135,7 +1135,13 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     stats[categoryType].updated++;
   }
 }
-// MAIN функция
+
+
+
+
+
+
+// MAIN функция       ===================================================================================================================
 
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
