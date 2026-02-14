@@ -626,9 +626,12 @@ async function reorderProductImages(productGid, images) {
 // Функция за създаване на нов продукт      CREATE PRODUCT
 
 
+// Функция за създаване на нов продукт     ============================================================================
 
-// Функция за създаване на нов продукт
-// Функция за създаване на нов продукт
+
+
+
+
 async function createShopifyProduct(filstarProduct, categoryType) {
  
   try {
