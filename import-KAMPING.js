@@ -37,6 +37,34 @@ const stats = {
 
 
 
+
+const fsSync = require('fs'); // Използваме това за синхронно четене
+
+// --- ЗАРЕЖДАНЕ НА ПРОМОЦИИ ---
+let promoData = {};
+try {
+    // Проверяваме дали файлът съществува
+    if (fsSync.existsSync('./promo.json')) {
+        const fileContent = fsSync.readFileSync('./promo.json', 'utf8');
+        promoData = JSON.parse(fileContent);
+        console.log(`✅ Loaded promo.json with ${Object.keys(promoData).length} items.`);
+    } else {
+        console.log('⚠️ promo.json not found - skipping promo prices.');
+    }
+} catch (error) {
+    console.log('❌ Error loading promo.json:', error.message);
+}
+// -----------------------------
+
+// Твоите останали константи (ACCESS_TOKEN, SHOPIFY_DOMAIN и т.н.) следват тук...
+
+
+
+
+
+
+
+
 // 2 част
 
 
