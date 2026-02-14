@@ -93,11 +93,6 @@ function normalizeFilename(filename) {
 
 
 
-
-
-
-
-
 // Функция за извличане на чист filename от URL
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
@@ -105,23 +100,34 @@ function getImageFilename(src) {
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
-  // Премахва Shopify UUID
   const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
   let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
-  
- // Премахва Filstar hex hash-ове (32+ char hex strings)
-const parts = cleanFilename.split('_');
-const cleanParts = parts.filter(part => {
-  const partWithoutExt = part.split('.')[0];
-  const isHex = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
-  return !isHex;
-});
-const extension = cleanFilename.split('.').pop();
-cleanFilename = cleanParts.join('_') + '.' + extension;
 
+  const parts = cleanFilename.split('_');
+  const cleanParts = parts.filter(part => {
+    const partWithoutExt = part.split('.')[0];
+    const isHex = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
+    return !isHex;
+  });
+
+  const extension = cleanFilename.split('.').pop();
+  
+  // КОРЕКЦИЯТА Е ТУК:
+  // Първо съединяваме чистите части
+  let finalBaseName = cleanParts.join('_');
+  
+  // Ако в края на името вече има същото разширение, го премахваме преди да го добавим пак
+  if (finalBaseName.toLowerCase().endsWith('.' + extension.toLowerCase())) {
+    finalBaseName = finalBaseName.substring(0, finalBaseName.length - (extension.length + 1));
+  }
+
+  cleanFilename = finalBaseName + '.' + extension;
   cleanFilename = cleanFilename.replace(/^_+/, '');
+  
   return cleanFilename;
 }
+
+
 
 
 function imageExists(existingImages, newImageUrl) {
