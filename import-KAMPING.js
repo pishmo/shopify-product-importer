@@ -856,6 +856,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   const safeAlt = filstarProduct.name.replace(/"/g, '\\"');
 
   try {
+    // 1. Вземаме актуални данни
     const productQuery = `query { product(id: "${productGid}") {
       images(first: 50) { edges { node { id src altText } } }
       variants(first: 50) { edges { node { id sku price inventoryItem { id } } } }
@@ -865,20 +866,20 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       method: 'POST', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: productQuery })
     });
-    const res = await response.json();
-    const existingImages = res.data.product.images.edges.map(e => e.node);
-    const shopifyVariants = res.data.product.variants.edges;
+    const resData = await response.json();
+    const existingImages = resData.data.product.images.edges.map(e => e.node);
+    const shopifyVariants = resData.data.product.variants.edges;
 
-    // Списък с чисти имена, които вече имаме в Shopify
+    // Мапинг за проверка
     let imageMap = new Map();
     existingImages.forEach(img => {
       const cleanName = getImageFilename(img.src);
       imageMap.set(cleanName, img.id);
     });
 
-    let uploadedNew = false;
+    let hasUploaded = false;
 
-    // КАЧВАНЕ
+    // 2. КАЧВАНЕ (С гарантирано разширение в името)
     if (filstarProduct.images) {
       for (const imgUrl of filstarProduct.images) {
         const cleanName = getImageFilename(imgUrl);
@@ -886,7 +887,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
           console.log(`  🖼️  Uploading: ${cleanName}`);
           const normalizedBuffer = await normalizeImage(imgUrl, filstarProduct.variants[0].sku);
           if (normalizedBuffer) {
-            // ТУК Е ВАЖНО: Пращаме cleanName КАТО име на файла
+            // Предаваме cleanName на uploadImageToShopify, за да знае името с разширението
             const resourceUrl = await uploadImageToShopify(normalizedBuffer, cleanName);
             const attachMutation = `mutation { productCreateMedia(productId: "${productGid}", media: [{originalSource: "${resourceUrl}", mediaContentType: IMAGE, alt: "${safeAlt}"}]) { media { id } } }`;
             const attachRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
@@ -895,20 +896,21 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             });
             const attachData = await attachRes.json();
             const newId = attachData.data?.productCreateMedia?.media?.[0]?.id;
-            if (newId) { imageMap.set(cleanName, newId); uploadedNew = true; }
+            if (newId) { imageMap.set(cleanName, newId); hasUploaded = true; }
           }
         }
       }
     }
 
-    // РЕОРДЕР СТАТУС
+    // 3. REORDER И ВАРИАНТИ
     console.log(`  ⚙️  REORDER STATUS:`);
     const finalOrder = [];
     const assignments = [];
 
-    // 1. OG Image (Ако е null, ползваме първата от масива filstarProduct.images)
-    let ogSource = filstarProduct.ogImageUrl || (filstarProduct.images && filstarProduct.images[0]);
+    // fallback за OG: ако няма ogImageUrl, вземи първата от масива filstarProduct.images
+    const ogSource = filstarProduct.ogImageUrl || (filstarProduct.images && filstarProduct.images[0]);
     const ogName = getImageFilename(ogSource || "");
+    
     if (ogName && imageMap.has(ogName)) {
       finalOrder.push(imageMap.get(ogName));
       console.log(`    [1] OG Image: Found -> ${ogName}`);
@@ -916,7 +918,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       console.log(`    [1] OG Image: NOT FOUND (${ogName})`);
     }
 
-    // 2. Варианти
+    // Варианти
     filstarProduct.variants.forEach(fv => {
       const vImgName = getImageFilename(fv.image || "");
       const mediaId = imageMap.get(vImgName);
@@ -927,12 +929,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       }
     });
 
-    // 3. Останалите
+    // Добавяме останалите
     imageMap.forEach((id, name) => {
       if (!finalOrder.includes(id)) finalOrder.push(id);
     });
 
-    // Изпълнение Reorder
+    // Изпълнение на Reorder (ако има какво)
     if (finalOrder.length > 0) {
       const moves = finalOrder.map((id, index) => ({ id, newPosition: String(index) }));
       await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
@@ -944,7 +946,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       });
     }
 
-    // Изпълнение Variant Link
+    // Свързване с SKU
     if (assignments.length > 0) {
       await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
         method: 'POST', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
@@ -955,18 +957,21 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       console.log(`    🔗 Variant images linked.`);
     }
 
-    // ЦЕНИ И НАЛИЧНОСТИ
+    // 4. ЦЕНИ И НАЛИЧНОСТИ (Винаги с лог)
     for (const fv of filstarProduct.variants) {
       const sv = shopifyVariants.find(v => v.node.sku === fv.sku)?.node;
       if (sv) {
         const vId = sv.id.split('/').pop();
         let price = String(fv.price);
         if (typeof promoData !== 'undefined' && promoData[fv.sku]) price = String(promoData[fv.sku]);
+        
         console.log(`    💰 [${fv.sku}] ${sv.price} -> ${price} | Qty: ${fv.quantity}`);
+
         await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${vId}.json`, {
           method: 'PUT', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
           body: JSON.stringify({ variant: { id: vId, price, barcode: fv.barcode || '' } })
         });
+        
         const invId = sv.inventoryItem.id.split('/').pop();
         await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`, {
           method: 'POST', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
@@ -974,9 +979,8 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         });
       }
     }
-  } catch (e) { console.error(`  ❌ Error: ${e.message}`); }
+  } catch (e) { console.error(`  ❌ Global Update Error: ${e.message}`); }
 }
-
 
 // MAIN функция       ===================================================================================================================
 
