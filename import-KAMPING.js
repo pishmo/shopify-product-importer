@@ -628,6 +628,7 @@ async function reorderProductImages(productGid, images) {
 
 
 // Функция за създаване на нов продукт
+// Функция за създаване на нов продукт
 async function createShopifyProduct(filstarProduct, categoryType) {
  
   try {
@@ -647,9 +648,20 @@ async function createShopifyProduct(filstarProduct, categoryType) {
        
 console.log(`\n📦 Variant VALUE : ${variantName}`);
  
+      // --- НОВАТА ЛОГИКА ЗА ЦЕНИ ---
+      let finalPrice = variant.price?.toString() || '0';
+      let compareAtPrice = null;
+
+      if (typeof promoData !== 'undefined' && promoData[variant.sku]) {
+        finalPrice = promoData[variant.sku].toString();
+        compareAtPrice = variant.price?.toString();
+        console.log(`  🏷️ Promo: ${variant.sku} -> ${finalPrice} (was ${compareAtPrice})`);
+      }
+      // ----------------------------
       
       const variantData = {
-        price: variant.price?.toString() || '0',
+        price: finalPrice,
+        compare_at_price: compareAtPrice,
         sku: variant.sku,
         barcode: variant.barcode || variant.sku,
         inventory_quantity: parseInt(variant.quantity) || 0,
@@ -810,8 +822,8 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
         }
       );
       
-      const productData = await productResponse.json();
-      const shopifyVariants = productData.data?.product?.variants?.edges || [];
+      const productDataRes = await productResponse.json();
+      const shopifyVariants = productDataRes.data?.product?.variants?.edges || [];
       
       const variantsToUpdate = [];
       
@@ -867,7 +879,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
           }
         `;
         
-        const response = await fetch(
+        const responseUpdate = await fetch(
           `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
           {
             method: 'POST',
@@ -879,7 +891,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
           }
         );
         
-        const data = await response.json();
+        const dataUpdate = await responseUpdate.json();
         console.log(`  ✅ Assigned ${variantsToUpdate.length} variant images`);
       }
     }
@@ -918,9 +930,6 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
 
     
     // REORDER IMAGES
-
-
-// REORDER IMAGES
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`  🔄 Reordering images...`);
   
@@ -946,7 +955,7 @@ if (allImages.length > 0 && ogImageUrl) {
         }
       }
     }
-         
+          
     // Раздели на assigned и unassigned (без OG)
     const unassignedImages = [];
     const assignedImages = [];
@@ -972,7 +981,7 @@ if (allImages.length > 0 && ogImageUrl) {
       ...unassignedImages,
       ...assignedImages
     ];
-       
+        
     console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
     await reorderProductImages(productGid, finalOrder);
   }
@@ -989,7 +998,7 @@ if (allImages.length > 0 && ogImageUrl) {
 }
 
 
-// Апдейт на продукти
+// Апдейт на продукти   ===================================================================================================================
 
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
