@@ -604,7 +604,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
   const safeAlt = filstarProduct.name.replace(/"/g, '\\"');
 
   try {
-    // 1. СЪЗДАВАНЕ НА ПРОДУКТА (Първоначално без снимки)
+    // 1. СЪЗДАВАНЕ НА ПРОДУКТА (С правилните цени и наличности)
     const createMutation = `
       mutation productCreate($input: ProductInput!) {
         productCreate(input: $input) {
@@ -624,7 +624,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
         sku: v.sku,
         price: String(promoData && promoData[v.sku] ? promoData[v.sku] : v.price),
         compareAtPrice: (promoData && promoData[v.sku]) ? String(v.price) : null,
-        inventoryQuantities: [{ locationId: LOCATION_ID, availableQuantity: parseInt(fv.quantity) || 0 }],
+        inventoryQuantities: [{ locationId: LOCATION_ID, availableQuantity: parseInt(v.quantity) || 0 }],
         barcode: v.barcode || ''
       }))
     };
@@ -637,22 +637,28 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
     const resData = await response.json();
     const newProduct = resData.data?.productCreate?.product;
+    
+    if (resData.data?.productCreate?.userErrors?.length > 0) {
+      console.log(`  ❌ Shopify Errors:`, resData.data.productCreate.userErrors);
+      return;
+    }
+    
     if (!newProduct) return;
 
     const productGid = newProduct.id;
     const shopifyVariants = newProduct.variants.edges;
 
-    // 2. КАЧВАНЕ НА СНИМКИ С ЧИСТИ ИМЕНА
+    // 2. КАЧВАНЕ НА СНИМКИ (С гарантирани чисти имена и разширения)
     let imageMap = new Map();
     const allImageUrls = filstarProduct.images || [];
 
     for (const imgUrl of allImageUrls) {
-      const cleanName = getImageFilename(imgUrl); // ТУК ИЗПОЛЗВАМЕ ФИКСИРАНАТА getImageFilename
+      const cleanName = getImageFilename(imgUrl); 
       console.log(`  🖼️  Uploading: ${cleanName}`);
       
       const normalizedBuffer = await normalizeImage(imgUrl, filstarProduct.variants[0].sku);
       if (normalizedBuffer) {
-        // ПРАЩАМЕ ЧИСТОТО ИМЕ КЪМ SHOPIFY
+        // Пращаме cleanName като име на файла, за да избегнем UUID-тата
         const resourceUrl = await uploadImageToShopify(normalizedBuffer, cleanName);
         
         const attachMutation = `
@@ -680,7 +686,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       }
     }
 
-    // 3. ПОДРЕДБА (REORDER) И СВЪРЗВАНЕ С ВАРИАНТИ
+    // 3. ПОДРЕДБА (REORDER): OG -> FREE -> VARIANTS
     const finalOrderIds = [];
     const variantAssignments = [];
     let logParts = [];
@@ -693,16 +699,18 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       logParts.push(`[OG: ${ogName}]`);
     }
 
-    // Б) Free Images (Снимки, които не са OG и не са на конкретни варианти)
+    // Б) Free Images
     const variantImageNames = new Set(filstarProduct.variants.map(v => v.image ? getImageFilename(v.image) : null).filter(Boolean));
+    let freeNames = [];
     imageMap.forEach((id, name) => {
       if (name !== ogName && !variantImageNames.has(name)) {
         finalOrderIds.push(id);
+        freeNames.push(name);
       }
     });
-    if (imageMap.size > (variantImageNames.size + 1)) logParts.push(`[Free Images Added]`);
+    if (freeNames.length > 0) logParts.push(`[Free: ${freeNames.join(', ')}]`);
 
-    // В) Variant Images (Накрая)
+    // В) Variant Images
     filstarProduct.variants.forEach(fv => {
       const vImgName = getImageFilename(fv.image || "");
       const mediaId = imageMap.get(vImgName);
@@ -749,7 +757,6 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     console.error(`  ❌ Error in Create: ${e.message}`);
   }
 }
-
 // Апдейт на продукти   ===================================================================================================================
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
