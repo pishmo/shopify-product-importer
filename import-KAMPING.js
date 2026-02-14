@@ -94,30 +94,38 @@ function normalizeFilename(filename) {
 
 
 // Функция за извличане на чист filename от URL
+
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
   
-  // 1. Махаме query параметри (?v=...)
+  // 1. Вземаме името и махаме query (?v=...)
   let base = src.split('/').pop().split('?')[0];
 
-  // 2. Намираме разширението (всичко след последната точка)
+  // 2. Намираме разширението
   const lastDotIndex = base.lastIndexOf('.');
-  if (lastDotIndex === -1) return base.toLowerCase() + ".jpg"; // Защита, ако липсва точка
+  let ext = "";
+  let name = base;
 
-  const ext = base.substring(lastDotIndex + 1).toLowerCase();
-  let name = base.substring(0, lastDotIndex);
+  if (lastDotIndex !== -1) {
+    ext = base.substring(lastDotIndex + 1).toLowerCase();
+    name = base.substring(0, lastDotIndex);
+  } else {
+    ext = "jpg"; // По подразбиране
+  }
 
-  // 3. Чистим Shopify UUID и Filstar Timestamps
-  // Търсим типичните поредици: _uuid или -дата-номер
-  const noisePattern = /(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{14}-\d+)/i;
-  name = name.replace(noisePattern, '');
-
-  // 4. Махаме артефакти като "-jpg" или "_png" вътре в името
-  name = name.replace(/[-_](jpg|jpeg|png|webp|gif)$/i, '');
+  // 3. Чистим Шум (UUID, Timestamps, Артефакти)
+  // Махаме всичко, което прилича на Shopify UUID или дълъг Timestamp
+  name = name.replace(/(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12})/i, '');
+  name = name.replace(/(-\d{10,15}-\d+)/, '');
+  
+  // Махаме остатъчни разширения вътре в името (като _jpg или -png)
+  name = name.replace(/[-_.](jpg|jpeg|png|webp|gif)$/i, '');
+  
+  // Махаме излишни долни черти/тирета накрая, които остават след чистенето
+  name = name.replace(/[_-]+$/, '');
 
   return (name + "." + ext).toLowerCase();
 }
-
 
 // Функция за извличане на SKU от filename
 function extractSkuFromImageFilename(filename) {
