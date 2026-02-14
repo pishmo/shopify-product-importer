@@ -629,9 +629,6 @@ async function reorderProductImages(productGid, images) {
 // Функция за създаване на нов продукт     ============================================================================
 
 
-
-
-
 async function createShopifyProduct(filstarProduct, categoryType) {
  
   try {
@@ -645,13 +642,13 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const needsOptions = filstarProduct.variants.length > 1 || 
       (filstarProduct.variants.length === 1 && formatVariantName(filstarProduct.variants[0], categoryNames));
     
-      const variants = filstarProduct.variants.map(variant => {
+    const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant, categoryNames);
       const finalName = variantName || variant.sku;
        
-console.log(`\n📦 Variant VALUE : ${variantName}`);
+      console.log(`\n📦 Variant VALUE : ${variantName}`);
  
-      // --- НОВАТА ЛОГИКА ЗА ЦЕНИ ---
+      // --- ЛОГИКА ЗА ЦЕНИТЕ ---
       let finalPrice = variant.price?.toString() || '0';
       let compareAtPrice = null;
 
@@ -660,7 +657,6 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
         compareAtPrice = variant.price?.toString();
         console.log(`  🏷️ Promo: ${variant.sku} -> ${finalPrice} (was ${compareAtPrice})`);
       }
-      // ----------------------------
       
       const variantData = {
         price: finalPrice,
@@ -724,7 +720,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     const imageMapping = new Map();
     
     if (filstarProduct.images && filstarProduct.images.length > 0) {
-      console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
+      console.log(`  🖼️  Uploading ${filstarProduct.images.length} images with ALT tags...`);
       
       for (const imageUrl of filstarProduct.images) {
         const filename = imageUrl.split('/').pop();
@@ -736,6 +732,9 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
           const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
           
           if (resourceUrl) {
+            // Подготвяме името за GraphQL (чистим кавичките)
+            const safeAltText = filstarProduct.name.replace(/"/g, '\\"');
+            
             const attachMutation = `
               mutation {
                 productCreateMedia(
@@ -743,6 +742,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
                   media: [{
                     originalSource: \"${resourceUrl}\"
                     mediaContentType: IMAGE
+                    alt: \"${safeAltText}\"
                   }]
                 ) {
                   media {
@@ -777,7 +777,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
               const shopifyImageId = attachData.data.productCreateMedia.media[0].id;
               const cleanFilename = getImageFilename(fullImageUrl);
               imageMapping.set(cleanFilename, shopifyImageId);
-              console.log(`    ✓ Uploaded: ${filename}`);
+              console.log(`    ✓ Uploaded: ${filename} (Alt: ${filstarProduct.name})`);
               stats[categoryType].images++;
             } else if (attachData.data?.productCreateMedia?.mediaUserErrors?.length > 0) {
               console.log(`    ❌ Upload error: ${attachData.data.productCreateMedia.mediaUserErrors[0].message}`);
@@ -854,7 +854,6 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
                 mediaId: shopifyImageId
               });
               
-              // Запази за reorder
               variantImageAssignments.push({
                 variantId: shopifyVariant.node.id,
                 imageId: shopifyImageId
@@ -930,66 +929,52 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     const allImagesData = await allImagesResponse.json();
     const allImages = allImagesData.data?.product?.images?.edges || [];
 
-
-    
     // REORDER IMAGES
-if (allImages.length > 0 && ogImageUrl) {
-  console.log(`  🔄 Reordering images...`);
-  
-  const ogFilename = normalizeFilename(ogImageUrl);
-  const ogImageIndex = allImages.findIndex(img => {
-  const imgFilename = normalizeFilename(img.node.src);
-  return imgFilename === ogFilename;
+    if (allImages.length > 0 && ogImageUrl) {
+      console.log(`  🔄 Reordering images...`);
       
-  });
-  console.log(`  🐛 Total images: ${allImages.length}`);
-  
-  if (ogImageIndex !== -1) {
-    const ogImage = allImages[ogImageIndex];
-    
-    // Създай Set с filenames на assigned снимки
-    const assignedFilenames = new Set();
-    for (const assignment of variantImageAssignments) {
-      // Намери filename от imageMapping
-      for (const [filename, imageId] of imageMapping.entries()) {
-        if (imageId === assignment.imageId) {
-          assignedFilenames.add(filename);
-          break;
+      const ogFilename = normalizeFilename(ogImageUrl);
+      const ogImageIndex = allImages.findIndex(img => {
+        const imgFilename = normalizeFilename(img.node.src);
+        return imgFilename === ogFilename;
+      });
+
+      if (ogImageIndex !== -1) {
+        const ogImage = allImages[ogImageIndex];
+        const assignedFilenames = new Set();
+        for (const assignment of variantImageAssignments) {
+          for (const [filename, imageId] of imageMapping.entries()) {
+            if (imageId === assignment.imageId) {
+              assignedFilenames.add(filename);
+              break;
+            }
+          }
         }
+              
+        const unassignedImages = [];
+        const assignedImages = [];
+        
+        allImages.forEach((img, idx) => {
+          if (idx === ogImageIndex) return; 
+          const imgFilename = getImageFilename(img.node.src);
+          const hasVariant = assignedFilenames.has(imgFilename);
+          
+          if (hasVariant) {
+            assignedImages.push(img);
+          } else {
+            unassignedImages.push(img);
+          }
+        });
+        
+        const finalOrder = [
+          ogImage,
+          ...unassignedImages,
+          ...assignedImages
+        ];
+            
+        await reorderProductImages(productGid, finalOrder);
       }
     }
-          
-    // Раздели на assigned и unassigned (без OG)
-    const unassignedImages = [];
-    const assignedImages = [];
-    
-    allImages.forEach((img, idx) => {
-      if (idx === ogImageIndex) return; // Skip OG image
-      
-      const imgFilename = getImageFilename(img.node.src);
-      
-      // Провери дали filename е в assigned
-      const hasVariant = assignedFilenames.has(imgFilename);
-      
-      if (hasVariant) {
-        assignedImages.push(img);
-      } else {
-        unassignedImages.push(img);
-      }
-    });
-    
-    // Финален ред: OG → unassigned → assigned
-    const finalOrder = [
-      ogImage,
-      ...unassignedImages,
-      ...assignedImages
-    ];
-        
-    console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
-    await reorderProductImages(productGid, finalOrder);
-  }
-}
-
     
     return productGid;
     
@@ -999,7 +984,6 @@ if (allImages.length > 0 && ogImageUrl) {
     return null;
   }
 }
-
 
 // Апдейт на продукти   ===================================================================================================================
 
