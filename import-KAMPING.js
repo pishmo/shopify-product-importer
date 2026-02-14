@@ -94,54 +94,29 @@ function normalizeFilename(filename) {
 
 
 // Функция за извличане на чист filename от URL
-
-
-
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
   
-  // 1. Извличаме името от URL и махаме параметрите (?v=...)
-  let fullFilename = src.split('/').pop().split('?')[0];
+  // 1. Махаме query параметри (?v=...)
+  let base = src.split('/').pop().split('?')[0];
 
-  // 2. Вземаме разширението (винаги последното след точката)
-  const parts = fullFilename.split('.');
-  const ext = parts.length > 1 ? parts.pop().toLowerCase() : 'jpg';
-  let name = parts.join('.'); // Останалото е името
+  // 2. Намираме разширението (всичко след последната точка)
+  const lastDotIndex = base.lastIndexOf('.');
+  if (lastDotIndex === -1) return base.toLowerCase() + ".jpg"; // Защита, ако липсва точка
 
-  // 3. ЧИСТЕНЕ: Махаме Shopify UUID и Timestamp-ове
-  // Търсим дълги поредици от букви и цифри (UUID) или дати (2024...)
-  const noisePattern = /(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{10,15}-\d+)/i;
+  const ext = base.substring(lastDotIndex + 1).toLowerCase();
+  let name = base.substring(0, lastDotIndex);
+
+  // 3. Чистим Shopify UUID и Filstar Timestamps
+  // Търсим типичните поредици: _uuid или -дата-номер
+  const noisePattern = /(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{14}-\d+)/i;
   name = name.replace(noisePattern, '');
 
-  // 4. Махаме артефакти като -jpg или _png в самото име
-  name = name.replace(/[-_](jpg|jpeg|png|webp)$/i, '');
+  // 4. Махаме артефакти като "-jpg" или "_png" вътре в името
+  name = name.replace(/[-_](jpg|jpeg|png|webp|gif)$/i, '');
 
-  // Връщаме името С разширение
-  return (name + '.' + ext).toLowerCase();
+  return (name + "." + ext).toLowerCase();
 }
-
-
-function imageExists(existingImages, newImageUrl) {
-  if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
-    return false;
-  }
-  
-  const newFilename = getImageFilename(newImageUrl);
-  if (!newFilename) {
-    return false;
-  }
-  
-  const newBase = newFilename.split('.')[0];
-  
-  return existingImages.some(img => {
-    const imgSrc = img.src || img.url || img;
-    const existingFilename = getImageFilename(imgSrc);
-    const existingBase = existingFilename ? existingFilename.split('.')[0] : null;
-    return existingBase && existingBase === newBase;
-  });
-}
-
-
 
 
 // Функция за извличане на SKU от filename
