@@ -96,33 +96,22 @@ function normalizeFilename(filename) {
 // Функция за извличане на чист filename от URL
 
 function getImageFilename(src) {
-  if (!src || typeof src !== 'string') return null;
-  
-  // 1. Вземаме името от URL и махаме query параметрите
+  if (!src) return null;
   let base = src.split('/').pop().split('?')[0];
+  let ext = base.split('.').pop().toLowerCase();
+  let name = base.substring(0, base.lastIndexOf('.'));
 
-  // 2. Намираме разширението (ако има такова)
-  const parts = base.split('.');
-  let ext = parts.length > 1 ? parts.pop().toLowerCase() : 'jpg';
-  let name = parts.join('.');
-
-  // 3. АГРЕСИВНО ЧИСТЕНЕ НА UUID И ТАЙМСТАМПОВЕ
-  // Премахва Shopify UUID (_bcb33564...) и Filstar timestamps (-20240716...)
-  const noisePattern = /(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{10,15}-\d+)/i;
-  name = name.replace(noisePattern, '');
-
-  // 4. Премахва остатъчни разширения вътре в името (-jpg, _png)
-  name = name.replace(/[-_](jpg|jpeg|png|webp|gif)$/i, '');
-  
-  // 5. Премахва излишни тирета/долни черти накрая
+  // Махаме 32-символни хешове (като 1cfe38e2814718206acb35b17341aedd)
+  name = name.replace(/[a-f0-9]{32}/i, '');
+  // Махаме UUID-та
+  name = name.replace(/(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12})/i, '');
+  // Махаме остатъци от разширения в името
+  name = name.replace(/[-_](jpg|jpeg|png|webp)$/i, '');
+  // Чистим символи накрая
   name = name.replace(/[_-]+$/, '');
 
-  // Връщаме името С разширението, за да е чисто: напр. 960300_1.jpg
   return (name + "." + ext).toLowerCase();
 }
-
-
-
 
 
 
