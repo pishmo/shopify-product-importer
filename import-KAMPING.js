@@ -94,54 +94,32 @@ function normalizeFilename(filename) {
 
 
 // Функция за извличане на чист filename от URL
-// Функция за извличане на чист и нормализиран filename от URL
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
   
-  // 1. Вземаме само последната част от пътя и чистим query параметри (?v=123)
-  const urlParts = src.split('/').pop();
-  const withoutQuery = urlParts.split('?')[0];
-  
-  // 2. Премахва Shopify UUID шаблони (напр. _88574686-...)
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
+  // 1. Вземаме само името на файла и чистим query параметри
+  let fullFilename = src.split('/').pop().split('?')[0];
 
-  // 3. Разделяме името на части, за да чистим Filstar хешовете
-  const parts = cleanFilename.split('_');
-  const cleanParts = parts.filter(part => {
-    const partWithoutExt = part.split('.')[0];
-    // Премахва части, които са 32+ символа чист хекс (hash)
-    const isHex = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
-    return !isHex;
-  });
+  // 2. ИЗВАЖДАМЕ РАЗШИРЕНИЕТО (напр. jpg, png)
+  const extension = fullFilename.split('.').pop();
+  let nameWithoutExt = fullFilename.substring(0, fullFilename.lastIndexOf('.'));
 
-  // Вземаме реалното разширение (напр. jpeg или png)
-  const extension = cleanFilename.split('.').pop();
-  
-  // 4. Сглобяваме чистото име
-  let finalBaseName = cleanParts.join('_');
+  // 3. ПРЕМАХВАМЕ SHOPIFY UUID (_8d1a1ff2-0c37...)
+  const shopifyUuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
+  nameWithoutExt = nameWithoutExt.replace(shopifyUuidPattern, '');
 
-  // 5. ПРЕМАХВАМЕ "АРТЕФАКТИ" (като -jpg или _png вътре в самото име)
-  // Това оправя случаи като: 962891-16-jpg.jpeg -> 962891-16.jpeg
-  const extensionArtifacts = new RegExp(`[-_.]?(jpg|jpeg|png|gif|webp)$`, 'i');
-  
-  // Махаме разширението от края на името, ако е там (преди реалната точка)
-  let baseWithoutExtension = finalBaseName;
-  if (baseWithoutExtension.toLowerCase().endsWith('.' + extension.toLowerCase())) {
-    baseWithoutExtension = baseWithoutExtension.substring(0, baseWithoutExtension.length - (extension.length + 1));
-  }
-  
-  // Чистим и остатъци като "-jpg"
-  baseWithoutExtension = baseWithoutExtension.replace(extensionArtifacts, '');
+  // 4. ПРЕМАХВАМЕ FILSTAR TIMESTAMPS (-20240716153312-465)
+  const timestampPattern = /-\d{14}-\d+/; 
+  nameWithoutExt = nameWithoutExt.replace(timestampPattern, '');
 
-  // 6. ФИНАЛНО СГЛОБЯВАНЕ
-  cleanFilename = baseWithoutExtension + '.' + extension;
-  
-  // Премахва водещи долни черти, ако са останали след чистенето
-  cleanFilename = cleanFilename.replace(/^_+/, '');
-  
-  return cleanFilename;
+  // 5. ПРЕМАХВАМЕ остатъчни разширения вътре в името (-jpg, _png)
+  // Това оправя случая "име-jpg.jpeg"
+  nameWithoutExt = nameWithoutExt.replace(/[-_](jpg|jpeg|png|gif|webp)/i, '');
+
+  // 6. СГЛОБЯВАМЕ ОБРАТНО С ПРАВИЛНОТО РАЗШИРЕНИЕ
+  return (nameWithoutExt + '.' + extension).toLowerCase();
 }
+
 
 
 
