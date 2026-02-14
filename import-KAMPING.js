@@ -1101,6 +1101,10 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     stats[categoryType].updated++;
   }
 }
+
+
+
+
 // MAIN функция       ===================================================================================================================
 
   async function main() {
