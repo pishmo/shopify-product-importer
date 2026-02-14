@@ -872,7 +872,6 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
 // Апдейт на продукти   ===================================================================================================================
 
-
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
   console.log(`\n🔄 Updating: ${filstarProduct.name}`);
   
@@ -889,13 +888,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   try {
     const productGid = shopifyProduct.id;
 
-    // 1. Вземаме пълните данни за продукта (включително текущите медии/снимки)
+    // 1. Вземаме пълните данни (Добавяме STATUS в заявката)
     const productQuery = `
       query getProduct($id: ID!) {
         product(id: $id) {
           id
           tags
           title
+          status
           images(first: 50) {
             edges {
               node {
@@ -928,6 +928,9 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     const productData = await productResponse.json();
     const fullProduct = productData.data.product;
     const existingImages = fullProduct.images.edges.map(e => e.node);
+    
+    // Вземаме текущия статус (DRAFT или ACTIVE), за да не го променяме
+    const currentStatus = fullProduct.status;
 
     // 2. Обработка на таговете
     let finalTags = fullProduct.tags ? [...fullProduct.tags] : [];
@@ -958,7 +961,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       vendor: filstarProduct.manufacturer || 'Unknown',
       productType: filstarProduct.category || '',
       tags: finalTags,
-      status: 'ACTIVE'
+      status: currentStatus // ТУК запазваме статуса непроменен
     };
 
     await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
@@ -967,14 +970,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       body: JSON.stringify({ query: updateMutation, variables: { input: productInput } })
     });
 
-    // --- 4. ИНТЕЛИГЕНТЕН МЕДИЯ МЕНИДЖМЪНТ ---
-    // Нормализираме имената на всички снимки, които ВЕЧЕ са в Shopify чрез getImageFilename
+    // --- 4. МЕДИЯ МЕНИДЖМЪНТ (СНИМКИ) ---
     const existingFilenames = new Set(existingImages.map(img => getImageFilename(img.src)));
     const safeAltText = filstarProduct.name.replace(/"/g, '\\"');
 
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       for (const imageUrl of filstarProduct.images) {
-        // Нормализираме името от Filstar за сравнение
         const cleanFilenameFromFilstar = getImageFilename(imageUrl);
         
         if (!existingFilenames.has(cleanFilenameFromFilstar)) {
@@ -1007,14 +1008,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                 headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: attachMutation })
               });
-              console.log(`    ✓ Uploaded and added to end: ${cleanFilenameFromFilstar}`);
+              console.log(`    ✓ Added new media: ${cleanFilenameFromFilstar}`);
             }
           }
         }
       }
     }
 
-    // Обновяване на ALT тагове на всички стари снимки (SEO)
+    // Обновяване на ALT тагове (SEO)
     for (const img of existingImages) {
       if (img.altText !== filstarProduct.name) {
         const updateMediaMutation = `
@@ -1032,9 +1033,8 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         });
       }
     }
-    // ------------------------------------
 
-    // 5. Обновяване на варианти, цени и наличности
+    // 5. Варианти, цени и наличности
     const shopifyVariants = fullProduct.variants.edges.map(e => e.node);
     const filstarVariants = filstarProduct.variants || [];
 
@@ -1053,21 +1053,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         compareAtPrice = String(fv.price);
       }
 
-      // Използваме REST за по-лесен ъпдейт на цена и баркод
       await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
         method: 'PUT',
         headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          variant: {
-            id: variantId,
-            price: finalPrice,
-            compare_at_price: compareAtPrice,
-            barcode: fv.barcode || ''
-          }
+          variant: { id: variantId, price: finalPrice, compare_at_price: compareAtPrice, barcode: fv.barcode || '' }
         })
       });
 
-      // Наличности
       const invItemId = sv.inventoryItem?.id.replace('gid://shopify/InventoryItem/', '');
       if (invItemId) {
         const locId = LOCATION_ID.replace('gid://shopify/Location/', '');
@@ -1078,12 +1071,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             location_id: locId,
             inventory_item_id: invItemId,
             available: parseInt(fv.quantity) || 0
-          } )
+          })
         });
       }
     }
 
-    console.log(`  ✅ Update complete: Basic info, Promo prices, Stocks, and New media.`);
+    console.log(`  ✅ Updated: Status ${currentStatus}, Prices, Stocks and Media.`);
   } catch (error) {
     console.error(`  ❌ Error updating product: ${error.message}`);
   }
@@ -1092,7 +1085,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     stats[categoryType].updated++;
   }
 }
-
 
 
 // MAIN функция       ===================================================================================================================
