@@ -1066,92 +1066,83 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     
 // REORDER IMAGES ---------------------------------------------------------------------------------------------------------------
   
-
-
-// --- ДЕБЪГ ЛОГОВЕ ПРЕДИ РЕОРДЕРА ---
-    console.log(`\n🔍 DEBUG INFO:`);
-    console.log(`  1. Variant Assignments (Tasks):`, variantImageAssignments.map(a => ({
-        sku: filstarProduct.variants.find(v => v.image && v.image.includes(getImageFilename(a.imageId || '')))?.sku || 'unknown',
-        id: a.imageId
-    })));
-    
-    console.log(`  2. All Images from Shopify:`, allImages.map(edge => ({
-        id: edge.node.id,
-        name: getImageFilename(edge.node.url || edge.node.src)
-    })));
-    // ----------------------------------
-
-
-
-
-
-
-	  
-	  if (allImages.length > 0 && ogImageUrl) {
-      console.log(`\n🔄 Reordering images (Numeric ID Logic)...`);
+    // ===========================================================================
+    // REORDER IMAGES (Filename Match Logic)
+    // ===========================================================================
+    if (allImages.length > 0 && ogImageUrl) {
+      console.log(`\n🔄 Reordering images (Matching by Filename)...`);
       
-      // 1. Събираме чистите числови ID-та на вариантните снимки
-      const variantNumericIds = new Set();
+      // 1. Събираме чистите имена на снимките, които сме асоциирали с варианти
+      const variantNames = new Set();
       variantImageAssignments.forEach(assignment => {
-          if (assignment.imageId) {
-              variantNumericIds.add(assignment.imageId.toString().split('/').pop());
+        for (let [name, id] of imageMapping.entries()) {
+          if (id === assignment.imageId) {
+            variantNames.add(name);
           }
+        }
       });
 
-      // 2. Намираме OG (Главната) снимка
-      const ogFilenameRaw = ogImageUrl.split('/').pop().split('?')[0];
-      let ogImageNode = allImages.find(edge => {
-          const currentName = edge.node.url || edge.node.src;
-          return currentName.includes(ogFilenameRaw.replace('.jpg', '').replace('.jpeg', '')); 
-      }) || allImages[0];
+      // 2. Взимаме името на основната (OG) снимка
+      const ogName = getImageFilename(ogImageUrl);
 
-      const ogNumericId = ogImageNode.node.id.split('/').pop();
+      const unassignedImages = []; // Свободни (FREE)
+      const assignedImages = [];   // Вариантни (VARIANT)
+      let ogImageNode = null;
 
-      // 3. РАЗПРЕДЕЛЯНЕ В СПИСЪЦИ
-      const unassignedImages = []; // Свободни (Галерия)
-      const assignedImages = [];   // Вариантни
-
+      // 3. Разпределяме снимките според имената им в Shopify
       allImages.forEach(edge => {
-          const node = edge.node;
-          const currentNumericId = node.id.split('/').pop();
+        const node = edge.node;
+        const currentName = getImageFilename(node.url || node.src);
 
-          if (currentNumericId === ogNumericId) return; // Пропускаме OG
+        // Проверяваме дали това е основната снимка
+        if (currentName === ogName && !ogImageNode) {
+          ogImageNode = node;
+          return;
+        }
 
-          // Сравняваме чистите числа
-          if (variantNumericIds.has(currentNumericId)) {
-              assignedImages.push(node);
-          } else {
-              unassignedImages.push(node);
-          }
+        // Проверяваме дали името съвпада с някой вариант
+        if (variantNames.has(currentName)) {
+          assignedImages.push(node);
+        } else {
+          unassignedImages.push(node);
+        }
       });
 
-      // 4. ЛОГОВЕ
+      // Ако не сме намерили OG по име, взимаме първата налична като резерва
+      if (!ogImageNode) ogImageNode = allImages[0].node ? allImages[0].node : allImages[0];
+
+      // 4. Генерираме финалния План за лога
       console.log(`  📋 REORDER PLAN:`);
-      console.log(`    1. [OG-MAIN] ${getImageFilename(ogImageNode.node.url || ogImageNode.node.src)}`);
+      const mainNameLog = getImageFilename(ogImageNode.url || ogImageNode.src || "");
+      console.log(`    1. [OG-MAIN] ${mainNameLog}`);
 
       unassignedImages.forEach((img, i) => {
-          console.log(`    ${i + 2}. [FREE]    ${getImageFilename(img.url || img.src)}`);
+          const name = getImageFilename(img.url || img.src);
+          console.log(`    ${i + 2}. [FREE]    ${name}`);
       });
       
-      const startVariantIndex = unassignedImages.length + 2;
+      const startVarIdx = unassignedImages.length + 2;
       assignedImages.forEach((img, i) => {
-          console.log(`    ${startVariantIndex + i}. [VARIANT] ${getImageFilename(img.url || img.src)}`);
+          const name = getImageFilename(img.url || img.src);
+          console.log(`    ${startVarIdx + i}. [VARIANT] ${name}`);
       });
 
-      // 5. ПОДГОТОВКА И ИЗПЪЛНЕНИЕ
+      // 5. ПОДГОТОВКА НА ID-тата ЗА ШОПИФАЙ
+      // Важно: тук ползваме node.id, което Shopify ни върна в allImages (ProductImage ID)
       const finalOrderIds = [
-          ogImageNode.node.id,                       // Първо OG
-          ...unassignedImages.map(img => img.id),   // После Свободни
-          ...assignedImages.map(img => img.id)      // Накрая Вариантни
+        ogImageNode.id,
+        ...unassignedImages.map(img => img.id),
+        ...assignedImages.map(img => img.id)
       ];
 
       const itemsToReorder = finalOrderIds.map((id, index) => ({
-          id: id,
-          position: index + 1
+        id: id,
+        position: index + 1
       }));
 
       await reorderProductImages(productGid, itemsToReorder);
-    } 
+    }
+	  
     return productGid;
     
   } catch (error) {
