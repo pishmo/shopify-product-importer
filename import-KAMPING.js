@@ -1330,7 +1330,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 
 // 5. УМНА МЕДИЯ (Качване и свързване)
-       // 5. УМНА МЕДИЯ (Нормализация + Качване + Свързване)
+       // 5. УМНА МЕДИЯ (Нормализация + Качване + Свързване + Закачане към вариант)
         const shopifyImages = shopifyProduct.images?.edges || [];
         const shopifyImageNames = shopifyImages.map(edge => getImageFilename(edge.node.url || edge.node.src));
         
@@ -1345,28 +1345,22 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         });
 
         if (missingImages.length > 0) {
-            console.log(`  📸 Намерени ${missingImages.length} нови снимки за нормализиране.`);
+            console.log(`  📸 Намерени ${missingImages.length} нови снимки.`);
 
             for (const url of missingImages) {
                 const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
                 const cleanFilename = getImageFilename(url);
                 
-                console.log(`    🧪 Нормализиране и качване: ${cleanFilename}`);
-
-                // 1. Нормализираме изображението (през твоята функция)
-                // Използваме filstarProduct.id или SKU за името в темп папката
                 const normalizedBuffer = await normalizeImage(fullUrl, filstarProduct.id || 'prod');
 
                 if (normalizedBuffer) {
-                    // 2. Качваме нормализирания буфер в Shopify Storage
                     const stagedUrl = await uploadImageToShopify(normalizedBuffer, cleanFilename);
 
                     if (stagedUrl) {
-                        // 3. Свързваме нормализираната снимка с продукта
                         const mediaMutation = `
                           mutation productCreateMedia($productId: ID!, $media: [CreateMediaInput!]!) {
                             productCreateMedia(productId: $productId, media: $media) {
-                              media { id }
+                              media { id status }
                               userErrors { message }
                             }
                           }
@@ -1379,20 +1373,51 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                                 query: mediaMutation,
                                 variables: {
                                     productId: productGid,
-                                    media: [{
-                                        mediaContentType: 'IMAGE',
-                                        originalSource: stagedUrl,
-                                        alt: filstarProduct.name
-                                    }]
+                                    media: [{ mediaContentType: 'IMAGE', originalSource: stagedUrl, alt: filstarProduct.name }]
                                 }
                             })
                         });
                         
                         const linkData = await linkRes.json();
-                        if (linkData.data?.productCreateMedia?.userErrors?.length > 0) {
-                            console.error(`      ❌ Грешка при свързване: ${linkData.data.productCreateMedia.userErrors[0].message}`);
-                        } else {
-                            console.log(`      ✅ Снимката ${cleanFilename} е нормализирана и добавена.`);
+                        const newMediaId = linkData.data?.productCreateMedia?.media[0]?.id;
+
+                        if (newMediaId) {
+                            console.log(`      ✅ Снимката ${cleanFilename} е добавена.`);
+
+                            // ПРОВЕРКА: Дали тази снимка е за конкретен вариант?
+                            const variantWithThisImage = filstarProduct.variants.find(v => getImageFilename(v.image) === cleanFilename);
+                            
+                            if (variantWithThisImage) {
+                                // Намираме съответния Shopify Variant GID по SKU
+                                const shopifyV = shopifyVariants.find(sv => sv.sku === variantWithThisImage.sku);
+                                
+                                if (shopifyV) {
+                                    console.log(`      🔗 Закачане към вариант SKU: ${variantWithThisImage.sku}`);
+                                    
+                                    const variantUpdateMutation = `
+                                      mutation productVariantUpdate($input: ProductVariantInput!) {
+                                        productVariantUpdate(input: $input) {
+                                          productVariant { id }
+                                          userErrors { message }
+                                        }
+                                      }
+                                    `;
+
+                                    await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                                        method: 'POST',
+                                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            query: variantUpdateMutation,
+                                            variables: {
+                                                input: {
+                                                    id: shopifyV.id,
+                                                    mediaId: newMediaId // Закачаме новата медия към варианта
+                                                }
+                                            }
+                                        })
+                                    });
+                                }
+                            }
                         }
                     }
                 }
@@ -1400,8 +1425,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         } else {
             console.log(`  ℹ️ Няма нови снимки за добавяне.`);
         }
-
-
 
 		
         // 6. СТАТИСТИКА
