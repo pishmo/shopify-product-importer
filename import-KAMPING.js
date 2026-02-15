@@ -1307,6 +1307,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         }
 
         // 5. УМНА МЕДИЯ
+      // 5. УМНА МЕДИЯ (Същата логика като в Create)
         const shopifyImages = shopifyProduct.images?.edges || [];
         const shopifyImageNames = shopifyImages.map(edge => getImageFilename(edge.node.url || edge.node.src));
         
@@ -1315,30 +1316,30 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
         ];
         
-        console.log(`  📸 Проверка на снимки: Shopify(${shopifyImageNames.length}), Filstar(${allFilstarUrls.length})`);
-
+        // Филтрираме тези, които липсват в Shopify
         const missingImages = allFilstarUrls.filter(url => {
             const name = getImageFilename(url);
-            const exists = shopifyImageNames.includes(name);
-            return !exists;
+            return !shopifyImageNames.includes(name);
         });
 
         if (missingImages.length > 0) {
-            console.log(`  🆕 Намерени ${missingImages.length} нови снимки за качване.`);
-            let nextIndex = shopifyImageNames.length + 1;
+            console.log(`  📸 Намерени ${missingImages.length} нови снимки.`);
 
             for (const url of missingImages) {
                 const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
-                const cleanFilename = `${filstarProduct.id || "product"}-${nextIndex}.jpg`;
                 
-                console.log(`    📤 Качване: ${cleanFilename}...`);
+                // ВЗЕМАМЕ ОРИГИНАЛНОТО ИМЕ (ОБЕЛЕНО)
+                const cleanFilename = getImageFilename(url); 
+                
+                console.log(`    📤 Качване на липсваща снимка: ${cleanFilename}`);
+                
+                // Използваме ТВОЯТА функция за качване (същата като в Create)
+                // Увери се, че името на функцията е точно това
                 await uploadImageToShopify(productGid, fullUrl, cleanFilename, productName);
-                nextIndex++;
             }
         } else {
-            console.log(`  ℹ️ Всички снимки са вече налични.`);
+            console.log(`  ℹ️ Няма нови снимки за добавяне.`);
         }
-
         // 6. СТАТИСТИКА
         if (categoryType && stats[categoryType]) {
             stats[categoryType].updated++;
