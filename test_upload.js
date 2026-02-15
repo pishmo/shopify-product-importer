@@ -12,8 +12,9 @@ const FILENAME = "963810.jpg";
 async function run() {
     try {
         console.log(`1. 📦 Създаване на нов тестов продукт...`);
+        // Опростена мутация за версия 2025-01
         const productMutation = `mutation {
-            productCreate(input: { title: "Test Product ${TARGET_SKU}", variants: [{ sku: "${TARGET_SKU}" }] }) {
+            productCreate(input: { title: "Test Product ${TARGET_SKU}" }) {
                 product { id }
                 userErrors { field message }
             }
@@ -27,7 +28,6 @@ async function run() {
 
         const pData = await pRes.json();
         
-        // Ако тук има грешка, ще я видим веднага
         if (pData.errors) {
             console.log("❌ API Error:", JSON.stringify(pData.errors, null, 2));
             return;
@@ -67,12 +67,13 @@ async function run() {
         if (upRes.ok) {
             console.log(`3. 🔗 Регистриране на медия...`);
             const regMutation = `mutation { productCreateMedia(productId: "${productId}", media: [{ originalSource: "${target.resourceUrl}", mediaContentType: IMAGE, alt: "Test" }]) { media { id } userErrors { message } } }`;
-            await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+            const regRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
                 method: 'POST',
                 headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: regMutation })
             });
-            console.log("\n✨ ГОТОВО. Провери продукта в админа.");
+            const regData = await regRes.json();
+            console.log("\n✨ ГОТОВО. Виж продукта в админа.");
         }
     } catch (err) {
         console.error("💥 Грешка:", err.message);
