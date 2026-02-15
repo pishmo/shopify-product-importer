@@ -98,10 +98,7 @@ function normalizeFilename(filename) {
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return "image.jpg";
   
-  // 1. Вземаме само името от URL и махаме параметрите
   let base = src.split('/').pop().split('?')[0];
-
-  // 2. Намираме разширението правилно
   const lastDotIndex = base.lastIndexOf('.');
   let ext = "jpg";
   let namePart = base;
@@ -111,17 +108,22 @@ function getImageFilename(src) {
     namePart = base.substring(0, lastDotIndex);
   }
 
-  // 3. ЧИСТЕНЕ: Махаме Shopify UUID и дълги таймстампове
-  // Патърн за UUID (_12345678-...) и за хешове (дълги поредици букви/цифри)
+  // Уеднаквяваме jpeg -> jpg
+  if (ext === 'jpeg') ext = 'jpg';
+
+  // Чистене на UUID и таймстампове
   const noisePattern = /(_[a-f0-9]{32}|_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{10,15}-\d+)/i;
   namePart = namePart.replace(noisePattern, '');
-
-  // 4. ФИНАЛНО ПОЛИРАНЕ: Махаме остатъчни "-jpg", "_png" и висящи черти/тирета накрая
+  
   namePart = namePart.replace(/[-_](jpg|jpeg|png|webp|gif)$/i, '');
-  namePart = namePart.replace(/[_-]+$/, ''); // Изтрива всички _ или - накрая на името
+  namePart = namePart.replace(/[_-]+$/, ''); 
 
   return (namePart + "." + ext).toLowerCase();
 }
+
+
+
+
 
 
 // Функция за нормализация на изображения
