@@ -1,8 +1,18 @@
 const FormData = require('form-data');
 // Тук сложи твоите константи
-const ACCESS_TOKEN = 'ТВОЯ_ТОКЕН';
-const SHOPIFY_DOMAIN = 'ТВОЯ_ДОМЕЙН.myshopify.com';
-const API_VERSION = '2024-01'; // или твоята версия
+const fetch = require('node-fetch');
+const sharp = require('sharp');
+const fs = require('fs').promises;
+const path = require('path');
+
+const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
+const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+const FILSTAR_TOKEN = process.env.FILSTAR_API_TOKEN;
+const API_VERSION = '2025-01';
+const FILSTAR_API_BASE = 'https://filstar.com/api';
+const FILSTAR_BASE_URL = 'https://filstar.com';
+const LOCATION_ID = 'gid://shopify/Location/109713850750';
+
 
 // 1. Твоята функция за качване (копирана)
 async function uploadImageToShopify(imageBuffer, filename) {
