@@ -1022,69 +1022,78 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
 
 
 // REORDER IMAGES
-if (allImages.length > 0 && ogImageUrl) {
-  console.log(`  🔄 Reordering images...`);
-  
-  const ogFilename = normalizeFilename(ogImageUrl);
-  const ogImageIndex = allImages.findIndex(img => {
-  const imgFilename = normalizeFilename(img.node.src);
-  return imgFilename === ogFilename;
+// REORDER IMAGES
+    // -----------------------------------------------------------
+    if (allImages.length > 0 && ogImageUrl) {
+      console.log(`\n🔄 Reordering images (ID-based logic)...`);
       
-  });
-  console.log(`  🐛 Total images: ${allImages.length}`);
-  
-  if (ogImageIndex !== -1) {
-    const ogImage = allImages[ogImageIndex];
-    
-    // Създай Set с filenames на assigned снимки
-    const assignedFilenames = new Set();
-    for (const assignment of variantImageAssignments) {
-      // Намери filename от imageMapping
-      for (const [filename, imageId] of imageMapping.entries()) {
-        if (imageId === assignment.imageId) {
-          assignedFilenames.add(filename);
-          break;
-        }
-      }
-    }
-         
-    // Раздели на assigned и unassigned (без OG)
-    const unassignedImages = [];
-    const assignedImages = [];
-    
-    allImages.forEach((img, idx) => {
-      if (idx === ogImageIndex) return; // Skip OG image
-      
-      const imgFilename = getImageFilename(img.node.src);
-      
-      // Провери дали filename е в assigned
-      const hasVariant = assignedFilenames.has(imgFilename);
-      
-      if (hasVariant) {
-        assignedImages.push(img);
-      } else {
-        unassignedImages.push(img);
-      }
-    });
-    
-    // Финален ред: OG → unassigned → assigned
-    const finalOrder = [
-      ogImage,
-      ...unassignedImages,
-      ...assignedImages
-    ];
-       
-    console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
+      // 1. Събираме ID-тата на вариантните снимки (от масива, който напълнихме по-горе)
+      const variantImageIds = new Set();
+      variantImageAssignments.forEach(assignment => variantImageIds.add(assignment.imageId));
 
-// ЛОГОВЕ ЗА РЕДА
-    console.log(`  📋 REORDER PLAN:`);
-    console.log(`    1. [OG-MAIN] ${ogImage.node.src.split('/').pop().split('?')[0]}`);
-    unassignedImages.forEach((img, i) => console.log(`    ${i + 2}. [FREE]    ${img.node.src.split('/').pop().split('?')[0]}`));
-    assignedImages.forEach((img, i) => console.log(`    ${i + 2 + unassignedImages.length}. [VARIANT] ${img.node.src.split('/').pop().split('?')[0]}`));
-	  
-    await reorderProductImages(productGid, finalOrder);
-  }
-}
+      // 2. Намираме OG (Главната) снимка
+      const ogFilenameRaw = ogImageUrl.split('/').pop().split('?')[0];
+      let ogImageNode = null;
+
+      // Търсим я сред качените
+      ogImageNode = allImages.find(edge => {
+          const currentName = edge.node.url || edge.node.src;
+          return currentName.includes(ogFilenameRaw.replace('.jpg', '').replace('.jpeg', '')); 
+      });
+
+      // Ако не я намерим по име, взимаме първата
+      if (!ogImageNode) ogImageNode = allImages[0];
+
+      // 3. РАЗПРЕДЕЛЯНЕ В СПИСЪЦИ
+      const unassignedImages = []; // Свободни (Галерия)
+      const assignedImages = [];   // Вариантни
+
+      allImages.forEach(edge => {
+          const node = edge.node;
+          if (node.id === ogImageNode.node.id) return; // Пропускаме OG, тя е ясна
+
+          if (variantImageIds.has(node.id)) {
+              assignedImages.push(node);
+          } else {
+              unassignedImages.push(node);
+          }
+      });
+
+      // 4. ЛОГОВЕ (Ето ги тук - ясни и точни)
+      console.log(`  📋 REORDER PLAN:`);
+      
+      // Лог за OG
+      const ogName = (ogImageNode.node.url || ogImageNode.node.src).split('/').pop().split('?')[0];
+      console.log(`    1. [OG-MAIN] ${ogName}`);
+
+      // Лог за Свободните
+      unassignedImages.forEach((img, i) => {
+          const name = (img.url || img.src).split('/').pop().split('?')[0];
+          console.log(`    ${i + 2}. [FREE]    ${name}`);
+      });
+      
+      // Лог за Вариантните
+      const startVariantIndex = unassignedImages.length + 2;
+      assignedImages.forEach((img, i) => {
+          const name = (img.url || img.src).split('/').pop().split('?')[0];
+          console.log(`    ${startVariantIndex + i}. [VARIANT] ${name}`);
+      });
+
+      // 5. ПОДГОТОВКА ЗА ИЗПРАЩАНЕ
+      const finalOrderIds = [];
+      finalOrderIds.push(ogImageNode.node.id);               // 1. OG
+      unassignedImages.forEach(img => finalOrderIds.push(img.id)); // 2. Free
+      assignedImages.forEach(img => finalOrderIds.push(img.id));   // 3. Variant
+
+      // 6. ИЗПЪЛНЕНИЕ
+      // Тук викаме функцията, като и подаваме масив с ID и Position
+      const itemsToReorder = finalOrderIds.map((id, index) => ({
+          id: id,
+          position: index + 1
+      }));
+
+      await reorderProductImages(productGid, itemsToReorder);
+    }
 
     
     return productGid;
