@@ -812,7 +812,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     
     // IMAGES
     const imageMapping = new Map();
-    
+    const uploadedMedia = [];
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
       
@@ -865,12 +865,26 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
             const attachData = await attachResponse.json();
             
             if (attachData.data?.productCreateMedia?.media?.[0]) {
-              const shopifyImageId = attachData.data.productCreateMedia.media[0].id;
+				
+              const shopifyMedia = attachData.data.productCreateMedia.media[0];
+              const shopifyImageId = shopifyMedia.id;
+              
+              // 1. Запазваме чистия мапинг за Variant Assignment
+              // Вместо само по име, помним оригиналния URL -> ID
+              uploadedMedia.push({
+                originalUrl: imageUrl, // Важно: това е ключът от Filstar
+                shopifyId: shopifyImageId
+              });
+
+              // 2. Оставяме и стария mapping за съвместимост, ако се ползва другаде
               const cleanFilename = getImageFilename(fullImageUrl);
               imageMapping.set(cleanFilename, shopifyImageId);
+
               console.log(`    ✓ Uploaded: ${filename}`);
               stats[categoryType].images++;
-            } else if (attachData.data?.productCreateMedia?.mediaUserErrors?.length > 0) {
+			
+			
+			} else if (attachData.data?.productCreateMedia?.mediaUserErrors?.length > 0) {
               console.log(`    ❌ Upload error: ${attachData.data.productCreateMedia.mediaUserErrors[0].message}`);
             }
           }
