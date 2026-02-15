@@ -6,14 +6,18 @@ const ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
 const API_VERSION = '2025-01';
 
 const TARGET_SKU = "963810";
-// Използваме работещия линк от Филстар
 const IMAGE_URL = "https://filstar.com/media/cache/product_view_default/images/963811-jpg_b54b0d75fc055cea5f9bf8c7c33961a5.jpeg";
 const FILENAME = "963810.jpg";
 
 async function run() {
     try {
-        console.log(`1. 📦 Създаване на тестов продукт...`);
-        const pMutation = `mutation { productCreate(input: { title: "Test Original Logic ${TARGET_SKU}" }) { product { id } } }`;
+        console.log(`1. 📦 Създаване на продукт...`);
+        const pMutation = `mutation {
+            productCreate(input: { title: "Test Product ${TARGET_SKU}" }) {
+                product { id }
+            }
+        }`;
+
         const pRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
             method: 'POST',
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
@@ -21,25 +25,26 @@ async function run() {
         });
         const pData = await pRes.json();
         const productId = pData.data?.productCreate?.product?.id;
+        console.log(`✅ ID: ${productId}`);
 
         console.log(`2. 📥 Сваляне на снимка...`);
         const imgRes = await fetch(IMAGE_URL, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         const buffer = Buffer.from(await imgRes.arrayBuffer());
 
-        console.log(`3. 🔍 Резервиране на staged upload...`);
+        console.log(`3. 🔍 Генериране на Staged Target...`);
         const stagedMutation = `mutation {
-            stagedUploadsCreate(input: [{
-                resource: IMAGE,
-                filename: "${FILENAME}",
-                mimeType: "image/jpeg",
-                httpMethod: POST
-            }]) {
-                stagedTargets {
-                    url
-                    resourceUrl
-                    parameters { name value }
-                }
+          stagedUploadsCreate(input: [{
+            resource: IMAGE,
+            filename: "${FILENAME}",
+            mimeType: "image/jpeg",
+            httpMethod: POST
+          }]) {
+            stagedTargets {
+              url
+              resourceUrl
+              parameters { name value }
             }
+          }
         }`;
 
         const sRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
@@ -50,37 +55,36 @@ async function run() {
         const sData = await sRes.json();
         const target = sData.data.stagedUploadsCreate.stagedTargets[0];
 
-        console.log(`4. 📤 Качване на файла...`);
+        console.log(`4. 📤 Качване към Google Storage (Multipart)...`);
         const formData = new FormData();
-        // ВАЖНО: Параметрите се добавят точно в този ред
+        // Параметрите трябва да са точно в този ред преди файла
         target.parameters.forEach(p => formData.append(p.name, p.value));
-        formData.append('file', buffer, { filename: FILENAME, contentType: 'image/jpeg' });
+        formData.append('file', buffer, { filename: FILENAME });
 
-        const upRes = await fetch(target.url, {
+        const uploadRes = await fetch(target.url, {
             method: 'POST',
             body: formData,
             headers: formData.getHeaders()
         });
 
-        if (upRes.ok) {
-            console.log(`5. 🔗 Свързване с продукта...`);
+        if (uploadRes.ok) {
+            console.log(`5. 🔗 Регистриране на медия към продукта...`);
             const regMutation = `mutation {
-                productCreateMedia(productId: "${productId}", media: [{
-                    originalSource: "${target.resourceUrl}",
-                    mediaContentType: IMAGE,
-                    alt: "${FILENAME}"
-                }]) {
-                    media { id }
-                    userErrors { message }
-                }
+              productCreateMedia(productId: "${productId}", media: [{
+                originalSource: "${target.resourceUrl}",
+                mediaContentType: IMAGE
+              }]) {
+                media { id status }
+                userErrors { message }
+              }
             }`;
-            const regRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+            
+            await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
                 method: 'POST',
                 headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: regMutation })
             });
-            const regData = await regRes.json();
-            console.log("\n✨ ГОТОВО! Провери продукта в админа.");
+            console.log(`\n✨ ГОТОВО! Провери името на файла в админа.`);
         }
     } catch (err) {
         console.error("💥 Грешка:", err.message);
