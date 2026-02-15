@@ -1068,19 +1068,19 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
       console.log(`  📋 REORDER PLAN:`);
       
       // Лог за OG
-      const ogName = (ogImageNode.node.url || ogImageNode.node.src).split('/').pop().split('?')[0];
+      const ogName = getImageFilename(ogImageNode.node.url || ogImageNode.node.src);
       console.log(`    1. [OG-MAIN] ${ogName}`);
 
       // Лог за Свободните
       unassignedImages.forEach((img, i) => {
-          const name = (img.url || img.src).split('/').pop().split('?')[0];
+          const name = getImageFilename(img.url || img.src);
           console.log(`    ${i + 2}. [FREE]    ${name}`);
       });
       
       // Лог за Вариантните
       const startVariantIndex = unassignedImages.length + 2;
       assignedImages.forEach((img, i) => {
-          const name = (img.url || img.src).split('/').pop().split('?')[0];
+          const name = getImageFilename(img.url || img.src);
           console.log(`    ${startVariantIndex + i}. [VARIANT] ${name}`);
       });
 
