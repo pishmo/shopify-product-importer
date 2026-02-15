@@ -162,17 +162,19 @@ async function normalizeImage(imageUrl, sku) {
   }
 }
 
+
+
+
 // Функция за качване на изображение в Shopify
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
-    const base64Image = imageBuffer.toString('base64');
-    
+    // 1. Staged Upload Mutation - ТУК Е ОК
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
           resource: IMAGE,
-          filename: \"${filename}\",
-          mimeType: \"image/jpeg\",
+          filename: "${filename}",
+          mimeType: "image/jpeg",
           httpMethod: POST
         }]) {
           stagedTargets {
@@ -186,7 +188,7 @@ async function uploadImageToShopify(imageBuffer, filename) {
         }
       }
     `;
-    
+
     const stagedResponse = await fetch(
       `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
       {
@@ -198,22 +200,39 @@ async function uploadImageToShopify(imageBuffer, filename) {
         body: JSON.stringify({ query: stagedUploadMutation })
       }
     );
-    
+
     const stagedData = await stagedResponse.json();
     const stagedTarget = stagedData.data.stagedUploadsCreate.stagedTargets[0];
+
+    // 2. ФИЗИЧЕСКО КАЧВАНЕ - ТУК Е КОРЕКЦИЯТА
+    const FormData = require('form-data'); // Увери се, че е дефинирана
+    const formData = new FormData();
     
-    const formData = new (require('form-data'))();
     stagedTarget.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
-    formData.append('file', imageBuffer, { filename });
-    
-    await fetch(stagedTarget.url, {
-      method: 'POST',
-      body: formData
+
+    // ВАЖНО: При Node.js Buffer, трябва изрично да подадем обекта с опции
+    // за да може contentType и filename да заминат правилно към дестинацията
+    formData.append('file', imageBuffer, {
+      filename: filename,
+      contentType: 'image/jpeg',
     });
-    
+
+    const uploadResponse = await fetch(stagedTarget.url, {
+      method: 'POST',
+      body: formData,
+      headers: formData.getHeaders() // ЗАДЪЛЖИТЕЛНО при ползване на form-data в Node.js
+    });
+
+    if (!uploadResponse.ok) {
+      const err = await uploadResponse.text();
+      throw new Error(`Upload to storage failed: ${err}`);
+    }
+
+    // Връщаме resourceUrl, който вече трябва да съдържа чистото име
     return stagedTarget.resourceUrl;
+
   } catch (error) {
     console.error(`  ❌ Error uploading image: ${error.message}`);
     return null;
