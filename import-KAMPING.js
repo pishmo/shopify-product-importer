@@ -256,10 +256,25 @@ async function scrapeOgImage(productSlug) {
 
 // FORMAT NAME
 
+// Глобална променлива за кеширане на категории
+
+let cachedCategoryNames = [];
 function formatVariantName(variant, productName) { 
   const parts = [];  
   
-  // 1. MODEL / АРТИКУЛ
+  // Помощна функция за форматиране на име на атрибут 
+  function formatAttributeName(name) { 
+	  
+    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(); 
+    if (formatted.includes(',')) { 
+      if (!formatted.endsWith('.')) { 
+        formatted = formatted + '. '; 
+      } 
+    } 
+    return formatted;
+  } 
+  
+  // 1. MODEL (ПЪРВИ - от variant.model или атрибут "АРТИКУЛ")
   let model = variant.model; 
   if (!model) { 
     const artikulAttr = variant.attributes?.find(attr => 
@@ -273,7 +288,7 @@ function formatVariantName(variant, productName) {
     parts.push(model); 
   } 
   
-  // 2. АРТИКУЛ (ако е различен от основния модел)
+  // 2. АРТИКУЛ (само ако е различен от model)
   const artikulAttr = variant.attributes?.find(attr => 
     attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
   ); 
@@ -286,26 +301,32 @@ function formatVariantName(variant, productName) {
     attr.attribute_name.toUpperCase() === 'РАЗМЕР' 
   ); 
   if (sizeAttr && sizeAttr.value) { 
-    parts.push(`Размер: ${sizeAttr.value}`); 
+    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`); 
   } 
   
-  // 4. ОСТАНАЛИТЕ АТРИБУТИ
-  if (variant.attributes && variant.attributes.length > 0) {
-    const otherAttrs = variant.attributes
-      .filter(attr => {
-        const name = attr.attribute_name.toUpperCase();
-        // Вземаме всичко, което не е Артикул или Размер и има стойност
-        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value;
-      })
-      .map(attr => `${attr.attribute_name}: ${attr.value}`);
-    
-    parts.push(...otherAttrs);
-  }
-
+  // 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул и Размер) 
+  if (variant.attributes && variant.attributes.length > 0) { 
+    const otherAttrs = variant.attributes 
+      .filter(attr => { 
+        const name = attr.attribute_name.toUpperCase(); 
+        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value; 
+      }) 
+      .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`); 
+    parts.push(...otherAttrs); 
+  } 
+  
   const result = parts.join(' / '); 
   
-  return (result && result.trim() !== '') ? result : '';
+  // Ако има форматиран резултат - върни го
+  if (result && result.trim() !== '') {
+    return result;
+  }
+  
+  // Ако НЯМА нищо - върни празен стринг
+  return '';
+
 }
+
 
 
 // Функция за определяне на типа на категорията
