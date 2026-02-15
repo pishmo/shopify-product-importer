@@ -63,36 +63,39 @@ function normalizeFilename(filename) {
 
 
 
-
+// ===================================
 
 
 // Функция за извличане на чист filename от URL
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
   
-  // 1. Вземаме само името на файла без параметри (?v=...)
-  const urlParts = src.split('/').pop();
-  const withoutQuery = urlParts.split('?')[0];
+  // 1. Махаме всичко след въпросителния знак (v=123...)
+  const withoutQuery = src.split('?')[0];
+  const filename = withoutQuery.split('/').pop();
   
-  // 2. Премахваме Shopify UUID (_[8]-[4]-[4]-[4]-[12])
+  // 2. Режем Shopify UUID-тата (_a1b2c3d4...)
   const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '');
+  let clean = filename.replace(uuidPattern, '');
   
-  // 3. Премахваме Filstar хешовете (дълги 32+ символа низове)
-  const parts = cleanFilename.split('_');
+  // 3. Махаме Filstar хешовете (32+ символа хекс)
+  const parts = clean.split('_');
   const cleanParts = parts.filter(part => {
-    const partWithoutExt = part.split('.')[0];
-    const isHexHash = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
-    return !isHexHash;
+    const p = part.split('.')[0];
+    return !(p.length >= 32 && /^[a-f0-9]+$/i.test(p));
   });
   
-  // 4. Сглобяваме и насилствено превръщаме .jpeg в .jpg
-  let finalName = cleanParts.join('_')
-    .replace(/^_+/, '')             // Махаме водещи долни черти
-    .replace(/\.jpeg$/i, '.jpg');   // Всичко става .jpg
+  // 4. Сглобяваме и КОВЕМ разширението на .jpg
+  let final = cleanParts.join('_')
+    .replace(/^_+/, '')             
+    .replace(/\.jpeg$/i, '.jpg');   
     
-  return finalName.toLowerCase();   // Малки букви за по-лесно сравняване
+  return final.toLowerCase();
 }
+//  ==========================================
+
+
+
 
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
