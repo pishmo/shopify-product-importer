@@ -1390,7 +1390,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  console.log('  -  Категория Къмпинг  (ID: 63 )
+  console.log('  -  Категория Къмпинг  (ID: 63 ) ');
      
   try {
     // Fetch всички продукти от Filstar
