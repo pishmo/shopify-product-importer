@@ -147,6 +147,11 @@ cleanFilename = cleanParts.join('_') + '.' + extension;
 }
 
 
+
+
+
+
+
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
     return false;
@@ -166,6 +171,11 @@ function imageExists(existingImages, newImageUrl) {
     return existingBase && existingBase === newBase;
   });
 }
+
+
+
+
+
 
 
 
