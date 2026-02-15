@@ -1,4 +1,4 @@
-// import-fishing-BOX.js - Импорт на Аксесоари Кутии от Filstar API
+// import-fishing-BOX.js - Импорт на Къмпинг от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -12,37 +12,26 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
-// --- НАСТРОЙКИ ЗА ПОДКАТЕГОРИИ ---
-
-const WANTED_SUBCATEGORIES = {
-  "КУТИИ, КОШЧЕТА И КАЛЪФИ": [
-      "Калъфи",
-      "Кутии",
-      "Куфари",
-      "Раници, чанти, кошчета и кофи",
-      "Кофи и кошчета"
-  ]
-};
+//    Столове, чадъри и палатки (ID: 63, Parent: 11)
 
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-   boxes_and_bags: ['61']
+   kamping: ['63']
 };
 
-const ACCESSORIES_PARENT_ID = '11';
 
 // Shopify collection IDs
 const COLLECTION_MAPPING  = {
-  
-   boxes_and_bags: 'gid://shopify/Collection/739661316478'
+ 
+   kamping:  gid://shopify/Collection/739661414782'
  
 };
 
 // Статистика
 const stats = {
   
-  boxes_and_bags: { created: 0, updated: 0, images: 0 }
+  kamping: { created: 0, updated: 0, images: 0 }
   
 };
 
@@ -1356,7 +1345,7 @@ if (categoryType && stats[categoryType]) {
   async function main() {
   console.log('🚀 Starting Filstar BOX Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Кутии и калъфи - Категория Id - (61)');
+  console.log('  -  Къмпинг - Категория Id - (63)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1375,7 +1364,7 @@ if (categoryType && stats[categoryType]) {
     
     // Групирай по категория
 const productsByCategory = {
- boxes_and_bags: []
+ kamping: []
 	  
     };
     
