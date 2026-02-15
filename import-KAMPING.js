@@ -166,21 +166,16 @@ async function normalizeImage(imageUrl, sku) {
 
 
 // Функция за качване на изображение в Shopify
-
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
-    // ПРОВЕРКА: Какъв е реалният тип на файла?
-    const isPng = filename.toLowerCase().endsWith('.png');
-    const mimeType = isPng ? 'image/png' : 'image/jpeg';
-
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
           resource: IMAGE,
           filename: "${filename}",
-          mimeType: "${mimeType}",
+          mimeType: "image/jpeg",
           httpMethod: POST
         }]) {
           stagedTargets {
@@ -201,23 +196,21 @@ async function uploadImageToShopify(imageBuffer, filename) {
     const stagedData = await stagedResponse.json();
     const target = stagedData.data.stagedUploadsCreate.stagedTargets[0];
 
-    // --- ТУК Е ВАЖНОТО ---
-    // Виж дали в resourceUrl накрая стои твоето име. 
-    // Ако Shopify още тук ти дава UUID, значи проблемът е в мутацията (Стъпка 1).
-    console.log(`🔍 DEBUG: Shopify reserved URL: ${target.resourceUrl}`);
-
     const formData = new FormData();
-    // 1. Първо добавяме абсолютно всички параметри
+    
+    // 1. Параметрите трябва да са точно в този ред
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // 2. Накрая добавяме файла по най-стандартния начин
+    // 2. ТУК Е КЛЮЧЪТ: Изрично добавяме contentType вътре в append
+    // Това е нещото, което кара Shopify да спре да лепи UUID
     formData.append('file', imageBuffer, { 
       filename: filename,
-      contentType: mimeType 
+      contentType: 'image/jpeg' // БЕЗ ТОВА СЕРВЪРЪТ СЛАГА UUID
     });
 
+    // 3. Качване с автоматичните хедъри на formData
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
       body: formData,
