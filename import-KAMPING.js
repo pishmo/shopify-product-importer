@@ -817,7 +817,8 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
       console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
       
       for (const imageUrl of filstarProduct.images) {
-        const filename = imageUrl.split('/').pop();
+      const filename = getImageFilename(imageUrl);
+		  
         const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${FILSTAR_BASE_URL}/${imageUrl}`;
         
         const normalizedBuffer = await normalizeImage(fullImageUrl, filstarProduct.variants[0].sku);
