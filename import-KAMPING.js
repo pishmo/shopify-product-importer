@@ -166,17 +166,21 @@ async function normalizeImage(imageUrl, sku) {
 
 
 // Функция за качване на изображение в Shopify
+
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
-    // 1. Mutation - остава същата
+    // ПРОВЕРКА: Какъв е реалният тип на файла?
+    const isPng = filename.toLowerCase().endsWith('.png');
+    const mimeType = isPng ? 'image/png' : 'image/jpeg';
+
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
           resource: IMAGE,
           filename: "${filename}",
-          mimeType: "image/jpeg",
+          mimeType: "${mimeType}",
           httpMethod: POST
         }]) {
           stagedTargets {
@@ -197,19 +201,21 @@ async function uploadImageToShopify(imageBuffer, filename) {
     const stagedData = await stagedResponse.json();
     const target = stagedData.data.stagedUploadsCreate.stagedTargets[0];
 
-    // 2. ПОДГОТОВКА НА FORM DATA (РЪЧЕН РЕЖИМ)
+    // --- ТУК Е ВАЖНОТО ---
+    // Виж дали в resourceUrl накрая стои твоето име. 
+    // Ако Shopify още тук ти дава UUID, значи проблемът е в мутацията (Стъпка 1).
+    console.log(`🔍 DEBUG: Shopify reserved URL: ${target.resourceUrl}`);
+
     const formData = new FormData();
-    
-    // Параметрите от Shopify ТРЯБВА да са първи
+    // 1. Първо добавяме абсолютно всички параметри
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // ТУК Е РЕШЕНИЕТО: Ръчно конструираме заглавието на секцията (Part Header)
-    // Това гарантира, че Google Storage ще види името на файла
-    const boundary = formData.getBoundary();
-    formData.append('file', imageBuffer, {
-      header: `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: image/jpeg\r\n\r\n`
+    // 2. Накрая добавяме файла по най-стандартния начин
+    formData.append('file', imageBuffer, { 
+      filename: filename,
+      contentType: mimeType 
     });
 
     const uploadResponse = await fetch(target.url, {
@@ -218,7 +224,7 @@ async function uploadImageToShopify(imageBuffer, filename) {
       headers: formData.getHeaders()
     });
 
-    if (!uploadResponse.ok) throw new Error("Physical upload failed");
+    if (!uploadResponse.ok) throw new Error("Upload failed");
 
     return target.resourceUrl;
   } catch (error) {
