@@ -166,10 +166,12 @@ async function normalizeImage(imageUrl, sku) {
 
 
 // Функция за качване на изображение в Shopify
+
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
-    const FormData = require('form-data'); // Използваме библиотеката form-data
+    const FormData = require('form-data');
     
+    // 1. Mutation - остава същата
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
@@ -187,52 +189,50 @@ async function uploadImageToShopify(imageBuffer, filename) {
       }
     `;
 
-    const stagedResponse = await fetch(
-      `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': ACCESS_TOKEN,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query: stagedUploadMutation })
-      }
-    );
+    const stagedResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+      method: 'POST',
+      headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: stagedUploadMutation })
+    });
 
     const stagedData = await stagedResponse.json();
-    const stagedTarget = stagedData.data.stagedUploadsCreate.stagedTargets[0];
+    const target = stagedData.data.stagedUploadsCreate.stagedTargets[0];
 
+    // 2. ФИЗИЧЕСКО КАЧВАНЕ - Критичната част
     const formData = new FormData();
-    stagedTarget.parameters.forEach(param => {
+    
+    // Параметрите от Shopify ТРЯБВА да са първи
+    target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // ФИКС 1: Подаваме името и типа изрично в append
+    // ТУК Е ПРОМЯНАТА: Подаваме опциите по този специфичен начин
     formData.append('file', imageBuffer, {
-      filename: filename,
-      contentType: 'image/jpeg',
+      filename: filename,       // Име на файла
+      contentType: 'image/jpeg', // Тип
+      knownLength: imageBuffer.length // Дължина (за стабилност)
     });
 
-    // ФИКС 2: Задължително headers: formData.getHeaders()
-    const uploadResponse = await fetch(stagedTarget.url, {
-      method: 'POST',
-      body: formData,
-      headers: formData.getHeaders() 
+    // Използваме вградения метод на formData за качване, за да сме сигурни за хедърите
+    const uploadResponse = await new Promise((resolve, reject) => {
+      formData.submit(target.url, (err, res) => {
+        if (err) reject(err);
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res);
+        } else {
+          reject(new Error(`Upload failed with status ${res.statusCode}`));
+        }
+      });
     });
 
-    if (!uploadResponse.ok) {
-      throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-    }
+    // Ако стигнем до тук без грешка, връщаме resourceUrl
+    return target.resourceUrl;
 
-    return stagedTarget.resourceUrl;
   } catch (error) {
-    console.error(`  ❌ Error uploading image: ${error.message}`);
+    console.error(`  ❌ Error: ${error.message}`);
     return null;
   }
 }
-
-
-
 
 
 
