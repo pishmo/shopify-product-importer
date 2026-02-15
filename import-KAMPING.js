@@ -95,21 +95,33 @@ function normalizeFilename(filename) {
 
 // Функция за извличане на чист filename от URL
 
-
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return "image.jpg";
-  let filename = src.split('/').pop().split('?')[0];
   
-  // Махаме типичните Filstar таймстампове и Shopify генерирани хешове
-  // Търсим всичко след разширението или дълги поредици от цифри/букви в края
-  filename = filename.replace(/(_[a-f0-9]{20,}|-\d{10,15}-\d+)/i, '');
-  
-  // Ако името стане твърде странно, се уверяваме, че завършва на .jpg или .jpeg
-  if (!filename.includes('.')) filename += '.jpg';
-  
-  return filename.toLowerCase();
-}
+  // 1. Вземаме само името от URL и махаме параметрите
+  let base = src.split('/').pop().split('?')[0];
 
+  // 2. Намираме разширението правилно (всичко след последната точка)
+  const lastDotIndex = base.lastIndexOf('.');
+  let ext = "jpg";
+  let namePart = base;
+
+  if (lastDotIndex !== -1) {
+    ext = base.substring(lastDotIndex + 1).toLowerCase();
+    namePart = base.substring(0, lastDotIndex);
+  }
+
+  // 3. ЧИСТЕНЕ: Махаме само Shopify UUID и дълги таймстампове
+  // Търсим специфичния патърн на Shopify: _8 символа-4-4-4-12
+  const shopifyUuid = /_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}/i;
+  // Търсим Филстар таймстамп: -14 цифри-номер
+  const filstarTime = /-\d{14}-\d+/;
+
+  namePart = namePart.replace(shopifyUuid, '').replace(filstarTime, '');
+
+  // 4. Сглобяваме обратно: име + . + разширение
+  return (namePart + "." + ext).toLowerCase();
+}
 
 // Функция за извличане на SKU от filename
 function extractSkuFromImageFilename(filename) {
