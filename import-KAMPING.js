@@ -166,12 +166,11 @@ async function normalizeImage(imageUrl, sku) {
 
 
 // Функция за качване на изображение в Shopify
-
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
-    // 1. Mutation за Staged Upload
+    // 1. Връщаме стандартния resource: IMAGE (преди беше само IMAGE без кавички)
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
@@ -196,56 +195,32 @@ async function uploadImageToShopify(imageBuffer, filename) {
     });
 
     const stagedData = await stagedResponse.json();
-    if (!stagedData.data?.stagedUploadsCreate?.stagedTargets) {
-      throw new Error("Staged upload creation failed");
-    }
     const target = stagedData.data.stagedUploadsCreate.stagedTargets[0];
 
-    // 2. Подготовка на FormData
+    // 2. Връщаме се към най-простия append, който работеше
     const formData = new FormData();
-    
-    // ВАЖНО: Параметрите от Shopify трябва да са ПРЕДИ файла
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // ВАЖНО: Изрично дефиниране на Content-Disposition
-    const options = {
-      filename: filename,
-      contentType: 'image/jpeg',
-      knownLength: imageBuffer.length
-    };
+    // Използваме директен append, но БЕЗ допълнителни хедъри вътре, 
+    // защото те понякога дублират Content-Disposition
+    formData.append('file', imageBuffer, { filename });
 
-    formData.append('file', imageBuffer, options);
-
-    // --- ЛОГ ЗА ДИАГНОСТИКА ---
-    const boundary = formData.getBoundary();
-    console.log(`\n🔍 DEBUG: Uploading file: ${filename}`);
-    console.log(`🔍 DEBUG: Boundary: ${boundary}`);
-    // --------------------------
-
-    // 3. Физическо качване
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
       body: formData,
-      headers: formData.getHeaders() // Взимаме хедърите директно от обекта
+      headers: formData.getHeaders()
     });
 
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error(`  ❌ Google Storage Error: ${uploadResponse.status} - ${errorText}`);
-      return null;
-    }
+    if (!uploadResponse.ok) throw new Error("Upload failed");
 
-    // Връщаме resourceUrl за Shopify
     return target.resourceUrl;
-
   } catch (error) {
-    console.error(`  ❌ Error in uploadImageToShopify: ${error.message}`);
+    console.error(`  ❌ Error: ${error.message}`);
     return null;
   }
 }
-
 
 
 //    ОГ ======================================================
