@@ -1388,7 +1388,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar REELS Import\n');
+  console.log('🚀 Starting Filstar  КЪМПИНГ Import\n');
   console.log('📋 Categories to import:');
   console.log('  -  Категория Къмпинг  (ID: 63 ) ');
      
@@ -1418,7 +1418,7 @@ console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
   
     // Групирай по категория
 const productsByCategory = {
- carp_fishing: []
+ camping: []
 	  
     };
     
