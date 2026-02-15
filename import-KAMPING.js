@@ -1326,7 +1326,7 @@ if (categoryType && stats[categoryType]) {
 // MAIN функция
 
   async function main() {
-  console.log('🚀 Starting Filstar BOX Import\n');
+  console.log('🚀 Starting Filstar КЪМПИНГ Import\n');
   console.log('📋 Categories to import:');
   console.log('  -  Къмпинг - Категория Id - (63)');
      
