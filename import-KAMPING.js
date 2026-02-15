@@ -1075,6 +1075,13 @@ if (allImages.length > 0 && ogImageUrl) {
     ];
        
     console.log(`  📋 Order: 1 OG + ${unassignedImages.length} free + ${assignedImages.length} variant`);
+
+// ЛОГОВЕ ЗА РЕДА
+    console.log(`  📋 REORDER PLAN:`);
+    console.log(`    1. [OG-MAIN] ${ogImage.node.src.split('/').pop().split('?')[0]}`);
+    unassignedImages.forEach((img, i) => console.log(`    ${i + 2}. [FREE]    ${img.node.src.split('/').pop().split('?')[0]}`));
+    assignedImages.forEach((img, i) => console.log(`    ${i + 2 + unassignedImages.length}. [VARIANT] ${img.node.src.split('/').pop().split('?')[0]}`));
+	  
     await reorderProductImages(productGid, finalOrder);
   }
 }
