@@ -1322,7 +1322,9 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         }
 
         // 5. УМНА МЕДИЯ
-      // 5. УМНА МЕДИЯ (Същата логика като в Create)
+
+
+// 5. УМНА МЕДИЯ (Качване и свързване)
         const shopifyImages = shopifyProduct.images?.edges || [];
         const shopifyImageNames = shopifyImages.map(edge => getImageFilename(edge.node.url || edge.node.src));
         
@@ -1331,7 +1333,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
         ];
         
-        // Филтрираме тези, които липсват в Shopify
         const missingImages = allFilstarUrls.filter(url => {
             const name = getImageFilename(url);
             return !shopifyImageNames.includes(name);
@@ -1342,19 +1343,62 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
             for (const url of missingImages) {
                 const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
+                const cleanFilename = getImageFilename(url);
                 
-                // ВЗЕМАМЕ ОРИГИНАЛНОТО ИМЕ (ОБЕЛЕНО)
-                const cleanFilename = getImageFilename(url); 
-                
-                console.log(`    📤 Качване на липсваща снимка: ${cleanFilename}`);
-                
-                // Използваме ТВОЯТА функция за качване (същата като в Create)
-                // Увери се, че името на функцията е точно това
-                await uploadImageToShopify(productGid, fullUrl, cleanFilename, productName);
+                console.log(`    📤 Качване и свързване на: ${cleanFilename}`);
+
+                // 1. Теглим файла
+                const imgRes = await fetch(fullUrl);
+                if (!imgRes.ok) continue;
+                const buffer = Buffer.from(await imgRes.arrayBuffer());
+
+                // 2. Качваме го в хранилището на Shopify (Твоята функция)
+                const stagedUrl = await uploadImageToShopify(buffer, cleanFilename);
+
+                if (stagedUrl) {
+                    // 3. Свързваме качената снимка с продукта
+                    const mediaMutation = `
+                      mutation productCreateMedia($productId: ID!, $media: [CreateMediaInput!]!) {
+                        productCreateMedia(productId: $productId, media: $media) {
+                          media { id }
+                          userErrors { message }
+                        }
+                      }
+                    `;
+
+                    const linkRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                        method: 'POST',
+                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            query: mediaMutation,
+                            variables: {
+                                productId: productGid,
+                                media: [{
+                                    mediaContentType: 'IMAGE',
+                                    originalSource: stagedUrl,
+                                    alt: filstarProduct.name
+                                }]
+                            }
+                        })
+                    });
+                    
+                    const linkData = await linkRes.json();
+                    if (linkData.data?.productCreateMedia?.userErrors?.length > 0) {
+                        console.error(`      ❌ Грешка при свързване: ${linkData.data.productCreateMedia.userErrors[0].message}`);
+                    } else {
+                        console.log(`      ✅ Снимката е успешно добавена към продукта.`);
+                    }
+                }
             }
         } else {
             console.log(`  ℹ️ Няма нови снимки за добавяне.`);
         }
+
+
+
+
+
+		
         // 6. СТАТИСТИКА
         if (categoryType && stats[categoryType]) {
             stats[categoryType].updated++;
