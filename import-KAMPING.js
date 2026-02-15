@@ -37,7 +37,7 @@ const WANTED_SUBCATEGORIES = {
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-  carp_fishing: ['37'] 
+  camping: ['63'] 
 };
 
 const ACCESSORIES_PARENT_ID = '11';
@@ -45,14 +45,14 @@ const ACCESSORIES_PARENT_ID = '11';
 // Shopify collection IDs
 const COLLECTION_MAPPING  = {
   
-  carp_fishing: 'gid://shopify/Collection/739661152638'
+  carp_fishing: 'gid://shopify/Collection/739661414782'
  
 };
 
 // Статистика
 const stats = {
   
-  carp_fishing: { created: 0, updated: 0, images: 0 }
+  camping: { created: 0, updated: 0, images: 0 }
   
 };
 
@@ -698,7 +698,7 @@ function getSubcategoryTag(filstarProduct) {
 
 
 
-// Функция за създаване на нов продукт      CREATE PRODUCT
+// Функция за създаване на нов продукт      CREATE PRODUCT   =======================================================================================
 
 
 
@@ -1090,7 +1090,15 @@ if (allImages.length > 0 && ogImageUrl) {
 }
 
 
-// UPDATE
+
+
+
+
+
+// UPDATE              ============================================================================================================================
+
+
+
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
     console.log(`🔄 Updating: ${filstarProduct.name}`);
@@ -1377,12 +1385,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 
 
-// MAIN функция
+// MAIN функция   =================================================================================================================================
 
   async function main() {
   console.log('🚀 Starting Filstar REELS Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+  console.log('  -  Категория Къмпинг  (ID: 63 )
      
   try {
     // Fetch всички продукти от Filstar
@@ -1394,6 +1402,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
       return categoryType !== null;
     });
 
+
+
+
+ // Филтър за конкретни SKU (ако е нужно)
+    const targetSkus = ['960300']; // Замени с реалните SKU-та
+    accessoryProducts = accessoryProducts.filter(product => 
+      product.variants && product.variants.some(v => targetSkus.includes(v.sku))
+    );
 
 
 	  
