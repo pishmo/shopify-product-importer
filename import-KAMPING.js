@@ -589,6 +589,13 @@ async function reorderProductImages(productGid, images) {
 }
 
 
+
+
+// CREATE =======================================================================================================================
+
+
+
+
 async function createShopifyProduct(filstarProduct, categoryType) {
   try {
     console.log(`\n📦 Creating: ${filstarProduct.name}`);
