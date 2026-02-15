@@ -12,30 +12,20 @@ const FILSTAR_API_BASE = 'https://filstar.com/api';
 const FILSTAR_BASE_URL = 'https://filstar.com';
 const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
-//    Столове, чадъри и палатки (ID: 63, Parent: 11)
-
-// Filstar category IDs за аксесоари
+// Filstar category IDs - само Къмпинг
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  
-   kamping: ['63']
+    kamping: ['63']
 };
 
-
-// Shopify collection IDs
-const COLLECTION_MAPPING  = {
- 
-   kamping:  gid://shopify/Collection/739661414782'
- 
+// Shopify collection IDs - тук беше грешката с кавичката
+const COLLECTION_MAPPING = {
+    kamping: 'gid://shopify/Collection/739661414782'
 };
 
 // Статистика
 const stats = {
-  
-  kamping: { created: 0, updated: 0, images: 0 }
-  
+    kamping: { created: 0, updated: 0, images: 0, errors: 0 }
 };
-
-
 // 2 част
 
 
