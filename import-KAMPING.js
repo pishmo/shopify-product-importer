@@ -273,6 +273,11 @@ async function normalizeImage(imageUrl, sku) {
   }
 }
 
+
+
+
+
+
 // Функция за качване на изображение в Shopify   ============================================================
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
