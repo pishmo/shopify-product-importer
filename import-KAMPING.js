@@ -45,7 +45,7 @@ const ACCESSORIES_PARENT_ID = '11';
 // Shopify collection IDs
 const COLLECTION_MAPPING  = {
   
-  carp_fishing: 'gid://shopify/Collection/739661414782'
+  camping: 'gid://shopify/Collection/739661414782'
  
 };
 
