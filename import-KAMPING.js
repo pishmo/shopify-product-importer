@@ -166,11 +166,12 @@ async function normalizeImage(imageUrl, sku) {
 
 
 // Функция за качване на изображение в Shopify
+
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
-    // 1. Mutation - остава същата
+    // 1. Мутацията е доказано правилна (виждаме го в лога ти)
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
@@ -199,29 +200,22 @@ async function uploadImageToShopify(imageBuffer, filename) {
 
     const formData = new FormData();
     
-    // ВАЖНО: Параметрите от Shopify трябва да са ПЪРВИ
+    // Първо всички параметри от Shopify
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // ВАЖНО: Добавяме contentType и knownLength, за да сме сигурни, че името ще се запази
-    formData.append('file', imageBuffer, { 
-      filename: filename,
-      contentType: 'image/jpeg',
-      knownLength: imageBuffer.length 
-    });
+    // ТУК Е ГРЕШКАТА: Трябва да е точно така, без contentType и без нищо друго,
+    // за да може библиотеката да сложи името правилно върху Buffer-а.
+    formData.append('file', imageBuffer, { filename: filename });
 
-    // ИЗПЪЛНЕНИЕ НА ЗАЯВКАТА
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
       body: formData,
-      headers: {
-        ...formData.getHeaders(),
-        'Content-Length': formData.getLengthSync() // Казваме на сървъра точно колко байта да очаква
-      }
+      headers: formData.getHeaders()
     });
 
-    if (!uploadResponse.ok) throw new Error("Physical upload failed");
+    if (!uploadResponse.ok) throw new Error("Upload failed");
 
     return target.resourceUrl;
   } catch (error) {
@@ -229,6 +223,11 @@ async function uploadImageToShopify(imageBuffer, filename) {
     return null;
   }
 }
+
+
+
+
+
 //    ОГ ======================================================
 
 
