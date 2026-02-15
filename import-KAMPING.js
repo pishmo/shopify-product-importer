@@ -266,27 +266,10 @@ async function scrapeOgImage(productSlug) {
 
 // FORMAT NAME
 
-// Глобална променлива за кеширане на категории
-
-let cachedCategoryNames = ['КУТИИ, КОШЧЕТА И КАЛЪФИ'];
 function formatVariantName(variant, productName) { 
   const parts = [];  
   
-  // Помощна функция за форматиране на име на атрибут 
-  function formatAttributeName(name) { 
-	  
-    let formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(); 
-    if (formatted.includes(',')) { 
-      if (!formatted.endsWith('.')) { 
-        formatted = formatted + '. '; 
-      } 
-    } 
-    return formatted;
-  } 
-  
-
-	
-	// 1. MODEL (ПЪРВИ - от variant.model или атрибут "АРТИКУЛ")
+  // 1. MODEL / АРТИКУЛ
   let model = variant.model; 
   if (!model) { 
     const artikulAttr = variant.attributes?.find(attr => 
@@ -300,7 +283,7 @@ function formatVariantName(variant, productName) {
     parts.push(model); 
   } 
   
-  // 2. АРТИКУЛ (само ако е различен от model)
+  // 2. АРТИКУЛ (ако е различен от основния модел)
   const artikulAttr = variant.attributes?.find(attr => 
     attr.attribute_name.toUpperCase() === 'АРТИКУЛ' 
   ); 
@@ -313,38 +296,25 @@ function formatVariantName(variant, productName) {
     attr.attribute_name.toUpperCase() === 'РАЗМЕР' 
   ); 
   if (sizeAttr && sizeAttr.value) { 
-    parts.push(`${formatAttributeName(sizeAttr.attribute_name)} : ${sizeAttr.value}`); 
+    parts.push(`Размер: ${sizeAttr.value}`); 
   } 
   
-// 4. ОСТАНАЛИТЕ АТРИБУТИ (без Артикул, Размер и категория)
-if (variant.attributes && variant.attributes.length > 0) {
-  const otherAttrs = variant.attributes
-    .filter(attr => {
-      const name = attr.attribute_name.toUpperCase();
-      
-      // Проверяваме дали атрибутът съвпада с категория
-      const matchesCategory = cachedCategoryNames.some(categoryName => 
-        categoryName.toUpperCase() === name
-      );
-      
-      return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && !matchesCategory && attr.value;
-    })
-    .map(attr => `${formatAttributeName(attr.attribute_name)}: ${attr.value}`);
-  
-  parts.push(...otherAttrs);
-}
-
+  // 4. ОСТАНАЛИТЕ АТРИБУТИ
+  if (variant.attributes && variant.attributes.length > 0) {
+    const otherAttrs = variant.attributes
+      .filter(attr => {
+        const name = attr.attribute_name.toUpperCase();
+        // Вземаме всичко, което не е Артикул или Размер и има стойност
+        return name !== 'АРТИКУЛ' && name !== 'РАЗМЕР' && attr.value;
+      })
+      .map(attr => `${attr.attribute_name}: ${attr.value}`);
+    
+    parts.push(...otherAttrs);
+  }
 
   const result = parts.join(' / '); 
   
-  // Ако има форматиран резултат - върни го
-  if (result && result.trim() !== '') {
-    return result;
-  }
-  
-  // Ако НЯМА нищо - върни празен стринг
-  return '';
-
+  return (result && result.trim() !== '') ? result : '';
 }
 
 
