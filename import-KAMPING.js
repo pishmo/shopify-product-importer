@@ -720,20 +720,36 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const needsOptions = filstarProduct.variants.length > 1 || 
       (filstarProduct.variants.length === 1 && formatVariantName(filstarProduct.variants[0], categoryNames));
     
-      const variants = filstarProduct.variants.map(variant => {
+     const variants = filstarProduct.variants.map(variant => {
       const variantName = formatVariantName(variant, categoryNames);
       const finalName = variantName || variant.sku;
-       
-console.log(`\n📦 Variant VALUE : ${variantName}`);
- 
+      
+      console.log(`\n📦 Variant VALUE : ${variantName}`);
+
+      // --- НОВАТА ЛОГИКА ЗА ЦЕНИ ---
+      const sku = variant.sku.toString();
+      const originalPrice = variant.price?.toString() || '0';
+      
+      // Търсим в заредения promoData
+      const promoPrice = promoData[sku]; 
       
       const variantData = {
-        price: variant.price?.toString() || '0',
-        sku: variant.sku,
-        barcode: variant.barcode || variant.sku,
+        sku: sku,
+        barcode: variant.barcode || sku,
         inventory_quantity: parseInt(variant.quantity) || 0,
         inventory_management: 'shopify'
       };
+
+      // Проверяваме дали имаме съвпадение в промоциите
+      if (promoPrice !== undefined && parseFloat(promoPrice) < parseFloat(originalPrice)) {
+        variantData.price = promoPrice.toString();        // Намалена цена
+        variantData.compare_at_price = originalPrice;    // Стара цена (зачеркната)
+        console.log(`    🏷️  PROMO found for SKU ${sku}: ${originalPrice} -> ${promoPrice}`);
+      } else {
+        variantData.price = originalPrice;               // Нормална цена
+        variantData.compare_at_price = null;
+      }
+      // -----------------------------
       
       if (needsOptions) {
         variantData.option1 = finalName;
@@ -741,7 +757,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
       
       return variantData;
     });
-    
+	  
   
 	// --- ЗАМЕСТВАШ ГО С ТОВА: ---
     
