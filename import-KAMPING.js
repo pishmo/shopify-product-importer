@@ -284,7 +284,9 @@ function formatVariantName(variant, productName) {
     return formatted;
   } 
   
-  // 1. MODEL (ПЪРВИ - от variant.model или атрибут "АРТИКУЛ")
+
+	
+	// 1. MODEL (ПЪРВИ - от variant.model или атрибут "АРТИКУЛ")
   let model = variant.model; 
   if (!model) { 
     const artikulAttr = variant.attributes?.find(attr => 
