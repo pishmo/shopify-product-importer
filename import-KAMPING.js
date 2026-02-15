@@ -850,13 +850,17 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
           const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
           
           if (resourceUrl) {
+
+            const altText = filstarProduct.name.replace(/"/g, '\\"'); // Ескейпваме кавичките
+
             const attachMutation = `
               mutation {
                 productCreateMedia(
-                  productId: \"${productGid}\"
+                  productId: "${productGid}"
                   media: [{
-                    originalSource: \"${resourceUrl}\"
+                    originalSource: "${resourceUrl}"
                     mediaContentType: IMAGE
+                    alt: "${altText}"
                   }]
                 ) {
                   media {
@@ -872,7 +876,8 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
                 }
               }
             `;
-            
+
+			  
             const attachResponse = await fetch(
               `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
               {
