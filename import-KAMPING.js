@@ -170,6 +170,7 @@ async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
+    // 1. Mutation - остава същата
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
@@ -198,26 +199,29 @@ async function uploadImageToShopify(imageBuffer, filename) {
 
     const formData = new FormData();
     
-    // 1. Параметрите трябва да са точно в този ред
+    // ВАЖНО: Параметрите от Shopify трябва да са ПЪРВИ
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // 2. ТУК Е КЛЮЧЪТ: Изрично добавяме contentType вътре в append
-    // Това е нещото, което кара Shopify да спре да лепи UUID
+    // ВАЖНО: Добавяме contentType и knownLength, за да сме сигурни, че името ще се запази
     formData.append('file', imageBuffer, { 
       filename: filename,
-      contentType: 'image/jpeg' // БЕЗ ТОВА СЕРВЪРЪТ СЛАГА UUID
+      contentType: 'image/jpeg',
+      knownLength: imageBuffer.length 
     });
 
-    // 3. Качване с автоматичните хедъри на formData
+    // ИЗПЪЛНЕНИЕ НА ЗАЯВКАТА
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
       body: formData,
-      headers: formData.getHeaders()
+      headers: {
+        ...formData.getHeaders(),
+        'Content-Length': formData.getLengthSync() // Казваме на сървъра точно колко байта да очаква
+      }
     });
 
-    if (!uploadResponse.ok) throw new Error("Upload failed");
+    if (!uploadResponse.ok) throw new Error("Physical upload failed");
 
     return target.resourceUrl;
   } catch (error) {
@@ -225,7 +229,6 @@ async function uploadImageToShopify(imageBuffer, filename) {
     return null;
   }
 }
-
 //    ОГ ======================================================
 
 
