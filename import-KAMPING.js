@@ -57,6 +57,7 @@ const stats = {
 };
 
 
+
 // 2 част
 
 
@@ -78,6 +79,56 @@ try {
     console.log('⚠️ Error loading promo.json:', error);
 }
 // ------------------------------------------------
+
+
+
+
+// --- ПОМОЩНИ БЪЛК ФУНКЦИИ ---
+
+async function productVariantsBulkUpdate(productId, variants) {
+  const mutation = `
+    mutation productVariantsBulkUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+        product { id }
+        userErrors { field message }
+      }
+    }
+  `;
+  const response = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: { 
+      'X-Shopify-Access-Token': ACCESS_TOKEN, 
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({ query: mutation, variables: { productId, variants } })
+  });
+  return response.json();
+}
+
+async function inventoryBulkSet(inventoryItemQuantities) {
+  const mutation = `
+    mutation inventorySetQuantities($input: InventorySetQuantitiesInput!) {
+      inventorySetQuantities(input: $input) {
+        inventoryLevels { available }
+        userErrors { field message }
+      }
+    }
+  `;
+  const response = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: { 
+      'X-Shopify-Access-Token': ACCESS_TOKEN, 
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({ query: mutation, variables: { input: { 
+      name: "available", 
+      reason: "correction", 
+      ignoreUnchangedCounts: true, 
+      quantities: inventoryItemQuantities 
+    } } })
+  });
+  return response.json();
+}
 
 
 
