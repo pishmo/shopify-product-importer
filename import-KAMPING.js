@@ -170,7 +170,7 @@ async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
-    // 1. Връщаме стандартния resource: IMAGE (преди беше само IMAGE без кавички)
+    // 1. Mutation - остава същата
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
@@ -197,15 +197,20 @@ async function uploadImageToShopify(imageBuffer, filename) {
     const stagedData = await stagedResponse.json();
     const target = stagedData.data.stagedUploadsCreate.stagedTargets[0];
 
-    // 2. Връщаме се към най-простия append, който работеше
+    // 2. ПОДГОТОВКА НА FORM DATA (РЪЧЕН РЕЖИМ)
     const formData = new FormData();
+    
+    // Параметрите от Shopify ТРЯБВА да са първи
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // Използваме директен append, но БЕЗ допълнителни хедъри вътре, 
-    // защото те понякога дублират Content-Disposition
-    formData.append('file', imageBuffer, { filename });
+    // ТУК Е РЕШЕНИЕТО: Ръчно конструираме заглавието на секцията (Part Header)
+    // Това гарантира, че Google Storage ще види името на файла
+    const boundary = formData.getBoundary();
+    formData.append('file', imageBuffer, {
+      header: `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: image/jpeg\r\n\r\n`
+    });
 
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
@@ -213,7 +218,7 @@ async function uploadImageToShopify(imageBuffer, filename) {
       headers: formData.getHeaders()
     });
 
-    if (!uploadResponse.ok) throw new Error("Upload failed");
+    if (!uploadResponse.ok) throw new Error("Physical upload failed");
 
     return target.resourceUrl;
   } catch (error) {
@@ -221,7 +226,6 @@ async function uploadImageToShopify(imageBuffer, filename) {
     return null;
   }
 }
-
 
 //    ОГ ======================================================
 
