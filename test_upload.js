@@ -15,7 +15,7 @@ async function run() {
         const pRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
             method: 'POST',
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: `mutation { productCreate(input: { title: "Log Test ${TARGET_SKU}" }) { product { id } } }` })
+            body: JSON.stringify({ query: `mutation { productCreate(input: { title: "Test Final Clean ${TARGET_SKU}" }) { product { id } } }` })
         });
         const pData = await pRes.json();
         const productId = pData.data?.productCreate?.product?.id;
@@ -48,22 +48,16 @@ async function run() {
         const sData = await sRes.json();
         const target = sData.data.stagedUploadsCreate.stagedTargets[0];
 
-        console.log(`\n--- 🛠 ДИАГНОСТИКА НА ПАКЕТА ---`);
+        console.log(`4. 📤 Качване към GCS (БЕЗ име в пакета)...`);
         const formData = new FormData();
-        target.parameters.forEach(p => {
-            console.log(`🔹 Param: ${p.name} = ${p.value}`);
-            formData.append(p.name, p.value);
-        });
         
-        // Тук е критичният момент
-        formData.append('file', buffer, { filename: FILENAME });
+        // Добавяме параметрите от Shopify (те съдържат 'key' с нашето име)
+        target.parameters.forEach(p => formData.append(p.name, p.value));
         
-        console.log(`🔹 File field name: file`);
-        console.log(`🔹 File original name: ${FILENAME}`);
-        console.log(`🔹 Buffer size: ${buffer.length} bytes`);
-        console.log(`-------------------------------\n`);
+        // ВАЖНО: Пращаме само буфера. БЕЗ { filename: ... }
+        // Това кара GCS да използва името от 'key' параметъра
+        formData.append('file', buffer);
 
-        console.log(`4. 📤 Качване към GCS...`);
         const uploadRes = await fetch(target.url, {
             method: 'POST',
             body: formData,
@@ -71,26 +65,22 @@ async function run() {
         });
 
         if (uploadRes.ok) {
-            console.log(`5. 🔗 Регистриране към продукт ${productId}...`);
+            console.log(`5. 🔗 Регистриране на медия...`);
             const regMutation = `mutation {
               productCreateMedia(productId: "${productId}", media: [{
                 originalSource: "${target.resourceUrl}",
                 mediaContentType: IMAGE
               }]) {
-                media { id status }
-                userErrors { message }
+                media { id }
               }
             }`;
             
-            const finalRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+            await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
                 method: 'POST',
                 headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: regMutation })
             });
-            const finalData = await finalRes.json();
-            console.log(`\n✨ ГОТОВО. Провери името.`);
-        } else {
-            console.log(`❌ Грешка при качване: ${uploadRes.status} ${uploadRes.statusText}`);
+            console.log(`\n✨ ГОТОВО. Провери името на файла в Shopify.`);
         }
     } catch (err) {
         console.error("💥 Грешка:", err.message);
