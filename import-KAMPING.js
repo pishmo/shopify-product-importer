@@ -70,27 +70,23 @@ function normalizeFilename(filename) {
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
   
-  // 1. Махаме всичко след въпросителния знак (v=123...)
-  const withoutQuery = src.split('?')[0];
-  const filename = withoutQuery.split('/').pop();
+  // 1. Вземаме името от URL (напр. cbc138-fox-eos-bed-jpg_a7ac8da...jpeg)
+  const filename = src.split('/').pop().split('?')[0];
   
-  // 2. Режем Shopify UUID-тата (_a1b2c3d4...)
+  // 2. Режем Shopify UUID-тата
   const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
   let clean = filename.replace(uuidPattern, '');
   
-  // 3. Махаме Filstar хешовете (32+ символа хекс)
+  // 3. Режем Filstar хешовете (32+ символа хекс)
   const parts = clean.split('_');
   const cleanParts = parts.filter(part => {
     const p = part.split('.')[0];
+    // Махаме само ако е точно дълъг хеш
     return !(p.length >= 32 && /^[a-f0-9]+$/i.test(p));
   });
   
-  // 4. Сглобяваме и КОВЕМ разширението на .jpg
-  let final = cleanParts.join('_')
-    .replace(/^_+/, '')             
-    .replace(/\.jpeg$/i, '.jpg');   
-    
-  return final.toLowerCase();
+  // 4. Сглобяваме обратно (запазва оригиналното разширение .jpeg или .jpg)
+  return cleanParts.join('_').replace(/^_+/, '');
 }
 //  ==========================================
 
