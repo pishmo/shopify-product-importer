@@ -98,21 +98,17 @@ function normalizeFilename(filename) {
 
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return "image.jpg";
-  
-  // 1. Вземаме само името от края на URL адреса
   let filename = src.split('/').pop().split('?')[0];
-
-  // 2. Агресивно чистене на Shopify UUID и Filstar Timestamps
-  // Търсим: _uuid (32 знака с тирета) ИЛИ -20240716... (дълги цифри)
-  const noisePattern = /(_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{10,15}-\d+)/i;
-  filename = filename.replace(noisePattern, '');
-
-  // 3. Махаме артефакти като -jpg или _png, които понякога се появяват в името
-  filename = filename.replace(/[-_](jpg|jpeg|png|webp|gif)$/i, '');
-
+  
+  // Махаме типичните Filstar таймстампове и Shopify генерирани хешове
+  // Търсим всичко след разширението или дълги поредици от цифри/букви в края
+  filename = filename.replace(/(_[a-f0-9]{20,}|-\d{10,15}-\d+)/i, '');
+  
+  // Ако името стане твърде странно, се уверяваме, че завършва на .jpg или .jpeg
+  if (!filename.includes('.')) filename += '.jpg';
+  
   return filename.toLowerCase();
 }
-
 
 
 // Функция за извличане на SKU от filename
