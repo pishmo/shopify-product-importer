@@ -171,7 +171,6 @@ async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
-    // 1. Мутацията е доказано правилна (виждаме го в лога ти)
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
@@ -200,15 +199,19 @@ async function uploadImageToShopify(imageBuffer, filename) {
 
     const formData = new FormData();
     
-    // Първо всички параметри от Shopify
+    // 1. Параметрите (точно както Shopify ги иска)
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // ТУК Е ГРЕШКАТА: Трябва да е точно така, без contentType и без нищо друго,
-    // за да може библиотеката да сложи името правилно върху Buffer-а.
-    formData.append('file', imageBuffer, { filename: filename });
+    // 2. Файлът - ТУК Е РАЗЛИКАТА
+    // Трябва да е точно този формат, за да разпознае Shopify името:
+    formData.append('file', imageBuffer, {
+      filename: filename,
+      contentType: 'image/jpeg'
+    });
 
+    // 3. Качване
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
       body: formData,
@@ -223,7 +226,6 @@ async function uploadImageToShopify(imageBuffer, filename) {
     return null;
   }
 }
-
 
 
 
