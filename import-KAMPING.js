@@ -101,7 +101,7 @@ function getImageFilename(src) {
   // 1. Вземаме само името от URL и махаме параметрите
   let base = src.split('/').pop().split('?')[0];
 
-  // 2. Намираме разширението правилно (всичко след последната точка)
+  // 2. Намираме разширението правилно
   const lastDotIndex = base.lastIndexOf('.');
   let ext = "jpg";
   let namePart = base;
@@ -111,31 +111,17 @@ function getImageFilename(src) {
     namePart = base.substring(0, lastDotIndex);
   }
 
-  // 3. ЧИСТЕНЕ: Махаме само Shopify UUID и дълги таймстампове
-  // Търсим специфичния патърн на Shopify: _8 символа-4-4-4-12
-  const shopifyUuid = /_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}/i;
-  // Търсим Филстар таймстамп: -14 цифри-номер
-  const filstarTime = /-\d{14}-\d+/;
+  // 3. ЧИСТЕНЕ: Махаме Shopify UUID и дълги таймстампове
+  // Патърн за UUID (_12345678-...) и за хешове (дълги поредици букви/цифри)
+  const noisePattern = /(_[a-f0-9]{32}|_[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}|-\d{10,15}-\d+)/i;
+  namePart = namePart.replace(noisePattern, '');
 
-  namePart = namePart.replace(shopifyUuid, '').replace(filstarTime, '');
+  // 4. ФИНАЛНО ПОЛИРАНЕ: Махаме остатъчни "-jpg", "_png" и висящи черти/тирета накрая
+  namePart = namePart.replace(/[-_](jpg|jpeg|png|webp|gif)$/i, '');
+  namePart = namePart.replace(/[_-]+$/, ''); // Изтрива всички _ или - накрая на името
 
-  // 4. Сглобяваме обратно: име + . + разширение
   return (namePart + "." + ext).toLowerCase();
 }
-
-// Функция за извличане на SKU от filename
-function extractSkuFromImageFilename(filename) {
-  if (!filename || typeof filename !== 'string') return '999999';
-  
-  const match = filename.match(/^(\d+)/);
-  if (match && match[1]) return match[1];
-  
-  const altMatch = filename.match(/[-_](\d{6,})/);
-  if (altMatch && altMatch[1]) return altMatch[1];
-  
-  return '999999';
-}
-
 
 
 // Функция за нормализация на изображения
