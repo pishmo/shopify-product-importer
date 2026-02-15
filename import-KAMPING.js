@@ -110,65 +110,59 @@ async function deleteShopifyProduct(productId) {
 
 //  Тука се оправят имената на снимките   =============================================================================================================
 
-// 1. Запазваме името, но вътре ползваме подобрената логика
-function normalizeFilename(filename) {
-  let clean = getImageFilename(filename);
-  // Гарантираме .jpg накрая
-  return clean ? clean.replace(/\.jpeg$/i, '.jpg') : null;
-}
-
-// 2. Основната логика за "белене" на името
+// 1. Основната функция за почистване (Хирургическа)
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
 
-  // Взимаме само файла от URL-а и махаме ?v=...
+  // Взимаме името на файла и махаме "?v=..."
   let filename = src.split('/').pop().split('?')[0];
 
-  // Стъпка 1: Махаме Shopify UUID (ако снимката е свалена от Shopify)
-  // Търси _следвано от тирета и цифри/букви (стандартно UUID)
-  filename = filename.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i, '');
+  // Махаме разширението временно, за да работим само с името
+  const lastDot = filename.lastIndexOf('.');
+  let ext = lastDot !== -1 ? filename.substring(lastDot).toLowerCase() : '';
+  let name = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
 
-  // Махаме разширението временно, за да чистим по-лесно
-  const lastDotIndex = filename.lastIndexOf('.');
-  let name = lastDotIndex !== -1 ? filename.substring(0, lastDotIndex) : filename;
-  const ext = lastDotIndex !== -1 ? filename.substring(lastDotIndex) : '';
+  // --- СТЪПКА 1: Махане на хешове и UUID ---
+  
+  // Махаме Filstar Hash (долна черта + 32 или повече hex символа)
+  // Пример: ...main-1_a7ac8da... -> става ...main-1
+  name = name.replace(/_[a-f0-9]{32,}$/i, '');
 
-  // Стъпка 2: Махаме Filstar Hash (онези 32 символа накрая)
-  // Пример: "963811-jpg_b54b0d75fc055cea5f9bf8c7c33961a5" -> става "963811-jpg"
-  const parts = name.split('_');
-  if (parts.length > 1) {
-    const lastPart = parts[parts.length - 1];
-    // Ако последната част е само цифри и букви и е дълга (над 30 символа) -> махаме я
-    if (lastPart.length >= 30 && /^[a-f0-9]+$/i.test(lastPart)) {
-      parts.pop();
-    }
-  }
-  name = parts.join('_');
+  // Махаме Shopify UUID (стандартен формат с тирета)
+  name = name.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i, '');
 
-  // Стъпка 3: Махаме "-jpg" или "-jpeg", което Filstar понякога лепи в името
-  // Пример: "963811-jpg" -> става "963811"
-  name = name.replace(/-jpg$/i, '').replace(/-jpeg$/i, '');
+  // --- СТЪПКА 2: Махане на служебна наставка "-jpg" ---
+  // Filstar URLs често са: "name-1-jpg_hash.jpeg"
+  // След Стъпка 1 остава: "name-1-jpg"
+  // Трябва да махнем това "-jpg", за да остане чистият индекс "name-1"
+  name = name.replace(/-jpe?g$/i, '');
 
-  // Връщаме чистото име: 963811.jpg
+  // --- СТЪПКА 3: Финална козметика ---
+  // Ако случайно сме оставили долна черта накрая
+  name = name.replace(/_+$/, '');
+
+  // Стандартизираме разширението
+  if (ext === '.jpeg') ext = '.jpg';
+
   return name + ext;
 }
 
-// 3. Проверката дали съществува
-function imageExists(existingImages, newImageUrl) {
-  if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
-    return false;
-  }
+// 2. Normalize - просто вика горната
+function normalizeFilename(filename) {
+  return getImageFilename(filename);
+}
 
-  // Какво търсим: (напр. 963810.jpg)
+// 3. Image Exists - сравнява "обелените" имена
+function imageExists(existingImages, newImageUrl) {
+  if (!existingImages || !existingImages.length) return false;
+
   const targetClean = normalizeFilename(newImageUrl);
 
   return existingImages.some(img => {
-    // Какво имаме в Shopify:
-    const imgSrc = img.src || img.url || img;
-    const currentClean = normalizeFilename(imgSrc);
-    
-    // Сравняваме чистите имена
-    return currentClean === targetClean;
+    const imgSrc = img.src || img.url || '';
+    // Белим и името от Shopify, за да видим дали е същото
+    const existingClean = normalizeFilename(imgSrc);
+    return existingClean === targetClean;
   });
 }
 
