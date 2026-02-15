@@ -635,15 +635,10 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
    // 1. Подготвяме базовите тагове (като масив)
     const tagsArray = ['Filstar', categoryType, vendor];
 
-    // 2. Проверяваме за подкатегория
-    const subcatTag = getSubcategoryTag(filstarProduct);
+ 
 
-    // 3. Ако има, добавяме я към списъка
-    if (subcatTag) {
-        tagsArray.push(subcatTag);
-        console.log(`   🏷️  [CREATE] Adding subcategory tag: ${subcatTag}`);
-    }
 
+	  
     // 4. ВАЖНО: Превръщаме масива в ТЕКСТ (String)
     // От ['Filstar', 'Шаран'] става "Filstar, Шаран"
     const tagsString = tagsArray.join(', ');
