@@ -197,38 +197,47 @@ async function uploadImageToShopify(imageBuffer, filename) {
 
     const stagedData = await stagedResponse.json();
     if (!stagedData.data?.stagedUploadsCreate?.stagedTargets) {
-        throw new Error("Staged upload creation failed");
+      throw new Error("Staged upload creation failed");
     }
     const target = stagedData.data.stagedUploadsCreate.stagedTargets[0];
 
     // 2. Подготовка на FormData
     const formData = new FormData();
     
-    // Първо добавяме параметрите от Shopify (ВАЖНО Е ЗА РЕДА)
+    // ВАЖНО: Параметрите от Shopify трябва да са ПРЕДИ файла
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // Добавяме самия файл с изрични метаданни за име и тип
-    formData.append('file', imageBuffer, {
+    // ВАЖНО: Изрично дефиниране на Content-Disposition
+    const options = {
       filename: filename,
       contentType: 'image/jpeg',
       knownLength: imageBuffer.length
-    });
+    };
 
-    // 3. Изпращане с правилни хедъри (getHeaders добавя boundary автоматично)
+    formData.append('file', imageBuffer, options);
+
+    // --- ЛОГ ЗА ДИАГНОСТИКА ---
+    const boundary = formData.getBoundary();
+    console.log(`\n🔍 DEBUG: Uploading file: ${filename}`);
+    console.log(`🔍 DEBUG: Boundary: ${boundary}`);
+    // --------------------------
+
+    // 3. Физическо качване
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
       body: formData,
-      headers: formData.getHeaders() 
+      headers: formData.getHeaders() // Взимаме хедърите директно от обекта
     });
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
-      throw new Error(`Upload failed: ${uploadResponse.status} ${errorText}`);
+      console.error(`  ❌ Google Storage Error: ${uploadResponse.status} - ${errorText}`);
+      return null;
     }
 
-    // Връщаме resourceUrl, който Shopify ще използва за регистриране на медията
+    // Връщаме resourceUrl за Shopify
     return target.resourceUrl;
 
   } catch (error) {
@@ -236,7 +245,6 @@ async function uploadImageToShopify(imageBuffer, filename) {
     return null;
   }
 }
-
 
 
 
