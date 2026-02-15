@@ -171,7 +171,7 @@ async function uploadImageToShopify(imageBuffer, filename) {
   try {
     const FormData = require('form-data');
     
-    // 1. СТЪПКА: Mutation за Staged Upload
+    // 1. Mutation за Staged Upload
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
@@ -191,47 +191,44 @@ async function uploadImageToShopify(imageBuffer, filename) {
 
     const stagedResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
       method: 'POST',
-      headers: { 
-        'X-Shopify-Access-Token': ACCESS_TOKEN, 
-        'Content-Type': 'application/json' 
-      },
+      headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: stagedUploadMutation })
     });
 
     const stagedData = await stagedResponse.json();
-    if (!stagedData.data || !stagedData.data.stagedUploadsCreate.stagedTargets) {
-      throw new Error("Staged upload creation failed");
+    if (!stagedData.data?.stagedUploadsCreate?.stagedTargets) {
+        throw new Error("Staged upload creation failed");
     }
     const target = stagedData.data.stagedUploadsCreate.stagedTargets[0];
 
-    // 2. СТЪПКА: ФИЗИЧЕСКО КАЧВАНЕ (КРИТИЧНА ЧАСТ)
+    // 2. Подготовка на FormData
     const formData = new FormData();
     
-    // Параметрите от Shopify ТРЯБВА да са ПРЕДИ файла
+    // Първо добавяме параметрите от Shopify (ВАЖНО Е ЗА РЕДА)
     target.parameters.forEach(param => {
       formData.append(param.name, param.value);
     });
 
-    // Използваме Buffer директно с опции, които Node.js разбира
+    // Добавяме самия файл с изрични метаданни за име и тип
     formData.append('file', imageBuffer, {
       filename: filename,
       contentType: 'image/jpeg',
       knownLength: imageBuffer.length
     });
 
-    // Използваме fetch, но с ВНИМАТЕЛНО взети хедъри от formData
+    // 3. Изпращане с правилни хедъри (getHeaders добавя boundary автоматично)
     const uploadResponse = await fetch(target.url, {
       method: 'POST',
       body: formData,
-      headers: formData.getHeaders() // Тук се генерира правилният Boundary
+      headers: formData.getHeaders() 
     });
 
     if (!uploadResponse.ok) {
-      const errorBody = await uploadResponse.text();
-      throw new Error(`Google Cloud Storage error: ${uploadResponse.status} - ${errorBody}`);
+      const errorText = await uploadResponse.text();
+      throw new Error(`Upload failed: ${uploadResponse.status} ${errorText}`);
     }
 
-    // Връщаме resourceUrl - това е линкът, който казваме на Shopify да ползва
+    // Връщаме resourceUrl, който Shopify ще използва за регистриране на медията
     return target.resourceUrl;
 
   } catch (error) {
@@ -239,6 +236,12 @@ async function uploadImageToShopify(imageBuffer, filename) {
     return null;
   }
 }
+
+
+
+
+//    ОГ ======================================================
+
 
 
 async function scrapeOgImage(productSlug) {
