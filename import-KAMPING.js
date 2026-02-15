@@ -896,8 +896,12 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     
     // Scrape OG image
     const ogImageUrl = await scrapeOgImage(filstarProduct.slug);
-    
-    // ASSIGN IMAGES TO VARIANTS
+
+
+
+	  
+   
+// ASSIGN IMAGES TO VARIANTS ===========================================================================
     const variantImageAssignments = [];
     
     if (imageMapping.size > 0) {
@@ -905,7 +909,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
       
       const productQuery = `
         {
-          product(id: \"${productGid}\") {
+          product(id: "${productGid}") {
             variants(first: 50) {
               edges {
                 node {
@@ -947,6 +951,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
         }
         
         if (variantImageUrl) {
+          // Използваме белачката, за да намерим правилното ID в mapping-а
           const cleanFilename = getImageFilename(variantImageUrl);
           const shopifyImageId = imageMapping.get(cleanFilename);
           
@@ -959,7 +964,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
                 mediaId: shopifyImageId
               });
               
-              // Запази за reorder
+              // Критично за правилния REORDER: запазваме асоциацията
               variantImageAssignments.push({
                 variantId: shopifyVariant.node.id,
                 imageId: shopifyImageId
@@ -973,7 +978,7 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
         const bulkUpdateMutation = `
           mutation {
             productVariantsBulkUpdate(
-              productId: \"${productGid}\"
+              productId: "${productGid}"
               variants: ${JSON.stringify(variantsToUpdate).replace(/"([^"]+)":/g, '$1:')}
             ) {
               productVariants {
@@ -1003,8 +1008,15 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
         console.log(`  ✅ Assigned ${variantsToUpdate.length} variant images`);
       }
     }
-    
-    // Fetch all images за reorder
+	  
+//  до тук ASSIGN IMAGES TO VARIANTS
+
+
+
+
+
+	  
+	  // Fetch all images за reorder
     const allImagesQuery = `
       {
         product(id: \"${productGid}\") {
