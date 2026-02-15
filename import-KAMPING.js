@@ -70,27 +70,29 @@ function normalizeFilename(filename) {
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
   
+  // 1. Вземаме само името на файла без параметри (?v=...)
   const urlParts = src.split('/').pop();
   const withoutQuery = urlParts.split('?')[0];
   
-  // Премахва Shopify UUID
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
+  // 2. Премахваме Shopify UUID (_[8]-[4]-[4]-[4]-[12])
+  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
+  let cleanFilename = withoutQuery.replace(uuidPattern, '');
   
- // Премахва Filstar hex hash-ове (32+ char hex strings)
-const parts = cleanFilename.split('_');
-const cleanParts = parts.filter(part => {
-  const partWithoutExt = part.split('.')[0];
-  const isHex = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
-  return !isHex;
-});
-const extension = cleanFilename.split('.').pop();
-cleanFilename = cleanParts.join('_') + '.' + extension;
-
-  cleanFilename = cleanFilename.replace(/^_+/, '');
-  return cleanFilename;
+  // 3. Премахваме Filstar хешовете (дълги 32+ символа низове)
+  const parts = cleanFilename.split('_');
+  const cleanParts = parts.filter(part => {
+    const partWithoutExt = part.split('.')[0];
+    const isHexHash = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
+    return !isHexHash;
+  });
+  
+  // 4. Сглобяваме и насилствено превръщаме .jpeg в .jpg
+  let finalName = cleanParts.join('_')
+    .replace(/^_+/, '')             // Махаме водещи долни черти
+    .replace(/\.jpeg$/i, '.jpg');   // Всичко става .jpg
+    
+  return finalName.toLowerCase();   // Малки букви за по-лесно сравняване
 }
-
 
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
