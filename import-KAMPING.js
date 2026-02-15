@@ -105,6 +105,13 @@ async function deleteShopifyProduct(productId) {
   console.log(` ✅ Product deleted`);
 }
 
+
+
+
+//  Тука се оправят имената на снимките   =============================================================================================================
+
+
+
 // нормализиране на името на снимките
 function normalizeFilename(filename) {
   // Премахни hash и Shopify UUID
@@ -113,12 +120,6 @@ function normalizeFilename(filename) {
   clean = clean.replace(/\.jpeg$/i, '.jpg');
   return clean;
 }
-
-
-
-
-
-
 
 
 // Функция за извличане на чист filename от URL
@@ -147,11 +148,6 @@ cleanFilename = cleanParts.join('_') + '.' + extension;
 }
 
 
-
-
-
-
-
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
     return false;
@@ -176,7 +172,7 @@ function imageExists(existingImages, newImageUrl) {
 
 
 
-
+// до тук снимките  ===============================================================================================================================
 
 
 
