@@ -1330,6 +1330,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 
 // 5. УМНА МЕДИЯ (Качване и свързване)
+       // 5. УМНА МЕДИЯ (Нормализация + Качване + Свързване)
         const shopifyImages = shopifyProduct.images?.edges || [];
         const shopifyImageNames = shopifyImages.map(edge => getImageFilename(edge.node.url || edge.node.src));
         
@@ -1344,62 +1345,61 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         });
 
         if (missingImages.length > 0) {
-            console.log(`  📸 Намерени ${missingImages.length} нови снимки.`);
+            console.log(`  📸 Намерени ${missingImages.length} нови снимки за нормализиране.`);
 
             for (const url of missingImages) {
                 const fullUrl = url.startsWith('http') ? url : `${FILSTAR_BASE_URL}/${url}`;
                 const cleanFilename = getImageFilename(url);
                 
-                console.log(`    📤 Качване и свързване на: ${cleanFilename}`);
+                console.log(`    🧪 Нормализиране и качване: ${cleanFilename}`);
 
-                // 1. Теглим файла
-                const imgRes = await fetch(fullUrl);
-                if (!imgRes.ok) continue;
-                const buffer = Buffer.from(await imgRes.arrayBuffer());
+                // 1. Нормализираме изображението (през твоята функция)
+                // Използваме filstarProduct.id или SKU за името в темп папката
+                const normalizedBuffer = await normalizeImage(fullUrl, filstarProduct.id || 'prod');
 
-                // 2. Качваме го в хранилището на Shopify (Твоята функция)
-                const stagedUrl = await uploadImageToShopify(buffer, cleanFilename);
+                if (normalizedBuffer) {
+                    // 2. Качваме нормализирания буфер в Shopify Storage
+                    const stagedUrl = await uploadImageToShopify(normalizedBuffer, cleanFilename);
 
-                if (stagedUrl) {
-                    // 3. Свързваме качената снимка с продукта
-                    const mediaMutation = `
-                      mutation productCreateMedia($productId: ID!, $media: [CreateMediaInput!]!) {
-                        productCreateMedia(productId: $productId, media: $media) {
-                          media { id }
-                          userErrors { message }
-                        }
-                      }
-                    `;
-
-                    const linkRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-                        method: 'POST',
-                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            query: mediaMutation,
-                            variables: {
-                                productId: productGid,
-                                media: [{
-                                    mediaContentType: 'IMAGE',
-                                    originalSource: stagedUrl,
-                                    alt: filstarProduct.name
-                                }]
+                    if (stagedUrl) {
+                        // 3. Свързваме нормализираната снимка с продукта
+                        const mediaMutation = `
+                          mutation productCreateMedia($productId: ID!, $media: [CreateMediaInput!]!) {
+                            productCreateMedia(productId: $productId, media: $media) {
+                              media { id }
+                              userErrors { message }
                             }
-                        })
-                    });
-                    
-                    const linkData = await linkRes.json();
-                    if (linkData.data?.productCreateMedia?.userErrors?.length > 0) {
-                        console.error(`      ❌ Грешка при свързване: ${linkData.data.productCreateMedia.userErrors[0].message}`);
-                    } else {
-                        console.log(`      ✅ Снимката е успешно добавена към продукта.`);
+                          }
+                        `;
+
+                        const linkRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                            method: 'POST',
+                            headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                query: mediaMutation,
+                                variables: {
+                                    productId: productGid,
+                                    media: [{
+                                        mediaContentType: 'IMAGE',
+                                        originalSource: stagedUrl,
+                                        alt: filstarProduct.name
+                                    }]
+                                }
+                            })
+                        });
+                        
+                        const linkData = await linkRes.json();
+                        if (linkData.data?.productCreateMedia?.userErrors?.length > 0) {
+                            console.error(`      ❌ Грешка при свързване: ${linkData.data.productCreateMedia.userErrors[0].message}`);
+                        } else {
+                            console.log(`      ✅ Снимката ${cleanFilename} е нормализирана и добавена.`);
+                        }
                     }
                 }
             }
         } else {
             console.log(`  ℹ️ Няма нови снимки за добавяне.`);
         }
-
-
 
 
 
