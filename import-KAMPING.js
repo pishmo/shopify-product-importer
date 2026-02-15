@@ -273,17 +273,15 @@ async function normalizeImage(imageUrl, sku) {
   }
 }
 
-// Функция за качване на изображение в Shopify
+// Функция за качване на изображение в Shopify   ============================================================
 async function uploadImageToShopify(imageBuffer, filename) {
   try {
-    const base64Image = imageBuffer.toString('base64');
-    
     const stagedUploadMutation = `
       mutation {
         stagedUploadsCreate(input: [{
           resource: IMAGE,
-          filename: \"${filename}\",
-          mimeType: \"image/jpeg\",
+          filename: "${filename}",
+          mimeType: "image/jpeg",
           httpMethod: POST
         }]) {
           stagedTargets {
@@ -294,6 +292,7 @@ async function uploadImageToShopify(imageBuffer, filename) {
               value
             }
           }
+          userErrors { field message }
         }
       }
     `;
@@ -311,6 +310,12 @@ async function uploadImageToShopify(imageBuffer, filename) {
     );
     
     const stagedData = await stagedResponse.json();
+    
+    if (stagedData.data.stagedUploadsCreate.userErrors?.length > 0) {
+        console.error(`  ❌ Staged Upload Error:`, stagedData.data.stagedUploadsCreate.userErrors);
+        return null;
+    }
+
     const stagedTarget = stagedData.data.stagedUploadsCreate.stagedTargets[0];
     
     const formData = new (require('form-data'))();
@@ -319,17 +324,27 @@ async function uploadImageToShopify(imageBuffer, filename) {
     });
     formData.append('file', imageBuffer, { filename });
     
-    await fetch(stagedTarget.url, {
+    const uploadRes = await fetch(stagedTarget.url, {
       method: 'POST',
       body: formData
     });
+
+    if (uploadRes.ok) {
+        console.log(`  🔹 File ${filename} staged successfully.`);
+        return stagedTarget.resourceUrl;
+    } else {
+        console.error(`  ❌ Failed to push binary to Shopify storage.`);
+        return null;
+    }
     
-    return stagedTarget.resourceUrl;
   } catch (error) {
     console.error(`  ❌ Error uploading image: ${error.message}`);
     return null;
   }
 }
+
+// OG Image  =======================================================================================================================
+
 
 async function scrapeOgImage(productSlug) {
   if (!productSlug) {
