@@ -589,7 +589,6 @@ async function reorderProductImages(productGid, images) {
 
 // CREATE =======================================================================================================================
 
-
 async function createShopifyProduct(filstarProduct, categoryType) {
   try {
     console.log(`\n📦 Creating: ${filstarProduct.name}`);
@@ -625,17 +624,28 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     console.log(`  ✅ Created product: ${productGid}`);
     stats.kamping.created++;
 
-    // 2. КАЧВАНЕ НА СНИМКИ И ЗАПИСВАНЕ НА mediaId
+    // 2. КАЧВАНЕ НА СНИМКИ (С ПОДДРЪЖКА НА ЕДНАКВИ ИМЕНА)
     const imageMapping = new Map();
+    const uploadedInCurrentProduct = new Set();
     
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
-      for (const imageUrl of filstarProduct.images) {
-        // Взимаме името точно както е в АПИ-то, "обелено"
+      for (let i = 0; i < filstarProduct.images.length; i++) {
+        const imageUrl = filstarProduct.images[i];
         const cleanName = getImageFilename(imageUrl); 
 
+        // Ако името се повтаря в този продукт, Shopify ще го затрие. 
+        // Затова добавяме индекс САМО ако името вече е използвано в този цикъл.
+        let finalName = cleanName;
+        if (uploadedInCurrentProduct.has(cleanName)) {
+           const parts = cleanName.split('.');
+           const ext = parts.pop();
+           finalName = `${parts.join('.')}_${i}.${ext}`;
+        }
+        uploadedInCurrentProduct.add(finalName);
+
         const normalizedBuffer = await normalizeImage(imageUrl, filstarProduct.variants[0].sku);
-        const resourceUrl = await uploadImageToShopify(normalizedBuffer, cleanName);
+        const resourceUrl = await uploadImageToShopify(normalizedBuffer, finalName);
         
         if (resourceUrl) {
           const attachMutation = `mutation { productCreateMedia(productId: "${productGid}", media: {originalSource: "${resourceUrl}", mediaContentType: IMAGE}) { media { ... on MediaImage { id } } } }`;
@@ -648,20 +658,19 @@ async function createShopifyProduct(filstarProduct, categoryType) {
           const mediaId = attachData.data?.productCreateMedia?.media?.[0]?.id;
           
           if (mediaId) {
-            console.log(`    ✓ Uploaded: ${cleanName}`);
-            imageMapping.set(cleanName, mediaId);
+            console.log(`    ✓ Uploaded: ${finalName}`);
+            imageMapping.set(cleanName, mediaId); // Пазим ОРИГИНАЛНОТО име като ключ за вариантите
             stats.kamping.images++;
           }
         }
       }
     }
 
-    // 3. ЗАКАЧАНЕ НА СНИМКИ КЪМ ВАРИАНТИТЕ (ДИРЕКТНО ПО ИМЕ ОТ АПИ)
-    console.log(`  🔗 Assigning images to variants...`);
+    // 3. ЗАКАЧАНЕ НА СНИМКИ КЪМ ВАРИАНТИТЕ + ЛОГ
+    console.log(`  🔗 Assigning images to variants:`);
     for (const variant of filstarProduct.variants) {
       const shopifyVar = shopifyVariants.find(sv => sv.sku === variant.sku);
       
-      // Взимаме името на снимката директно от атрибута на варианта
       if (shopifyVar && variant.images && variant.images.length > 0) {
         const variantImgName = getImageFilename(variant.images[0]);
         const mediaId = imageMapping.get(variantImgName);
@@ -673,8 +682,12 @@ async function createShopifyProduct(filstarProduct, categoryType) {
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: assignMutation })
           });
-          console.log(`    ✅ Assigned: ${variantImgName} to SKU: ${variant.sku}`);
+          console.log(`    📦 Вариант ${variant.sku} -> Снимка: ${variantImgName}`);
+        } else {
+          console.log(`    ⚠️ Вариант ${variant.sku} -> Снимка: ${variantImgName} (НЕ Е НАМЕРЕНА В КАЧЕНИТЕ)`);
         }
+      } else {
+        console.log(`    ⚪ Вариант ${variant.sku} -> (няма зададена снимка)`);
       }
     }
 
@@ -687,11 +700,9 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     const imgData = await imgDataRes.json();
     const allImages = imgData.data?.product?.images?.edges || [];
 
-    if (allImages.length > 0) {
-      console.log(`  🔄 Reordering images (Total: ${allImages.length})...`);
-      await reorderProductImages(productGid, allImages);
-      console.log(`  ✅ Reorder complete.`);
-    }
+    console.log(`  🔄 Reordering images (Total: ${allImages.length})`);
+    await reorderProductImages(productGid, allImages);
+    console.log(`  ✅ Reorder complete.`);
 
     return productGid;
   } catch (error) {
