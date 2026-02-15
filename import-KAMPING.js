@@ -600,18 +600,20 @@ const collectionId = COLLECTION_MAPPING[categoryType];
 }
 
 // Функция за пренареждане на изображенията
-async function reorderProductImages(productGid, images) {
+
+
+async function reorderProductImages(productGid, itemsWithPositions) {
   try {
     const productId = productGid.replace('gid://shopify/Product/', '');
     
-    const reorderedImages = images.map((img, index) => {
-      const imageId = img.node?.id || img.id;
-      const numericId = imageId.replace('gid://shopify/ProductImage/', '');
-      
-      return {
-        id: numericId,
-        position: index + 1
-      };
+    // Превръщаме данните в това, което Shopify иска (числови ID-та)
+    const moves = itemsWithPositions.map(item => {
+        // Изчистваме GID-то, ако е останало
+        const cleanId = item.id.toString().replace('gid://shopify/ProductImage/', '');
+        return {
+            id: cleanId,
+            position: item.position
+        };
     });
 
     const response = await fetch(
@@ -625,25 +627,26 @@ async function reorderProductImages(productGid, images) {
         body: JSON.stringify({
           product: {
             id: productId,
-            images: reorderedImages
+            images: moves
           }
         })
       }
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.log(`  🐛 Reorder error: ${response.status} - ${errorText}`);
+      console.log(`  🐛 Reorder error: ${response.status}`);
       return false;
     }
     
-    console.log(`    ✅ Reordered ${images.length} images`);
+    console.log(`    ✅ Reordered ${moves.length} images successfully`);
     return true;
   } catch (error) {
-    console.error(`  ❌ Error reordering images: ${error.message}`);
+    console.error(`  ❌ Error reordering: ${error.message}`);
     return false;
   }
 }
+
+
 
 
 
