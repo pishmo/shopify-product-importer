@@ -809,15 +809,39 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     stats[categoryType].created++;
     
     await addProductToCollection(productGid, categoryType);
+
+
+	  
+    // IMAGES      =============================================================================================      IMAGES  
     
-    // IMAGES
-    const imageMapping = new Map();
+	  
+	const imageMapping = new Map();
+	const nameCounts = {};
     const uploadedMedia = [];
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
       
       for (const imageUrl of filstarProduct.images) {
-      const filename = getImageFilename(imageUrl);
+
+		  
+      // --- ЛОГИКА ЗА ИНДЕКСИРАНЕ ---
+        let filename = cleanName;
+        if (!nameCounts[cleanName]) {
+            nameCounts[cleanName] = 1; // Първи път го виждаме
+        } else {
+            // Вече го има, правим го "963811-1.jpg", "963811-2.jpg" и т.н.
+            const dotIndex = cleanName.lastIndexOf('.');
+            const namePart = cleanName.substring(0, dotIndex);
+            const extPart = cleanName.substring(dotIndex);
+            filename = `${namePart}-${nameCounts[cleanName]}${extPart}`;
+            nameCounts[cleanName]++;
+        }
+        // ----------------------------
+
+
+
+
+		  
 		  
         const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${FILSTAR_BASE_URL}/${imageUrl}`;
         
