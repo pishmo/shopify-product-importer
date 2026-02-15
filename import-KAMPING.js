@@ -821,26 +821,25 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
       
-      for (const imageUrl of filstarProduct.images) {
-
-		  
-      // --- ЛОГИКА ЗА ИНДЕКСИРАНЕ ---
-        let filename = cleanName;
-        if (!nameCounts[cleanName]) {
-            nameCounts[cleanName] = 1; // Първи път го виждаме
+     
+	for (const imageUrl of filstarProduct.images) {
+        // 1. Първоначално белене
+        let rawCleanName = getImageFilename(imageUrl); 
+        
+        // 2. Логика за уникално име (индексиране)
+        let filename;
+        if (!nameCounts[rawCleanName]) {
+            filename = rawCleanName; // Първи път: 963811.jpg
+            nameCounts[rawCleanName] = 1;
         } else {
-            // Вече го има, правим го "963811-1.jpg", "963811-2.jpg" и т.н.
-            const dotIndex = cleanName.lastIndexOf('.');
-            const namePart = cleanName.substring(0, dotIndex);
-            const extPart = cleanName.substring(dotIndex);
-            filename = `${namePart}-${nameCounts[cleanName]}${extPart}`;
-            nameCounts[cleanName]++;
+            // Втори път: 963811-1.jpg, 963811-2.jpg...
+            const lastDot = rawCleanName.lastIndexOf('.');
+            const namePart = lastDot !== -1 ? rawCleanName.substring(0, lastDot) : rawCleanName;
+            const extPart = lastDot !== -1 ? rawCleanName.substring(lastDot) : '.jpg';
+            
+            filename = `${namePart}-${nameCounts[rawCleanName]}${extPart}`;
+            nameCounts[rawCleanName]++;
         }
-        // ----------------------------
-
-
-
-
 		  
 		  
         const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${FILSTAR_BASE_URL}/${imageUrl}`;
