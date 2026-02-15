@@ -1066,6 +1066,26 @@ console.log(`\n📦 Variant VALUE : ${variantName}`);
     
 // REORDER IMAGES ---------------------------------------------------------------------------------------------------------------
   
+
+
+// --- ДЕБЪГ ЛОГОВЕ ПРЕДИ РЕОРДЕРА ---
+    console.log(`\n🔍 DEBUG INFO:`);
+    console.log(`  1. Variant Assignments (Tasks):`, variantImageAssignments.map(a => ({
+        sku: filstarProduct.variants.find(v => v.image && v.image.includes(getImageFilename(a.imageId || '')))?.sku || 'unknown',
+        id: a.imageId
+    })));
+    
+    console.log(`  2. All Images from Shopify:`, allImages.map(edge => ({
+        id: edge.node.id,
+        name: getImageFilename(edge.node.url || edge.node.src)
+    })));
+    // ----------------------------------
+
+
+
+
+
+
 	  
 	  if (allImages.length > 0 && ogImageUrl) {
       console.log(`\n🔄 Reordering images (Numeric ID Logic)...`);
