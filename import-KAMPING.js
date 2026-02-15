@@ -110,66 +110,67 @@ async function deleteShopifyProduct(productId) {
 
 //  Тука се оправят имената на снимките   =============================================================================================================
 
-
-
-// нормализиране на името на снимките
+// 1. Запазваме името, но вътре ползваме подобрената логика
 function normalizeFilename(filename) {
-  // Премахни hash и Shopify UUID
   let clean = getImageFilename(filename);
-  // Нормализирай .jpeg → .jpg
-  clean = clean.replace(/\.jpeg$/i, '.jpg');
-  return clean;
+  // Гарантираме .jpg накрая
+  return clean ? clean.replace(/\.jpeg$/i, '.jpg') : null;
 }
 
-
-// Функция за извличане на чист filename от URL
+// 2. Основната логика за "белене" на името
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
-  
-  const urlParts = src.split('/').pop();
-  const withoutQuery = urlParts.split('?')[0];
-  
-  // Премахва Shopify UUID
-  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(\.[a-z]+)?$/i;
-  let cleanFilename = withoutQuery.replace(uuidPattern, '$1');
-  
- // Премахва Filstar hex hash-ове (32+ char hex strings)
-const parts = cleanFilename.split('_');
-const cleanParts = parts.filter(part => {
-  const partWithoutExt = part.split('.')[0];
-  const isHex = partWithoutExt.length >= 32 && /^[a-f0-9]+$/i.test(partWithoutExt);
-  return !isHex;
-});
-const extension = cleanFilename.split('.').pop();
-cleanFilename = cleanParts.join('_') + '.' + extension;
 
-  cleanFilename = cleanFilename.replace(/^_+/, '');
-  return cleanFilename;
+  // Взимаме само файла от URL-а и махаме ?v=...
+  let filename = src.split('/').pop().split('?')[0];
+
+  // Стъпка 1: Махаме Shopify UUID (ако снимката е свалена от Shopify)
+  // Търси _следвано от тирета и цифри/букви (стандартно UUID)
+  filename = filename.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i, '');
+
+  // Махаме разширението временно, за да чистим по-лесно
+  const lastDotIndex = filename.lastIndexOf('.');
+  let name = lastDotIndex !== -1 ? filename.substring(0, lastDotIndex) : filename;
+  const ext = lastDotIndex !== -1 ? filename.substring(lastDotIndex) : '';
+
+  // Стъпка 2: Махаме Filstar Hash (онези 32 символа накрая)
+  // Пример: "963811-jpg_b54b0d75fc055cea5f9bf8c7c33961a5" -> става "963811-jpg"
+  const parts = name.split('_');
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1];
+    // Ако последната част е само цифри и букви и е дълга (над 30 символа) -> махаме я
+    if (lastPart.length >= 30 && /^[a-f0-9]+$/i.test(lastPart)) {
+      parts.pop();
+    }
+  }
+  name = parts.join('_');
+
+  // Стъпка 3: Махаме "-jpg" или "-jpeg", което Filstar понякога лепи в името
+  // Пример: "963811-jpg" -> става "963811"
+  name = name.replace(/-jpg$/i, '').replace(/-jpeg$/i, '');
+
+  // Връщаме чистото име: 963811.jpg
+  return name + ext;
 }
 
-
+// 3. Проверката дали съществува
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !Array.isArray(existingImages) || existingImages.length === 0) {
     return false;
   }
-  
-  const newFilename = getImageFilename(newImageUrl);
-  if (!newFilename) {
-    return false;
-  }
-  
-  const newBase = newFilename.split('.')[0];
-  
+
+  // Какво търсим: (напр. 963810.jpg)
+  const targetClean = normalizeFilename(newImageUrl);
+
   return existingImages.some(img => {
+    // Какво имаме в Shopify:
     const imgSrc = img.src || img.url || img;
-    const existingFilename = getImageFilename(imgSrc);
-    const existingBase = existingFilename ? existingFilename.split('.')[0] : null;
-    return existingBase && existingBase === newBase;
+    const currentClean = normalizeFilename(imgSrc);
+    
+    // Сравняваме чистите имена
+    return currentClean === targetClean;
   });
 }
-
-
-
 
 
 // до тук снимките  ===============================================================================================================================
