@@ -1370,7 +1370,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             }
         }
 
-        // 5. МЕДИЯ: Качване и Свързване
+      // 5. МЕДИЯ: Качване и Свързване (Фиксната версия)
         const existingImages = fullProduct.images.edges.map(e => getImageFilename(e.node.src));
         const filstarUrls = [
             ...(filstarProduct.images || []), 
@@ -1398,19 +1398,35 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                 if (buffer) {
                     const stagedUrl = await uploadImageToShopify(buffer, cleanFilename);
                     if (stagedUrl) {
+                        // ТУК ВНИМАНИЕ: Пращаме заявката и ЧАКАМЕ отговор
                         const mediaRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
                             method: 'POST',
                             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                query: `mutation m($p: ID!, $m: [CreateMediaInput!]!) { productCreateMedia(productId: $p, media: $m) { media { id } } }`,
+                                query: `mutation m($p: ID!, $m: [CreateMediaInput!]!) { 
+                                    productCreateMedia(productId: $p, media: $m) { 
+                                        media { id status } 
+                                        mediaUserErrors { message }
+                                    } 
+                                }`,
                                 variables: { productId: productGid, media: [{ mediaContentType: 'IMAGE', originalSource: stagedUrl, alt: productName }] }
                             })
                         });
+                        
                         const mData = await mediaRes.json();
-                        const newMediaId = mData.data?.productCreateMedia?.media?.[0]?.id;
+                        const mediaResult = mData.data?.productCreateMedia;
+                        
+                        if (mediaResult?.mediaUserErrors?.length > 0) {
+                            console.log(`    ❌ Shopify грешка при медия: ${mediaResult.mediaUserErrors[0].message}`);
+                            continue;
+                        }
+
+                        const newMediaId = mediaResult?.media?.[0]?.id;
 
                         if (newMediaId) {
-                            console.log(`    ✅ Снимката е в Shopify. Търсене на вариант за свързване...`);
+                            console.log(`    ✅ Снимката е в Shopify (ID: ${newMediaId}).`);
+                            
+                            // Търсим вариант
                             const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === cleanFilename);
                             if (targetFv) {
                                 const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
@@ -1420,29 +1436,21 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                                         method: 'POST',
                                         headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
-                                            query: `mutation v($i: ProductVariantInput!) { productVariantUpdate(input: $i) { productVariant { id } } }`,
+                                            query: `mutation v($i: ProductVariantInput!) { productVariantUpdate(input: $i) { productVariant { id } userErrors { message } } }`,
                                             variables: { input: { id: targetSv.id, mediaId: newMediaId } }
                                         })
                                     });
                                 }
                             }
+                        } else {
+                            console.log(`    ⚠️ Снимката е изпратена, но Shopify не върна ID веднага.`);
                         }
                     }
                 }
             } catch (err) {
-                console.log(`    ⚠️ ГРЕШКА със снимка ${cleanFilename}: ${err.message}`);
+                console.log(`    ⚠️ ГРЕШКА при обработка на ${cleanFilename}: ${err.message}`);
             }
         }
-
-        if (categoryType && stats[categoryType]) stats[categoryType].updated++;
-        console.log(`\n✅ [FINISH] Продуктът е обновен успешно!`);
-
-    } catch (error) {
-        console.error(`❌ ГРЕШКА при ъпдейт на ${productName}:`, error.message);
-    }
-}
-
-
 
 // MAIN функция   =================================================================================================================================
 
