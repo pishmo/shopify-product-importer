@@ -119,59 +119,46 @@ function getUniversalRoot(filename) {
 
 // Изтриване на UID ==========================================================================================
 
-
+// ТУК Е НОВАТА ФУНКЦИЯ ЗА ПОЧИСТВАНЕ (ПОДМЕНИ Я И НЕЯ)
 async function cleanupProductUIDImages(productGid, categoryType) {
     try {
-        const numericProductId = productGid.replace('gid://shopify/Product/', '');
-        const res = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images.json`, {
+        const numericId = productGid.replace('gid://shopify/Product/', '');
+        const res = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}/images.json`, {
             method: 'GET',
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
         });
-
         const data = await res.json();
         const images = data.images || [];
         if (images.length <= 1) return 0;
 
         const seenNames = new Set();
-        let deletedCount = 0;
+        let deleted = 0;
 
         for (const img of images) {
-            const imageId = img.id;
-            const fullFilename = img.src.split('/').pop().split('?')[0]; // Пълно име: име_123.jpg
-            
-            // Проверяваме дали това име вече сме го виждали
-            // Ако Shopify е добавил UID (напр. име_8f2ae.jpg), 
-            // трябва да разпознаем, че основата е същата.
-            
-            let baseName = fullFilename;
-            if (fullFilename.includes('_') && fullFilename.length > 30) { 
-                // Ако името е много дълго и има долна черта накрая, вероятно е UID
-                const parts = fullFilename.split('_');
-                const maybeUid = parts.pop(); 
-                if (maybeUid.length < 10) { // Типичен Shopify UID е кратък
-                    baseName = parts.join('_');
-                }
+            const fname = img.src.split('/').pop().split('?')[0];
+            // Чисто сравнение без белене до първа долна черта
+            // Махаме само добавения UID от Shopify, ако съществува
+            let base = fname;
+            if (fname.includes('_') && fname.length > 35) {
+                const parts = fname.split('_');
+                parts.pop();
+                base = parts.join('_');
             }
 
-            if (seenNames.has(baseName)) {
-                console.log(`  🗑️  REST CLEANUP: Изтриване на реален дубликат/UID: ${fullFilename}`);
-                await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images/${imageId}.json`, {
+            if (seenNames.has(base)) {
+                console.log(`  🗑️  Cleanup: Изтриване на дубликат ${fname}`);
+                await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}/images/${img.id}.json`, {
                     method: 'DELETE',
                     headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
                 });
-                deletedCount++;
+                deleted++;
             } else {
-                seenNames.add(baseName);
+                seenNames.add(base);
             }
         }
-        return deletedCount;
-    } catch (e) {
-        console.error(`  ⚠️ Cleanup error: ${e.message}`);
-        return 0;
-    }
+        return deleted;
+    } catch (e) { return 0; }
 }
-
-
 
 
 // --- ПОМОЩНИ БЪЛК ФУНКЦИИ ---
