@@ -1259,14 +1259,18 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 // UPDATE              ============================================================================================================================
 
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
-    console.log(`\n🔄 Updating: ${filstarProduct.name}`);
+    const productName = filstarProduct.name;
+    console.log(`\n${'='.repeat(40)}`);
+    console.log(`🔄 [PROCESS] ${productName}`);
+    console.log(`${'='.repeat(40)}`);
 
     // 1. ПРОВЕРКА: Брой варианти
     const shopifyVariantsCount = shopifyProduct.variants?.edges?.length || 0;
     const filstarVariantsCount = filstarProduct.variants?.length || 0;
 
     if (shopifyVariantsCount !== filstarVariantsCount) {
-        console.log(`  ⚠️ MISMATCH - Recreating...`);
+        console.log(`  ⚠️ РАЗЛИКА ВЪВ ВАРИАНТИТЕ! (Shopify: ${shopifyVariantsCount}, Filstar: ${filstarVariantsCount})`);
+        console.log(`  🚀 Пресъздаване на продукта...`);
         await deleteShopifyProduct(shopifyProduct.id);
         await createShopifyProduct(filstarProduct, categoryType);
         return;
@@ -1275,34 +1279,22 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     try {
         const productGid = shopifyProduct.id;
 
-        // 2. Fetch пълните данни (ТВОЕТО КУЕРИ)
+        // 2. Fetch пълните данни
+        console.log(`  🔍 Теглене на текущи данни от Shopify...`);
         const productQuery = `
           query getProduct($id: ID!) {
             product(id: $id) {
               id
-              title
-              descriptionHtml
-              vendor
-              productType
               tags
-              status
+              images(first: 250) { edges { node { id src } } }
               variants(first: 100) {
                 edges {
                   node {
                     id
                     sku
                     price
-                    inventoryQuantity
                     inventoryItem { id }
                     image { id }
-                  }
-                }
-              }
-              images(first: 250) {
-                edges {
-                  node {
-                    id
-                    src
                   }
                 }
               }
@@ -1317,9 +1309,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         });
 
         const productResult = await productResponse.json();
-        const fullProduct = productResult.data.product;
+        const fullProduct = productResult.data?.product;
+        if (!fullProduct) throw new Error("Неуспешно извличане на продукта от Shopify.");
 
-        // 3. Update на основните полета (ТВОЯТА ЛОГИКА)
+        // 3. Update на Тагове (ТВОЯТА ЛОГИКА)
+        console.log(`  🏷️  Обновяване на тагове и описание...`);
         let finalTags = fullProduct.tags ? [...fullProduct.tags] : [];
         if (filstarProduct.tags) {
             const filstarTags = Array.isArray(filstarProduct.tags) ? filstarProduct.tags : filstarProduct.tags.split(',').map(t => t.trim());
@@ -1328,26 +1322,17 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         const subcatTag = getSubcategoryTag(filstarProduct);
         if (subcatTag && !finalTags.includes(subcatTag)) finalTags.push(subcatTag);
 
-        const productInput = {
-            id: productGid,
-            title: filstarProduct.name,
-            descriptionHtml: filstarProduct.description || '',
-            vendor: filstarProduct.manufacturer || 'Unknown',
-            productType: filstarProduct.category || '',
-            tags: finalTags,
-            status: 'ACTIVE'
-        };
-
         await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
             method: 'POST',
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 query: `mutation p($input: ProductInput!) { productUpdate(input: $input) { product { id } } }`,
-                variables: { input: productInput }
+                variables: { input: { id: productGid, tags: finalTags, status: 'ACTIVE' } }
             })
         });
 
-        // 4. Update Variants (ТВОЯТА REST API ЛОГИКА)
+        // 4. Update Variants (Цена и Количество)
+        console.log(`  💰 Обработка на цени и наличности...`);
         const shopifyVariants = fullProduct.variants.edges.map(e => ({
             ...e.node,
             inventoryItemId: e.node.inventoryItem?.id.replace('gid://shopify/InventoryItem/', '')
@@ -1365,16 +1350,16 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             if (typeof promoData !== 'undefined' && promoData[fv.sku]) {
                 finalPrice = String(promoData[fv.sku]);
                 compareAtPrice = String(fv.price);
+                console.log(`    🔥 ПРОМО: ${fv.sku} (${finalPrice} лв.)`);
             }
 
-            // REST Update Price
+            // REST Update
             await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
                 method: 'PUT',
                 headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ variant: { id: variantId, price: finalPrice, compare_at_price: compareAtPrice, barcode: fv.barcode || '' } })
+                body: JSON.stringify({ variant: { id: variantId, price: finalPrice, compare_at_price: compareAtPrice } })
             });
 
-            // REST Update Inventory
             if (sv.inventoryItemId) {
                 const locId = LOCATION_ID.replace('gid://shopify/Location/', '');
                 await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/inventory_levels/set.json`, {
@@ -1384,25 +1369,29 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                 });
             }
         }
-        console.log(`  ✅ Variants Price/Qty updated`);
 
-        // 5. МЕДИЯ (ОПРОСТЕНА ЛОГИКА)
+        // 5. МЕДИЯ: Качване и Свързване
         const existingImages = fullProduct.images.edges.map(e => getImageFilename(e.node.src));
         const filstarUrls = [
             ...(filstarProduct.images || []), 
             ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
         ];
         
-        const processedThisRun = new Set();
+        console.log(`  🖼️  Проверка на снимки (Намерени във фийда: ${filstarUrls.length})...`);
+        const processedNames = new Set();
 
         for (const url of filstarUrls) {
             const cleanFilename = getImageFilename(url);
-            
-            // Пропускаме ако: 1. Вече сме я обработили СЕГА, или 2. Вече я има в Shopify
-            if (processedThisRun.has(cleanFilename) || existingImages.includes(cleanFilename)) continue;
-            processedThisRun.add(cleanFilename);
+            if (processedNames.has(cleanFilename)) continue;
+            processedNames.add(cleanFilename);
+
+            if (existingImages.includes(cleanFilename)) {
+                console.log(`    ⏩ Снимката ${cleanFilename} вече съществува. Пропускане.`);
+                continue;
+            }
 
             try {
+                console.log(`    📸 Качване на нова снимка: ${cleanFilename}...`);
                 let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
                 const buffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.id || 'id');
                 
@@ -1414,19 +1403,19 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 query: `mutation m($p: ID!, $m: [CreateMediaInput!]!) { productCreateMedia(productId: $p, media: $m) { media { id } } }`,
-                                variables: { productId: productGid, media: [{ mediaContentType: 'IMAGE', originalSource: stagedUrl, alt: filstarProduct.name }] }
+                                variables: { productId: productGid, media: [{ mediaContentType: 'IMAGE', originalSource: stagedUrl, alt: productName }] }
                             })
                         });
                         const mData = await mediaRes.json();
                         const newMediaId = mData.data?.productCreateMedia?.media?.[0]?.id;
 
                         if (newMediaId) {
-                            console.log(`    ✅ Image ${cleanFilename} uploaded.`);
+                            console.log(`    ✅ Снимката е в Shopify. Търсене на вариант за свързване...`);
                             const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === cleanFilename);
                             if (targetFv) {
                                 const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
                                 if (targetSv) {
-                                    console.log(`    🔗 Linking to variant ${targetFv.sku}`);
+                                    console.log(`    🔗 Свързване на ${cleanFilename} към вариант ${targetFv.sku}...`);
                                     await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
                                         method: 'POST',
                                         headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
@@ -1440,20 +1429,18 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                         }
                     }
                 }
-            } catch (e) { 
-                console.log(`    ⚠️ Skipping image ${cleanFilename} due to error.`); 
+            } catch (err) {
+                console.log(`    ⚠️ ГРЕШКА със снимка ${cleanFilename}: ${err.message}`);
             }
         }
 
         if (categoryType && stats[categoryType]) stats[categoryType].updated++;
-        console.log(`  🎉 [FINISH] Update complete.`);
+        console.log(`\n✅ [FINISH] Продуктът е обновен успешно!`);
 
     } catch (error) {
-        console.error(`❌ Error updating product: ${error.message}`);
+        console.error(`❌ ГРЕШКА при ъпдейт на ${productName}:`, error.message);
     }
 }
-
-
 
 
 
