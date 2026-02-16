@@ -1425,6 +1425,9 @@ for (const url of filstarUrls) {
             if (newMediaId) {
                 console.log(`    ✅ Image uploaded: ${cleanFilename}`);
                 newMediaMap[cleanFilename] = newMediaId; // ← ЗАПАЗВАМЕ ID-то
+
+				if (categoryType && stats[categoryType]) {  stats[categoryType].images++;  }
+				
             } else {
                 const err = attachData.data?.productCreateMedia?.mediaUserErrors?.[0]?.message;
                 console.log(`    ❌ Media Error: ${err || 'No ID returned'}`);
