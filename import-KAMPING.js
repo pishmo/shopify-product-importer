@@ -1436,7 +1436,7 @@ for (const url of filstarUrls) {
 // 6. ИЗЧАКВАМЕ И СЛЕД ТОВА СВЪРЗВАМЕ КЪМ ВАРИАНТИ
 if (Object.keys(newMediaMap).length > 0) {
     console.log(`    ⏳ Waiting for media processing...`);
-    await new Promise(resolve => setTimeout(resolve, 5000)); // ← 2 секунди пауза
+    await new Promise(resolve => setTimeout(resolve, 10000)); // ← 2 секунди пауза
 
     console.log(`    🔗 Linking images to variants...`);
 
