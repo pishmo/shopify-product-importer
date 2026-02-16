@@ -1257,6 +1257,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
 
 // UPDATE              ============================================================================================================================
+
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
     console.log(`\n🔄 Updating: ${filstarProduct.name}`);
 
@@ -1387,66 +1388,74 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
         // 5. МЕДИЯ (ОПРОСТЕНА ЛОГИКА)
         const existingImages = fullProduct.images.edges.map(e => getImageFilename(e.node.src));
-        const filstarUrls = [...(filstarProduct.images || []), ...filstarProduct.variants.filter(v => v.image).map(v => v.image)];
+        const filstarUrls = [
+            ...(filstarProduct.images || []), 
+            ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
+        ];
         
-        const uniqueToProcess = [];
-        const seenNames = new Set();
-        for (const url of filstarUrls) {
-            const name = getImageFilename(url);
-            if (!seenNames.has(name) && !existingImages.includes(name)) {
-                seenNames.add(name);
-                uniqueToProcess.push(url);
-            }
-        }
+        const processedThisRun = new Set();
 
-        for (const url of uniqueToProcess) {
-            const filename = getImageFilename(url);
+        for (const url of filstarUrls) {
+            const cleanFilename = getImageFilename(url);
+            
+            // Пропускаме ако: 1. Вече сме я обработили СЕГА, или 2. Вече я има в Shopify
+            if (processedThisRun.has(cleanFilename) || existingImages.includes(cleanFilename)) continue;
+            processedThisRun.add(cleanFilename);
+
             try {
                 let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
                 const buffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.id || 'id');
-                if (!buffer) continue;
+                
+                if (buffer) {
+                    const stagedUrl = await uploadImageToShopify(buffer, cleanFilename);
+                    if (stagedUrl) {
+                        const mediaRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                            method: 'POST',
+                            headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                query: `mutation m($p: ID!, $m: [CreateMediaInput!]!) { productCreateMedia(productId: $p, media: $m) { media { id } } }`,
+                                variables: { productId: productGid, media: [{ mediaContentType: 'IMAGE', originalSource: stagedUrl, alt: filstarProduct.name }] }
+                            })
+                        });
+                        const mData = await mediaRes.json();
+                        const newMediaId = mData.data?.productCreateMedia?.media?.[0]?.id;
 
-                const stagedUrl = await uploadImageToShopify(buffer, filename);
-                if (stagedUrl) {
-                    const mediaRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-                        method: 'POST',
-                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            query: `mutation m($p: ID!, $m: [CreateMediaInput!]!) { productCreateMedia(productId: $p, media: $m) { media { id } } }`,
-                            variables: { productId: productGid, media: [{ mediaContentType: 'IMAGE', originalSource: stagedUrl, alt: filstarProduct.name }] }
-                        })
-                    });
-                    const mData = await mediaRes.json();
-                    const newMediaId = mData.data?.productCreateMedia?.media?.[0]?.id;
-
-                    if (newMediaId) {
-                        const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === filename);
-                        if (targetFv) {
-                            const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
-                            if (targetSv) {
-                                console.log(`    🔗 Linking ${filename} to variant ${targetFv.sku}`);
-                                await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-                                    method: 'POST',
-                                    headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        query: `mutation v($i: ProductVariantInput!) { productVariantUpdate(input: $i) { productVariant { id } } }`,
-                                        variables: { input: { id: targetSv.id, mediaId: newMediaId } }
-                                    })
-                                });
+                        if (newMediaId) {
+                            console.log(`    ✅ Image ${cleanFilename} uploaded.`);
+                            const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === cleanFilename);
+                            if (targetFv) {
+                                const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
+                                if (targetSv) {
+                                    console.log(`    🔗 Linking to variant ${targetFv.sku}`);
+                                    await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                                        method: 'POST',
+                                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            query: `mutation v($i: ProductVariantInput!) { productVariantUpdate(input: $i) { productVariant { id } } }`,
+                                            variables: { input: { id: targetSv.id, mediaId: newMediaId } }
+                                        })
+                                    });
+                                }
                             }
                         }
                     }
                 }
-            } catch (e) { console.log(`    ⚠️ Image error: ${filename}`); }
+            } catch (e) { 
+                console.log(`    ⚠️ Skipping image ${cleanFilename} due to error.`); 
+            }
         }
 
         if (categoryType && stats[categoryType]) stats[categoryType].updated++;
-        console.log(`  🎉 Update complete.`);
+        console.log(`  🎉 [FINISH] Update complete.`);
 
     } catch (error) {
         console.error(`❌ Error updating product: ${error.message}`);
     }
 }
+
+
+
+
 
 // MAIN функция   =================================================================================================================================
 
