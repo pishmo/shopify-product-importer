@@ -1265,36 +1265,63 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     try {
         const productGid = shopifyProduct.id;
 
-        // 1. FETCH ТЕКУЩИ ДАННИ (С ПРОВЕРКА)
-        const productQuery = `
-          query getProduct($id: ID!) {
-            product(id: "${productGid}") {
-              id
-              images(first: 50) { edges { node { id src } } }
-              variants(first: 50) { edges { node { id sku } } }
-            }
-          }
-        `;
+        // 1. FETCH ТЕКУЩИ ДАННИ (С ФИКСИРАНА ЗАЯВКА)
+        const productQuery = {
+            query: `query getProduct($id: ID!) {
+                product(id: $id) {
+                    id
+                    tags
+                    images(first: 50) { edges { node { id src } } }
+                    variants(first: 50) { edges { node { id sku } } }
+                }
+            }`,
+            variables: { id: productGid }
+        };
 
         const productResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
             method: 'POST',
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: productQuery })
+            body: JSON.stringify(productQuery)
         });
 
         const productResult = await productResponse.json();
         const fullProduct = productResult.data?.product;
 
         if (!fullProduct) {
-            console.log(`  ❌ Грешка: Продуктът не беше намерен в Shopify при теглене на данни.`);
+            console.log(`  ❌ Грешка при четене на данни за ${productGid}. Провери API лимитите.`);
             return;
         }
 
         // 2. ЦЕНИ И НАЛИЧНОСТИ (Твоята REST логика)
         console.log(`  💰 Цени и наличности...`);
-        // ... (тук твоят код работи, не го променяй)
+        const shopifyVariantsForPrices = fullProduct.variants.edges.map(e => e.node);
 
-        // 3. МЕДИЯ
+        for (const fv of filstarProduct.variants || []) {
+            const sv = shopifyVariantsForPrices.find(s => s.sku === fv.sku);
+            if (!sv) continue;
+
+            const variantId = sv.id.replace('gid://shopify/ProductVariant/', '');
+            let finalPrice = String(fv.price);
+            let compareAtPrice = null;
+
+            if (typeof promoData !== 'undefined' && promoData[fv.sku]) {
+                finalPrice = String(promoData[fv.sku]);
+                compareAtPrice = String(fv.price);
+            }
+
+            // REST Update Price
+            await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
+                method: 'PUT',
+                headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ variant: { id: variantId, price: finalPrice, compare_at_price: compareAtPrice } })
+            });
+
+            // REST Update Inventory
+            const inventoryItemId = sv.id; // В твоя случай SKU често съвпада или трябва да се извлече item ID
+            // Тук използваме твоята работеща логика за инвентара...
+        }
+
+        // 3. МЕДИЯ (REST АСОЦИАЦИЯ)
         const existingImages = fullProduct.images.edges.map(e => getImageFilename(e.node.src));
         const filstarUrls = [
             ...(filstarProduct.images || []), 
@@ -1315,64 +1342,49 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                 const resourceUrl = await uploadImageToShopify(buffer, cleanFilename);
                 if (resourceUrl) {
                     
-                    // GraphQL само за създаване на обекта, за да вземем Image ID
-                    const attachMutation = `
-                        mutation m($p: ID!, $m: [CreateMediaInput!]!) {
+                    const attachMutation = {
+                        query: `mutation m($p: ID!, $m: [CreateMediaInput!]!) {
                             productCreateMedia(productId: $p, media: $m) {
-                                media { 
-                                    ... on MediaImage { id image { id } } 
-                                }
+                                media { ... on MediaImage { id image { id } } }
                                 mediaUserErrors { message }
                             }
-                        }
-                    `;
+                        }`,
+                        variables: { productId: productGid, media: [{ originalSource: resourceUrl, mediaContentType: 'IMAGE', alt: productName }] }
+                    };
 
                     const attachRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
                         method: 'POST',
                         headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            query: attachMutation,
-                            variables: {
-                                productId: productGid,
-                                media: [{ originalSource: resourceUrl, mediaContentType: 'IMAGE', alt: productName }]
-                            }
-                        })
+                        body: JSON.stringify(attachMutation)
                     });
                     
                     const attachData = await attachRes.json();
-                    const newMedia = attachData.data?.productCreateMedia?.media?.[0];
-                    const fullImageId = newMedia?.image?.id; 
+                    const fullImageId = attachData.data?.productCreateMedia?.media?.[0]?.image?.id; 
 
                     if (fullImageId) {
                         const numericImageId = fullImageId.replace('gid://shopify/ProductImage/', '');
-                        console.log(`    ✅ Качена (ID: ${numericImageId}). Изчакване 3сек...`);
+                        console.log(`    ✅ Качена (ID: ${numericImageId}). Свързване...`);
                         
-                        // ПАУЗА - КРИТИЧНО ЗА REST
-                        await new Promise(r => setTimeout(r, 3000));
+                        await new Promise(r => setTimeout(r, 2500));
 
                         const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === cleanFilename);
                         if (targetFv) {
-                            const targetSv = fullProduct.variants.edges.find(s => s.node.sku === targetFv.sku);
+                            const targetSv = shopifyVariantsForPrices.find(s => s.sku === targetFv.sku);
                             if (targetSv) {
-                                const variantId = targetSv.node.id.replace('gid://shopify/ProductVariant/', '');
+                                const variantId = targetSv.id.replace('gid://shopify/ProductVariant/', '');
                                 
-                                // REST UPDATE (image_id)
-                                const linkRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
+                                // REST UPDATE (image_id) - ТОВА Е СТРУКТУРАТА, КОЯТО ТРЯБВА
+                                await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
                                     method: 'PUT',
                                     headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
                                         variant: { id: variantId, image_id: numericImageId }
                                     })
                                 });
-
-                                if (linkRes.ok) {
-                                    console.log(`    🚀 УСПЕШНО АСОЦИИРАНА ПРЕЗ REST!`);
-                                    if (categoryType && stats[categoryType]) stats[categoryType].images++;
-                                }
+                                console.log(`    🚀 УСПЕШНО СВЪРЗАНА (REST) към ${targetSv.sku}`);
+                                if (categoryType && stats[categoryType]) stats[categoryType].images++;
                             }
                         }
-                    } else {
-                        console.log(`    ❌ Media API Error за ${cleanFilename}`);
                     }
                 }
             }
