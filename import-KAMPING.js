@@ -81,6 +81,42 @@ try {
 // ------------------------------------------------
 
 
+
+
+//   новата функция за  обелване на името на снимката
+function getUniversalRoot(filename) {
+    if (!filename || typeof filename !== 'string') return '';
+    
+    // 1. Уеднаквяваме всичко към малки букви веднага
+    let root = filename.toLowerCase().trim();
+    
+    // 2. Махаме разширението (.jpg, .jpeg, .png, .webp)
+    let parts = root.split('.');
+    if (parts.length > 1) parts.pop();
+    root = parts.join('.');
+    
+    // 3. Махаме UID/Хеш (всичко след долната черта)
+    // 959640-JPG_7c2dee33 -> 959640-jpg
+    root = root.split('_')[0];
+    
+    // 4. Махаме паразитното "-jpg", "-jpeg", "-png" накрая
+    // 959640-jpg -> 959640
+    root = root.replace(/-(png|jpe?g|webp)$/i, '');
+    
+    return root; // Вече е гарантирано малко и чисто
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // Изтриване на UID ==========================================================================================
 
 
