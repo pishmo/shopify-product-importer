@@ -1415,7 +1415,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 query: `mutation p($input: ProductInput!) { productUpdate(input: $input) { product { id } } }`,
-                variables: { input: { id: productGid, tags: finalTags, status: 'ACTIVE' } }
+                variables: { input: { id: productGid, tags: finalTags } }
             })
         });
 
