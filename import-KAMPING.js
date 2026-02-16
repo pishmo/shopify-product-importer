@@ -216,38 +216,33 @@ async function deleteShopifyProduct(productId) {
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
 
-  // Взимаме името на файла и махаме "?v=..."
+  // 1. Взимаме името на файла и махаме параметри (?v=...)
   let filename = src.split('/').pop().split('?')[0];
 
-  // Махаме разширението временно, за да работим само с името
+  // 2. Намираме разширението и самото име
   const lastDot = filename.lastIndexOf('.');
-  let ext = lastDot !== -1 ? filename.substring(lastDot).toLowerCase() : '';
   let name = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
 
-  // --- СТЪПКА 1: Махане на хешове и UUID ---
-  
-  // Махаме Filstar Hash (долна черта + 32 или повече hex символа)
-  // Пример: ...main-1_a7ac8da... -> става ...main-1
+  // --- СТЪПКА 1: Чистене на UID и Хешове ---
+  // Маха Shopify UUID (_8f2a1b3c...) и Filstar Hash
+  name = name.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i, '');
   name = name.replace(/_[a-f0-9]{32,}$/i, '');
 
-  // Махаме Shopify UUID (стандартен формат с тирета)
-  name = name.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i, '');
+  // --- СТЪПКА 2: Фикс за твоя проблем "-jpg" и ".png" ---
+  // Ако името е "photo-png" или "photo-jpg", махаме наставката
+  name = name.replace(/-(png|jpe?g)$/i, '');
 
-  // --- СТЪПКА 2: Махане на служебна наставка "-jpg" ---
-  // Filstar URLs често са: "name-1-jpg_hash.jpeg"
-  // След Стъпка 1 остава: "name-1-jpg"
-  // Трябва да махнем това "-jpg", за да остане чистият индекс "name-1"
-  name = name.replace(/-jpe?g$/i, '');
-
-  // --- СТЪПКА 3: Финална козметика ---
-  // Ако случайно сме оставили долна черта накрая
-  name = name.replace(/_+$/, '');
-
-  // Стандартизираме разширението
-  if (ext === '.jpeg') ext = '.jpg';
-
-  return name + ext;
+  // --- СТЪПКА 3: Унифициране ---
+  // Тъй като твоята нормализация винаги записва като .jpg, 
+  // ние "лъжем" системата, че и входният файл е .jpg. 
+  // Така photo.png и photo.jpg ще се срещнат на "photo.jpg"
+  return name.toLowerCase() + '.jpg';
 }
+
+
+
+
+
 
 // 2. Normalize - просто вика горната
 function normalizeFilename(filename) {
