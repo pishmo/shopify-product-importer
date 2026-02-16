@@ -123,7 +123,6 @@ function getUniversalRoot(filename) {
 async function cleanupProductUIDImages(productGid, categoryType) {
     try {
         const numericProductId = productGid.replace('gid://shopify/Product/', '');
-        
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images.json`, {
             method: 'GET',
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
@@ -131,56 +130,49 @@ async function cleanupProductUIDImages(productGid, categoryType) {
 
         const data = await res.json();
         const images = data.images || [];
-
         if (images.length <= 1) return 0;
 
-        const seenNames = new Map();
+        const seenNames = new Set();
         let deletedCount = 0;
 
         for (const img of images) {
             const imageId = img.id;
-            const filename = img.src.split('/').pop().split('?')[0];
+            const fullFilename = img.src.split('/').pop().split('?')[0]; // Пълно име: име_123.jpg
             
-            // --- НОВАТА ЛОГИКА ЗА ПОЧИСТВАНЕ ---
-            // 1. Махаме разширението (.jpg)
-            let nameWithoutExt = filename.split('.');
-            nameWithoutExt.pop();
-            let name = nameWithoutExt.join('.');
-
-            // 2. Разбиваме по долна черта
-            let parts = name.split('_');
-
-            // 3. Ако името има долни черти, махаме само ПОСЛЕДНАТА част (UID-то)
-            // Така "protection_lotion_123" става "protection_lotion"
-            // А "protection_lotion_456" става "protection_lotion" -> ТОВА ВЕЧЕ Е ДУБЛИКАТ
-            if (parts.length > 1) {
-                parts.pop();
+            // Проверяваме дали това име вече сме го виждали
+            // Ако Shopify е добавил UID (напр. име_8f2ae.jpg), 
+            // трябва да разпознаем, че основата е същата.
+            
+            let baseName = fullFilename;
+            if (fullFilename.includes('_') && fullFilename.length > 30) { 
+                // Ако името е много дълго и има долна черта накрая, вероятно е UID
+                const parts = fullFilename.split('_');
+                const maybeUid = parts.pop(); 
+                if (maybeUid.length < 10) { // Типичен Shopify UID е кратък
+                    baseName = parts.join('_');
+                }
             }
-            const cleanName = parts.join('_');
-            // ----------------------------------
 
-            if (seenNames.has(cleanName)) {
-                console.log(`  🗑️  REST DELETE: Премахване на дубликат ${filename} (ID: ${imageId})`);
-                
-                const delRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images/${imageId}.json`, {
+            if (seenNames.has(baseName)) {
+                console.log(`  🗑️  REST CLEANUP: Изтриване на реален дубликат/UID: ${fullFilename}`);
+                await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images/${imageId}.json`, {
                     method: 'DELETE',
                     headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
                 });
-
-                if (delRes.ok) {
-                    deletedCount++;
-                }
+                deletedCount++;
             } else {
-                seenNames.set(cleanName, imageId);
+                seenNames.add(baseName);
             }
         }
-
         return deletedCount;
     } catch (e) {
         console.error(`  ⚠️ Cleanup error: ${e.message}`);
         return 0;
     }
 }
+
+
+
 
 // --- ПОМОЩНИ БЪЛК ФУНКЦИИ ---
 
