@@ -1438,8 +1438,15 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
         for (const url of filstarUrls) {
             const cleanFilename = getImageFilename(url);
-            if (processedNames.has(cleanFilename) || existingImages.includes(cleanFilename)) continue;
-            processedNames.add(cleanFilename);
+        
+
+        if (processedNames.has(cleanFilename) || existingImages.includes(cleanFilename)) {
+        console.log(`    ⏩ Skipping: ${cleanFilename} (already exists)`);
+        continue;
+    }
+			
+			
+			processedNames.add(cleanFilename);
 
             console.log(`    📸 Uploading new image: ${cleanFilename}...`);
             let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
