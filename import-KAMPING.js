@@ -1015,14 +1015,20 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     if (imageMapping.size > 0) {
       console.log(`  🔗 Assigning images to variants...`);
       
-      const productQuery = `
+     const productQuery = `
         {
           product(id: "${productGid}") {
+            id
+            images(first: 50) { edges { node { id url } } }
             variants(first: 50) {
               edges {
                 node {
                   id
                   sku
+                  price
+                  inventoryQuantity
+                  inventoryItem { id }
+                  image { id }
                 }
               }
             }
