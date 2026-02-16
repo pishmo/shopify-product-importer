@@ -1258,34 +1258,60 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
     const productGid = shopifyProduct.id;
 
     try {
-        // --- СЕКЦИЯ 1: ДАННИ ---
+        // --- СЕКЦИЯ 1: ИЗВЛИЧАНЕ НА ДАННИ ОТ SHOPIFY ---
         const shopifyVariants = shopifyProduct.variants.edges.map(e => ({
             id: e.node.id,
             sku: e.node.sku,
             price: e.node.price,
+            compareAtPrice: e.node.compareAtPrice,
             inventoryQuantity: e.node.inventoryQuantity || 0,
             inventoryItemId: e.node.inventoryItem?.id
         }));
 
-        // --- СЕКЦИЯ 2: ЦЕНИ И НАЛИЧНОСТИ (Bulk) ---
+        const filstarVariants = filstarProduct.variants || [];
+
+        // --- СЕКЦИЯ 2: БЪЛК ЪПДЕЙТ НА ЦЕНИ И НАЛИЧНОСТИ ---
         const variantsToUpdate = [];
         const inventoryUpdates = [];
-        for (const fv of filstarProduct.variants || []) {
+
+        for (const fv of filstarVariants) {
             const sv = shopifyVariants.find(s => s.sku === fv.sku);
             if (!sv) continue;
+
             let finalPrice = fv.price?.toString() || '0';
             if (promoData && promoData[fv.sku]) finalPrice = promoData[fv.sku].toString();
-            if (sv.price !== finalPrice) variantsToUpdate.push({ id: sv.id, price: finalPrice });
-            const filstarQty = parseInt(fv.quantity) || 0;
-            if (sv.inventoryQuantity !== filstarQty) inventoryUpdates.push({ inventoryItemId: sv.inventoryItemId, locationId: LOCATION_ID, quantity: filstarQty });
-        }
-        if (variantsToUpdate.length > 0) await productVariantsBulkUpdate(productGid, variantsToUpdate);
-        if (inventoryUpdates.length > 0) await inventoryBulkSet(inventoryUpdates);
 
-      // --- СЕКЦИЯ 3: КАЧВАНЕ НА НОВИ СНИМКИ ---
+            // Логване на разлики в цените
+            if (sv.price !== finalPrice) {
+                console.log(`  💰 Цена разлика за ${fv.sku}: Shopify(${sv.price}) -> Filstar(${finalPrice})`);
+                variantsToUpdate.push({ id: sv.id, price: finalPrice });
+            }
+
+            // Логване на разлики в наличностите
+            const filstarQty = parseInt(fv.quantity) || 0;
+            if (sv.inventoryQuantity !== filstarQty) {
+                console.log(`  📦 Наличност разлика за ${fv.sku}: Shopify(${sv.inventoryQuantity}) -> Filstar(${filstarQty})`);
+                inventoryUpdates.push({ inventoryItemId: sv.inventoryItemId, locationId: LOCATION_ID, quantity: filstarQty });
+            }
+        }
+
+        if (variantsToUpdate.length > 0) {
+            await productVariantsBulkUpdate(productGid, variantsToUpdate);
+            console.log(`  ✅ Успешен ъпдейт на цени.`);
+        }
+        if (inventoryUpdates.length > 0) {
+            await inventoryBulkSet(inventoryUpdates);
+            console.log(`  ✅ Успешен ъпдейт на наличности.`);
+        }
+
+        // --- СЕКЦИЯ 3: КАЧВАНЕ НА НОВИ СНИМКИ ---
         const shopifyImages = shopifyProduct.images?.edges || [];
         const shopifyImageNames = shopifyImages.map(edge => getImageFilename(edge.node.url || edge.node.src));
-        const allFilstarUrls = [...(filstarProduct.images || []), ...filstarProduct.variants.filter(v => v.image).map(v => v.image)];
+        
+        const allFilstarUrls = [
+            ...(filstarProduct.images || []), 
+            ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
+        ];
         
         const uniqueFilstarImages = [];
         const seenNames = new Set();
@@ -1303,18 +1329,16 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                 let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
                 
                 const normalizedBuffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.id || 'prod');
-                if (!normalizedBuffer) {
-                    console.log(`    ❌ Нормализацията се провали за ${cleanFilename}`);
-                    continue;
-                }
+                if (!normalizedBuffer) continue;
 
                 const stagedUrl = await uploadImageToShopify(normalizedBuffer, cleanFilename);
+
                 if (stagedUrl) {
                     const mediaMutation = `
                       mutation productCreateMedia($productId: ID!, $media: [CreateMediaInput!]!) {
                         productCreateMedia(productId: $productId, media: $media) {
                           media { id status }
-                          userErrors { field message }
+                          userErrors { message }
                         }
                       }
                     `;
@@ -1324,29 +1348,20 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                         headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             query: mediaMutation,
-                            variables: { 
-                                productId: productGid, 
-                                media: [{ 
-                                    mediaContentType: 'IMAGE', 
-                                    originalSource: stagedUrl, // Вземаме resourceUrl от stagedUpload
-                                    alt: productName 
-                                }] 
-                            }
+                            variables: { productId: productGid, media: [{ mediaContentType: 'IMAGE', originalSource: stagedUrl, alt: productName }] }
                         })
                     });
                     
                     const linkData = await linkRes.json();
-                    const errors = linkData.data?.productCreateMedia?.userErrors;
-                    
-                    if (errors && errors.length > 0) {
-                        console.log(`    ❌ Shopify грешка при качване на ${cleanFilename}: ${errors[0].message}`);
+                    if (linkData.data?.productCreateMedia?.userErrors?.length > 0) {
+                        console.error(`    ❌ Shopify грешка: ${linkData.data.productCreateMedia.userErrors[0].message}`);
                     } else {
-                        console.log(`    ✅ Снимката ${cleanFilename} е изпратена успешно (ID: ${linkData.data?.productCreateMedia?.media[0]?.id})`);
+                        console.log(`    ✅ Снимката ${cleanFilename} е изпратена.`);
                     }
                 }
             }
 
-            console.log(`  ⏳ Изчакване 5 секунди за обработка...`);
+            console.log(`  ⏳ Изчакване 5 секунди за обработка на медията...`);
             await new Promise(r => setTimeout(r, 5000));
         }
 
@@ -1378,9 +1393,17 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                     })
                 });
             } else if (shopifyV) {
-                console.log(`  ⚠️ Не намерих качена снимка за вариант ${fv.sku} (търсено име: ${fileName})`);
+                console.log(`  ⚠️ Не намерих качена снимка в галерията за вариант ${fv.sku}`);
             }
         }
+
+        if (categoryType && stats[categoryType]) stats[categoryType].updated++;
+        console.log(`  🎉 [FINISH] Update complete for: ${productName}`);
+
+    } catch (error) {
+        console.error(`  ❌ Критична грешка при ${productName}:`, error.message);
+    }
+}
 
 // MAIN функция   =================================================================================================================================
 
