@@ -1662,6 +1662,7 @@ for (let i = 0; i < products.length; i++) {
       console.log(`  Created: ${data.created}`);
       console.log(`  Updated: ${data.updated}`);
       console.log(`  Images: ${data.images}\n`);
+		console.log(' Cleaned UID: ' + (s.cleaned || 0));
     });
     
     console.log('✅ Import completed successfully!');
