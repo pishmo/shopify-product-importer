@@ -216,29 +216,20 @@ async function deleteShopifyProduct(productId) {
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
 
-  // 1. Взимаме името на файла и махаме параметри (?v=...)
   let filename = src.split('/').pop().split('?')[0];
-
-  // 2. Намираме разширението и самото име
   const lastDot = filename.lastIndexOf('.');
   let name = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
 
-  // --- СТЪПКА 1: Чистене на UID и Хешове ---
-  // Маха Shopify UUID (_8f2a1b3c...) и Filstar Hash
+  // Чистим UUID и Хешове (това вече го имаш)
   name = name.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i, '');
   name = name.replace(/_[a-f0-9]{32,}$/i, '');
 
-  // --- СТЪПКА 2: Фикс за твоя проблем "-jpg" и ".png" ---
-  // Ако името е "photo-png" или "photo-jpg", махаме наставката
+  // ТОВА Е ВАЖНОТО: Махаме "-png" или "-jpg", ако са залепени за името
   name = name.replace(/-(png|jpe?g)$/i, '');
 
-  // --- СТЪПКА 3: Унифициране ---
-  // Тъй като твоята нормализация винаги записва като .jpg, 
-  // ние "лъжем" системата, че и входният файл е .jpg. 
-  // Така photo.png и photo.jpg ще се срещнат на "photo.jpg"
+  // ВРЪЩАМЕ ВИНАГИ .jpg (защото твоята нормализация прави .jpg)
   return name.toLowerCase() + '.jpg';
 }
-
 
 
 
