@@ -85,71 +85,53 @@ try {
 
 
 async function cleanupProductUIDImages(productGid, categoryType) {
-    console.log(`  🧹 Проверка за дубликати с UID...`);
-    let deletedCount = 0;
-
     try {
-        // Взимаме медията (използваме GraphQL за скорост)
-        const query = `query g($id: ID!) { product(id: $id) { 
-            media(first: 50) { edges { node { id ... on MediaImage { image { url } } } } } 
-        } }`;
-
-        const res = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-            method: 'POST',
-            headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, variables: { id: productGid } })
+        const numericProductId = productGid.replace('gid://shopify/Product/', '');
+        
+        // 1. Взимаме всички снимки чрез REST (най-точно за триене)
+        const res = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images.json`, {
+            method: 'GET',
+            headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
         });
 
-        const result = await res.json();
-        const mediaEdges = result.data?.product?.media?.edges || [];
-        
+        const data = await res.json();
+        const images = data.images || [];
+
+        if (images.length <= 1) return 0;
+
         const seenNames = new Map();
-        const toDelete = [];
+        let deletedCount = 0;
 
-        for (const edge of mediaEdges) {
-            const mediaId = edge.node.id;
-            const fullUrl = edge.node.image?.url;
-            if (!fullUrl) continue;
-
-            const filename = fullUrl.split('/').pop().split('?')[0];
+        for (const img of images) {
+            const imageId = img.id;
+            const filename = img.src.split('/').pop().split('?')[0];
             
-            // Твоят формат: 959640_2f476850... -> чистим всичко след първата долна черта
-            // Ако няма долна черта, взима цялото име преди разширението
+            // Твоят формат: SKU_UID.jpg -> взимаме SKU
             const cleanName = filename.split('_')[0].split('.')[0];
 
             if (seenNames.has(cleanName)) {
-                toDelete.push(mediaId);
+                console.log(`  🗑️  REST DELETE: Премахване на дубликат ${filename} (ID: ${imageId})`);
+                
+                // 2. ИЗТРИВАМЕ ЧРЕЗ REST
+                const delRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images/${imageId}.json`, {
+                    method: 'DELETE',
+                    headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
+                });
+
+                if (delRes.ok) {
+                    deletedCount++;
+                }
             } else {
-                seenNames.set(cleanName, mediaId);
+                seenNames.set(cleanName, imageId);
             }
         }
 
-        if (toDelete.length > 0) {
-            console.log(`  🗑️  Открити ${toDelete.length} дубликата с UID. Изтриване...`);
-            const deleteMutation = `mutation d($p: ID!, $m: [ID!]!) { productDeleteMedia(productId: $p, mediaIds: $m) { deletedMediaIds } }`;
-            
-            await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-                method: 'POST',
-                headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: deleteMutation, variables: { productId: productGid, mediaIds: toDelete } })
-            });
-
-            deletedCount = toDelete.length;
-            // Добавяме към статистика за "изтрити" или просто логваме
-            if (stats[categoryType]) {
-                if (!stats[categoryType].cleaned) stats[categoryType].cleaned = 0;
-                stats[categoryType].cleaned += deletedCount;
-            }
-        }
         return deletedCount;
     } catch (e) {
-        console.error(`  ⚠️ Грешка при почистване: ${e.message}`);
+        console.error(`  ⚠️ Cleanup error: ${e.message}`);
         return 0;
     }
 }
-
-
-
 
 
 // --- ПОМОЩНИ БЪЛК ФУНКЦИИ ---
