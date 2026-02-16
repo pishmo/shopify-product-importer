@@ -1439,35 +1439,50 @@ if (Object.keys(newMediaMap).length > 0) {
     await new Promise(resolve => setTimeout(resolve, 5000)); // ← 2 секунди пауза
 
     console.log(`    🔗 Linking images to variants...`);
-    for (const [filename, mediaId] of Object.entries(newMediaMap)) {
-        const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === filename);
-        if (targetFv) {
-            const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
-            if (targetSv) {
-                console.log(`      → ${targetSv.sku} ← ${filename}`);
-                const variantUpdateRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-                    method: 'POST',
-                    headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        query: `mutation v($i: ProductVariantInput!) { productVariantUpdate(input: $i) { productVariant { id image { id } } userErrors { field message } } }`,
-                        variables: { input: { id: targetSv.id, mediaId: mediaId } }
-                    })
-                });
-                
-                const variantUpdateData = await variantUpdateRes.json();
-                if (variantUpdateData.data?.productVariantUpdate?.userErrors?.length > 0) {
-                    console.log(`      ⚠️ Error: ${JSON.stringify(variantUpdateData.data.productVariantUpdate.userErrors)}`);
-                }
+
+	
+  for (const [filename, mediaId] of Object.entries(newMediaMap)) {
+    const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === filename);
+    if (targetFv) {
+        const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
+        if (targetSv) {
+            console.log(`      → ${targetSv.sku} ← ${filename}`);
+            console.log(`      → Media GID: ${mediaId}`);
+            
+            // Извличаме numeric ID от media GID
+            const imageId = mediaId.split('/').pop();
+            const variantId = targetSv.id.split('/').pop();
+            
+            console.log(`      → Image ID: ${imageId}, Variant ID: ${variantId}`);
+            
+            // REST API update
+            const restUpdateRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
+                method: 'PUT',
+                headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    variant: { 
+                        id: parseInt(variantId), 
+                        image_id: parseInt(imageId) 
+                    } 
+                })
+            });
+            
+            const restData = await restUpdateRes.json();
+            if (restData.errors) {
+                console.log(`      ❌ REST Error: ${JSON.stringify(restData.errors)}`);
+            } else {
+                console.log(`      ✅ Variant image linked successfully`);
             }
         }
     }
 }
 
+
+
+}
+
 if (categoryType && stats[categoryType]) stats[categoryType].updated++;
 console.log(`\n✅ [FINISH] Update complete.`);
-
-
-// край на секция 5
 		
     } catch (error) {
         console.error(`❌ CRITICAL ERROR:`, error.message);
