@@ -1587,6 +1587,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 
 
+
+ // Филтър за конкретни SKU (ако е нужно)
+    const targetSkus = ['959640']; // Замени с реалните SKU-та
+    accessoryProducts = accessoryProducts.filter(product => 
+      product.variants && product.variants.some(v => targetSkus.includes(v.sku))
+    );
+
+
 	  
 console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
