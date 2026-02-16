@@ -1258,6 +1258,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
 // UPDATE              ============================================================================================================================
 
+
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
     const productName = filstarProduct.name;
     console.log(`\n🔄 [START] Smart Updating: ${productName}`);
@@ -1285,13 +1286,13 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             if (promoData && promoData[fv.sku]) finalPrice = promoData[fv.sku].toString();
 
             if (sv.price !== finalPrice) {
-                console.log(`  💰 Цена разлика ${fv.sku}: Shopify(${sv.price}) -> Filstar(${finalPrice})`);
+                console.log(`  💰 Цена разлика ${fv.sku}: ${sv.price} -> ${finalPrice}`);
                 variantsToUpdate.push({ id: sv.id, price: finalPrice });
             }
 
             const filstarQty = parseInt(fv.quantity) || 0;
             if (sv.inventoryQuantity !== filstarQty) {
-                console.log(`  📦 Наличност разлика ${fv.sku}: Shopify(${sv.inventoryQuantity}) -> Filstar(${filstarQty})`);
+                console.log(`  📦 Наличност разлика ${fv.sku}: ${sv.inventoryQuantity} -> ${filstarQty}`);
                 inventoryUpdates.push({ inventoryItemId: sv.inventoryItemId, locationId: LOCATION_ID, quantity: filstarQty });
             }
         }
@@ -1299,7 +1300,22 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         if (variantsToUpdate.length > 0) await productVariantsBulkUpdate(productGid, variantsToUpdate);
         if (inventoryUpdates.length > 0) await inventoryBulkSet(inventoryUpdates);
 
-     // --- СЕКЦИЯ 3: КАЧВАНЕ ---
+        // --- СЕКЦИЯ 3: КАЧВАНЕ НА НОВИ СНИМКИ ---
+        const shopifyImages = shopifyProduct.images?.edges || [];
+        const shopifyImageNames = shopifyImages.map(edge => getImageFilename(edge.node.url || edge.node.src));
+        
+        const allFilstarUrls = [
+            ...(filstarProduct.images || []), 
+            ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
+        ];
+        
+        const uniqueFilstarImages = [];
+        const seenNames = new Set();
+        for (const url of allFilstarUrls) {
+            const name = getImageFilename(url);
+            if (!seenNames.has(name)) { seenNames.add(name); uniqueFilstarImages.push(url); }
+        }
+
         const missingImages = uniqueFilstarImages.filter(url => !shopifyImageNames.includes(getImageFilename(url)));
         const successfullyUploadedNames = []; // Пълним този масив само при успех
 
@@ -1326,17 +1342,17 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                     const linkData = await linkRes.json();
                     if (!linkData.data?.productCreateMedia?.userErrors?.length) {
                         console.log(`    ✅ Снимката ${cleanFilename} е приета.`);
-                        successfullyUploadedNames.push(cleanFilename); // ТУК ЗАПИСВАМЕ УСПЕХА
+                        successfullyUploadedNames.push(cleanFilename);
                     }
                 }
             }
-            console.log(`  ⏳ Изчакване 10 секунди...`);
+            console.log(`  ⏳ Изчакване 10 секунди за обработка...`);
             await new Promise(r => setTimeout(r, 10000));
         }
 
-        // --- СЕКЦИЯ 4: СВЪРЗВАНЕ ---
+        // --- СЕКЦИЯ 4: СВЪРЗВАНЕ НА НОВИТЕ СНИМКИ ---
         if (successfullyUploadedNames.length > 0) {
-            console.log(`  🔍 Проверка на галерията за: ${successfullyUploadedNames.join(', ')}`);
+            console.log(`  🔍 Проверка на галерията за нови ID-та...`);
             const refreshRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
                 method: 'POST',
                 headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
@@ -1351,7 +1367,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             for (const fv of filstarProduct.variants.filter(v => v.image)) {
                 const fileName = getImageFilename(fv.image);
                 
-                // Проверяваме дали това име е сред УСПЕШНО качените току-що
                 if (successfullyUploadedNames.includes(fileName)) {
                     const foundMedia = updatedMedia.find(m => m.node.image && getImageFilename(m.node.image.url) === fileName);
                     const shopifyV = shopifyVariants.find(sv => sv.sku === fv.sku);
@@ -1370,6 +1385,20 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                 }
             }
         }
+
+        if (categoryType && stats[categoryType]) stats[categoryType].updated++;
+        console.log(`  🎉 [FINISH] Update complete for: ${productName}`);
+
+    } catch (error) {
+        console.error(`  ❌ КРИТИЧНА ГРЕШКА при ${productName}:`, error.message);
+    }
+}
+
+
+
+
+
+
 
 // MAIN функция   =================================================================================================================================
 
