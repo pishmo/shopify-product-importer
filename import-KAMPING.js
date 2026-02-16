@@ -253,12 +253,17 @@ function normalizeFilename(filename) {
 function imageExists(existingImages, newImageUrl) {
   if (!existingImages || !existingImages.length) return false;
 
-  const targetClean = normalizeFilename(newImageUrl);
+  // Нормализираме новата снимка (вече винаги ще е .jpg в паметта)
+  const targetClean = getImageFilename(newImageUrl);
 
   return existingImages.some(img => {
-    const imgSrc = img.src || img.url || '';
-    // Белим и името от Shopify, за да видим дали е същото
-    const existingClean = normalizeFilename(imgSrc);
+    // Взимаме сорса от Shopify (може да е img.node.src или img.src)
+    const imgSrc = img?.node?.src || img?.src || '';
+    if (!imgSrc) return false;
+
+    // Нормализираме и това, което вече е в Shopify
+    const existingClean = getImageFilename(imgSrc);
+    
     return existingClean === targetClean;
   });
 }
