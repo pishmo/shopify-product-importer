@@ -1433,55 +1433,79 @@ for (const url of filstarUrls) {
     }
 }
 
-// 6. ИЗЧАКВАМЕ И СЛЕД ТОВА СВЪРЗВАМЕ КЪМ ВАРИАНТИ
+// 6. ИЗЧАКВАМЕ И FETCH-ВАМЕ АКТУАЛНИ IMAGE ID-ТА
 if (Object.keys(newMediaMap).length > 0) {
     console.log(`    ⏳ Waiting for media processing...`);
-    await new Promise(resolve => setTimeout(resolve, 10000)); // ← 2 секунди пауза
+    await new Promise(resolve => setTimeout(resolve, 3000)); // 3 секунди
+
+    // FETCH НА АКТУАЛНИ IMAGES
+    console.log(`    🔄 Fetching updated product images...`);
+    const updatedProductQuery = `
+      query getProduct($id: ID!) {
+        product(id: $id) {
+          images(first: 250) { 
+            edges { 
+              node { 
+                id 
+                src 
+              } 
+            } 
+          }
+        }
+      }
+    `;
+
+    const updatedProductRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+        method: 'POST',
+        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: updatedProductQuery, variables: { id: productGid } })
+    });
+
+    const updatedProductData = await updatedProductRes.json();
+    const updatedImages = updatedProductData.data?.product?.images?.edges || [];
 
     console.log(`    🔗 Linking images to variants...`);
-
-	
-  for (const [filename, mediaId] of Object.entries(newMediaMap)) {
-    const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === filename);
-    if (targetFv) {
-        const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
-        if (targetSv) {
-            console.log(`      → ${targetSv.sku} ← ${filename}`);
-            console.log(`      → Media GID: ${mediaId}`);
-            
-            // Извличаме numeric ID от media GID
-            const imageId = mediaId.split('/').pop();
-            const variantId = targetSv.id.split('/').pop();
-            
-            console.log(`      → Image ID: ${imageId}, Variant ID: ${variantId}`);
-            
-            // REST API update
-            const restUpdateRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
-                method: 'PUT',
-                headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    variant: { 
-                        id: parseInt(variantId), 
-                        image_id: parseInt(imageId) 
-                    } 
-                })
-            });
-            
-            const restData = await restUpdateRes.json();
-            if (restData.errors) {
-                console.log(`      ❌ REST Error: ${JSON.stringify(restData.errors)}`);
-            } else {
-                console.log(`      ✅ Variant image linked successfully`);
+    for (const [filename, mediaId] of Object.entries(newMediaMap)) {
+        const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === filename);
+        if (targetFv) {
+            const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
+            if (targetSv) {
+                // НАМИРАМЕ ПРАВИЛНИЯ IMAGE ID ОТ АКТУАЛНИТЕ IMAGES
+                const matchingImage = updatedImages.find(img => getImageFilename(img.node.src) === filename);
+                
+                if (matchingImage) {
+                    const productImageId = matchingImage.node.id.split('/').pop();
+                    const variantId = targetSv.id.split('/').pop();
+                    
+                    console.log(`      → ${targetSv.sku} ← ${filename}`);
+                    console.log(`      → ProductImage ID: ${productImageId}`);
+                    
+                    const restUpdateRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${variantId}.json`, {
+                        method: 'PUT',
+                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            variant: { 
+                                image_id: parseInt(productImageId) 
+                            } 
+                        })
+                    });
+                    
+                    const restData = await restUpdateRes.json();
+                    if (restData.errors) {
+                        console.log(`      ❌ Error: ${JSON.stringify(restData.errors)}`);
+                    } else {
+                        console.log(`      ✅ Linked!`);
+                    }
+                } else {
+                    console.log(`      ⚠️ Image not found in product: ${filename}`);
+                }
             }
         }
     }
 }
 
-
-
-}
-
-if (categoryType && stats[categoryType]) stats[categoryType].updated++;
+		
+		if (categoryType && stats[categoryType]) stats[categoryType].updated++;
 console.log(`\n✅ [FINISH] Update complete.`);
 		
     } catch (error) {
