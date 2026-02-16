@@ -124,7 +124,6 @@ async function cleanupProductUIDImages(productGid, categoryType) {
     try {
         const numericProductId = productGid.replace('gid://shopify/Product/', '');
         
-        // 1. Взимаме всички снимки чрез REST (най-точно за триене)
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images.json`, {
             method: 'GET',
             headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
@@ -142,13 +141,27 @@ async function cleanupProductUIDImages(productGid, categoryType) {
             const imageId = img.id;
             const filename = img.src.split('/').pop().split('?')[0];
             
-            // Твоят формат: SKU_UID.jpg -> взимаме SKU
-            const cleanName = filename.split('_')[0].split('.')[0];
+            // --- НОВАТА ЛОГИКА ЗА ПОЧИСТВАНЕ ---
+            // 1. Махаме разширението (.jpg)
+            let nameWithoutExt = filename.split('.');
+            nameWithoutExt.pop();
+            let name = nameWithoutExt.join('.');
+
+            // 2. Разбиваме по долна черта
+            let parts = name.split('_');
+
+            // 3. Ако името има долни черти, махаме само ПОСЛЕДНАТА част (UID-то)
+            // Така "protection_lotion_123" става "protection_lotion"
+            // А "protection_lotion_456" става "protection_lotion" -> ТОВА ВЕЧЕ Е ДУБЛИКАТ
+            if (parts.length > 1) {
+                parts.pop();
+            }
+            const cleanName = parts.join('_');
+            // ----------------------------------
 
             if (seenNames.has(cleanName)) {
                 console.log(`  🗑️  REST DELETE: Премахване на дубликат ${filename} (ID: ${imageId})`);
                 
-                // 2. ИЗТРИВАМЕ ЧРЕЗ REST
                 const delRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images/${imageId}.json`, {
                     method: 'DELETE',
                     headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
@@ -168,7 +181,6 @@ async function cleanupProductUIDImages(productGid, categoryType) {
         return 0;
     }
 }
-
 
 // --- ПОМОЩНИ БЪЛК ФУНКЦИИ ---
 
