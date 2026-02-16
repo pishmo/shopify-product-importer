@@ -1372,84 +1372,103 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         }
 
         // 5. МЕДИЯ (КАЧВАНЕ И СВЪРЗВАНЕ)
-        const existingImages = fullProduct.images.edges.map(e => getImageFilename(e.node.src));
-        const filstarUrls = [
-            ...(filstarProduct.images || []), 
-            ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
-        ];
-        
-        const processedNames = new Set();
+// ЗАМЕНИ СЕКЦИЯ 5 С ТОВА:
 
-        for (const url of filstarUrls) {
-            const cleanFilename = getImageFilename(url);
-            if (processedNames.has(cleanFilename) || existingImages.includes(cleanFilename)) continue;
-            processedNames.add(cleanFilename);
+// 5. МЕДИЯ (КАЧВАНЕ И СВЪРЗВАНЕ)
+const existingImages = fullProduct.images.edges.map(e => getImageFilename(e.node.src));
+const filstarUrls = [
+    ...(filstarProduct.images || []), 
+    ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
+];
 
-            console.log(`    📸 Uploading new image: ${cleanFilename}...`);
-            let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
-            const buffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.id || 'id');
+const processedNames = new Set();
+const newMediaMap = {}; // ← ЩЕ СЪХРАНЯВАМЕ MAPPING ТУК
+
+for (const url of filstarUrls) {
+    const cleanFilename = getImageFilename(url);
+    if (processedNames.has(cleanFilename) || existingImages.includes(cleanFilename)) continue;
+    processedNames.add(cleanFilename);
+
+    console.log(`    📸 Uploading new image: ${cleanFilename}...`);
+    let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
+    const buffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.id || 'id');
+    
+    if (buffer) {
+        const resourceUrl = await uploadImageToShopify(buffer, cleanFilename);
+        if (resourceUrl) {
+            const altText = filstarProduct.name.replace(/"/g, '\\"');
+            const attachMutation = `
+              mutation {
+                productCreateMedia(
+                  productId: "${productGid}"
+                  media: [{
+                    originalSource: "${resourceUrl}"
+                    mediaContentType: IMAGE
+                    alt: "${altText}"
+                  }]
+                ) {
+                  media { id }
+                  mediaUserErrors { message }
+                }
+              }
+            `;
+
+            const attachRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                method: 'POST',
+                headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: attachMutation })
+            });
             
-            if (buffer) {
-                const resourceUrl = await uploadImageToShopify(buffer, cleanFilename);
-                if (resourceUrl) {
-                    const altText = filstarProduct.name.replace(/"/g, '\\"');
-                    const attachMutation = `
-                      mutation {
-                        productCreateMedia(
-                          productId: "${productGid}"
-                          media: [{
-                            originalSource: "${resourceUrl}"
-                            mediaContentType: IMAGE
-                            alt: "${altText}"
-                          }]
-                        ) {
-                          media { id }
-                          mediaUserErrors { message }
-                        }
-                      }
-                    `;
+            const attachData = await attachRes.json();
+            const newMediaId = attachData.data?.productCreateMedia?.media?.[0]?.id;
 
-                    const attachRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-                        method: 'POST',
-                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: attachMutation })
-                    });
-                    
-                    const attachData = await attachRes.json();
-                    
-                    // ЛОГ ЗА ДИАГНОСТИКА
-                    console.log(`    📡 Media API Response: ${JSON.stringify(attachData).substring(0, 100)}`);
+            if (newMediaId) {
+                console.log(`    ✅ Image uploaded: ${cleanFilename}`);
+                newMediaMap[cleanFilename] = newMediaId; // ← ЗАПАЗВАМЕ ID-то
+            } else {
+                const err = attachData.data?.productCreateMedia?.mediaUserErrors?.[0]?.message;
+                console.log(`    ❌ Media Error: ${err || 'No ID returned'}`);
+            }
+        }
+    }
+}
 
-                    const newMediaId = attachData.data?.productCreateMedia?.media?.[0]?.id;
+// 6. ИЗЧАКВАМЕ И СЛЕД ТОВА СВЪРЗВАМЕ КЪМ ВАРИАНТИ
+if (Object.keys(newMediaMap).length > 0) {
+    console.log(`    ⏳ Waiting for media processing...`);
+    await new Promise(resolve => setTimeout(resolve, 2000)); // ← 2 секунди пауза
 
-                    if (newMediaId) {
-                        console.log(`    ✅ Image linked to product.`);
-                        const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === cleanFilename);
-                        if (targetFv) {
-                            const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
-                            if (targetSv) {
-                                console.log(`    🔗 Linking to variant ${targetSv.sku}...`);
-                                await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
-                                    method: 'POST',
-                                    headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        query: `mutation v($i: ProductVariantInput!) { productVariantUpdate(input: $i) { productVariant { id } } }`,
-                                        variables: { input: { id: targetSv.id, mediaId: newMediaId } }
-                                    })
-                                });
-                            }
-                        }
-                    } else {
-                        const err = attachData.data?.productCreateMedia?.mediaUserErrors?.[0]?.message;
-                        console.log(`    ❌ Media Error: ${err || 'No ID returned'}`);
-                    }
+    console.log(`    🔗 Linking images to variants...`);
+    for (const [filename, mediaId] of Object.entries(newMediaMap)) {
+        const targetFv = filstarProduct.variants.find(v => getImageFilename(v.image) === filename);
+        if (targetFv) {
+            const targetSv = shopifyVariants.find(s => s.sku === targetFv.sku);
+            if (targetSv) {
+                console.log(`      → ${targetSv.sku} ← ${filename}`);
+                const variantUpdateRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                    method: 'POST',
+                    headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: `mutation v($i: ProductVariantInput!) { productVariantUpdate(input: $i) { productVariant { id image { id } } userErrors { field message } } }`,
+                        variables: { input: { id: targetSv.id, mediaId: mediaId } }
+                    })
+                });
+                
+                const variantUpdateData = await variantUpdateRes.json();
+                if (variantUpdateData.data?.productVariantUpdate?.userErrors?.length > 0) {
+                    console.log(`      ⚠️ Error: ${JSON.stringify(variantUpdateData.data.productVariantUpdate.userErrors)}`);
                 }
             }
         }
+    }
+}
 
-        if (categoryType && stats[categoryType]) stats[categoryType].updated++;
-        console.log(`\n✅ [FINISH] Update complete.`);
+if (categoryType && stats[categoryType]) stats[categoryType].updated++;
+console.log(`\n✅ [FINISH] Update complete.`);
 
+
+// край на секция 5
+		
     } catch (error) {
         console.error(`❌ CRITICAL ERROR:`, error.message);
     }
