@@ -1431,6 +1431,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                         const attachData = await attachRes.json();
                         const newId = attachData.data?.productCreateMedia?.media?.[0]?.id;
                         if (newId) newMediaMap[rawFilstarName] = newId;
+						if (stats[categoryType]) stats[categoryType].images++;
                     }
                 }
             }
