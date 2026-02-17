@@ -37,7 +37,7 @@ const WANTED_SUBCATEGORIES = {
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-  camping: ['63'] 
+   carp_fishing: ['37'] 
 };
 
 const ACCESSORIES_PARENT_ID = '11';
@@ -45,14 +45,14 @@ const ACCESSORIES_PARENT_ID = '11';
 // Shopify collection IDs
 const COLLECTION_MAPPING  = {
   
-  camping: 'gid://shopify/Collection/739661414782'
+  carp_fishing: 'gid://shopify/Collection/739661152638'
  
 };
 
 // Статистика
 const stats = {
   
-  camping: { reated: 0, updated: 0, images: 0, cleaned: 0}
+  carp_fishing: { reated: 0, updated: 0, images: 0, cleaned: 0}
   
 };
 
