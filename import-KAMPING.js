@@ -1265,6 +1265,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         const deletedCount = await cleanupProductUIDImages(productGid, filstarProduct);
         if (deletedCount > 0) {
             console.log(`  🧹 Cleaned up ${deletedCount} images.`);
+			if (stats[categoryType]) stats[categoryType].cleaned += deletedCount;
         }
 
         // =====================================================================
