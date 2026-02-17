@@ -1510,7 +1510,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
   async function main() {
   console.log('🚀 Starting Filstar  КЪМПИНГ Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+   console.log('  - Аксесоари Кутии и калъфи - Категория Id - (61)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1540,7 +1540,7 @@ console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
   
     // Групирай по категория
 const productsByCategory = {
- carp_fishing: []
+ boxes_and_bags: []
 	  
     };
     
