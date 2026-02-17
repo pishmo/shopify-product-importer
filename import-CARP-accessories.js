@@ -114,8 +114,8 @@ async function cleanupProductUIDImages(productGid, filstarProduct) {
                         method: 'DELETE', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
                     });
 					
-                   if (stats[categoryType]) {stats[categoryType].cleaned++;}
-					
+                
+					deleted++;
                 }
             }
         }
