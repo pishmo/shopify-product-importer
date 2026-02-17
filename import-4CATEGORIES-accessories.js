@@ -469,18 +469,22 @@ function getCategoryType(product) {
 }
 
 
-// Функция за получаване на име на категория
+ 
+  // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    carp_fishing: 'Аксесоари Шарански риболов'
+    pike_and_catfish: 'Аксесоари щука и сом',
+    pole_and_match: 'Аксесоари щека и мач',
+    knives: 'Ножове',
+   
    
   };
   
-  return names[categoryType] || 'Аксесоари Шарански риболов';
+  return names[categoryType] || '3 Категории Аксесоари';
 }
 
 
-
+  
 
 
 
