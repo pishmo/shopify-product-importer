@@ -52,7 +52,7 @@ const COLLECTION_MAPPING  = {
 // Статистика
 const stats = {
   
-  carp_fishing: { reated: 0, updated: 0, images: 0, cleaned: 0}
+  carp_fishing: { created: 0, updated: 0, images: 0, cleaned: 0}
   
 };
 
