@@ -113,7 +113,9 @@ async function cleanupProductUIDImages(productGid, filstarProduct) {
                     await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}/images/${img.id}.json`, {
                         method: 'DELETE', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
                     });
-                    deleted++;
+					
+                   if (stats[categoryType]) {stats[categoryType].cleaned++;}
+					
                 }
             }
         }
