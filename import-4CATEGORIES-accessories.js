@@ -1,4 +1,4 @@
-// import-CARP-accessories.js - Импорт на CARP аксесоари от Filstar API
+// import-3CATEGORIES-accessories.js - Импорт на 3 Категории аксесоари от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -32,29 +32,32 @@ const WANTED_SUBCATEGORIES = {
 
 
 
-
-
-// Filstar category IDs за аксесоари
+// Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
+  pike_and_catfish: ['45'],
+  pole_and_match: ['50'],
+  knives: ['59'],
   
-   carp_fishing: ['37'] 
 };
 
 
 
-// Shopify collection IDs
+// Shopify collection IDs - САМО 4 КАТЕГОРИИ
 const COLLECTION_MAPPING  = {
+  pike_and_catfish: 'gid://shopify/Collection/739661185406',
+  pole_and_match: 'gid://shopify/Collection/739661218174',
+  knives: 'gid://shopify/Collection/739661250942',
   
-  carp_fishing: 'gid://shopify/Collection/739661152638'
- 
 };
 
-// Статистика
+// Статистика - САМО 3 КАТЕГОРИИ
 const stats = {
-  
-  carp_fishing: { created: 0, updated: 0, images: 0, cleaned: 0}
+  pike_and_catfish: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  pole_and_match: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  knives: { created: 0, updated: 0, images: 0, cleaned: 0 },
   
 };
+
 
 
 
