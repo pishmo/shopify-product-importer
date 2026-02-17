@@ -40,7 +40,7 @@ const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
    carp_fishing: ['37'] 
 };
 
-const ACCESSORIES_PARENT_ID = '11';
+
 
 // Shopify collection IDs
 const COLLECTION_MAPPING  = {
