@@ -1614,7 +1614,7 @@ for (let i = 0; i < products.length; i++) {
       console.log(`${getCategoryName(category)}:`);
       console.log(`  Created: ${data.created}`);
       console.log(`  Updated: ${data.updated}`);
-      console.log(`  Images: ${data.images}\n`);
+      console.log(`  Images: ${data.images}`);
 	  console.log(`  Cleaned UID: ${data.cleaned || 0}\n`);
     });
     
