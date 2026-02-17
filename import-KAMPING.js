@@ -1592,11 +1592,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             }
         }
 
-        // =====================================================================
-        // 🚀 СЕКЦИЯ 6: СВЪРЗВАНЕ С ВАРИАНТИТЕ (С ПОДРОБНИ ЛОГОВЕ)
+    
+		
+		
+	// =====================================================================
+        // 🚀 СЕКЦИЯ 6: СВЪРЗВАНЕ С ВАРИАНТИТЕ (С ОПТИМИЗАЦИЯ И ЛОГОВЕ)
         // =====================================================================
         console.log(`    🔗 Linking images to variants...`);
-        await new Promise(r => setTimeout(r, 4000)); // Изчакване за индексация
+        await new Promise(r => setTimeout(r, 4000)); // Изчакване за индексация на медията
 
         const finalProductRes = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
             method: 'POST',
@@ -1616,40 +1619,51 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             }
 
             const targetName = getImageFilename(fv.image);
-            const targetSv = shopifyVariants.find(s => s.sku === variantSku);
+            const targetSv = fullProduct.variants.edges.find(e => e.node.sku === variantSku);
 
             if (targetSv) {
-                // Търсим съвпадение в Shopify по името на файла
+                // Търсим съвпадение в актуалните медии на Shopify
                 const match = currentImages.find(img => {
                     const sName = getImageFilename(img.node.src);
                     return sName === targetName || sName.includes(targetName.split('.')[0]);
                 });
 
                 if (match) {
-                    const imgId = match.node.id.split('/').pop();
-                    console.log(`      🔗 Linked: [${variantSku}] <-> [${targetName}]`);
-                    
-                    await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${targetSv.id.split('/').pop()}.json`, {
-                        method: 'PUT',
-                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ variant: { image_id: parseInt(imgId) } })
-                    });
+                    const imgIdInShopify = match.node.id.split('/').pop();
+                    const currentVariantImageId = targetSv.node.image?.id ? targetSv.node.image.id.split('/').pop() : null;
+
+                    // 🎯 ОПТИМИЗАЦИЯ: Свързваме само ако ID-тата се различават
+                    if (currentVariantImageId === imgIdInShopify) {
+                        console.log(`      ✅ Variant [${variantSku}] already linked to ${targetName}. Skipping.`);
+                    } else {
+                        console.log(`      🔗 Linking: [${variantSku}] <-> [${targetName}]`);
+                        
+                        await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/variants/${targetSv.node.id.split('/').pop()}.json`, {
+                            method: 'PUT',
+                            headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ variant: { image_id: parseInt(imgIdInShopify) } })
+                        });
+                    }
                 } else {
-                    // 2. ПРОВЕРКА: Качена ли е изобщо в медиите на продукта?
-                    console.log(`      ❓ Вариант [${variantSku}]: Снимка ${targetName} не е намерена в Shopify.`);
+                    console.log(`      ❓ Вариант [${variantSku}]: Снимка ${targetName} не бе открита в медиите на продукта.`);
                 }
             } else {
                 console.log(`      ⚠️ Вариант [${variantSku}]: SKU не бе открит в Shopify.`);
             }
         }
 
+        // КРАЙ НА СЕКЦИЯ 6
         if (categoryType && stats[categoryType]) stats[categoryType].updated++;
         console.log(`✅ [FINISH] Update complete.`);
         
     } catch (error) {
         console.error(`❌ CRITICAL ERROR:`, error.message);
     }
-}
+} // КРАЙ НА ФУНКЦИЯТА updateShopifyProduct
+
+
+
+
 
 // MAIN функция   =================================================================================================================================
 
