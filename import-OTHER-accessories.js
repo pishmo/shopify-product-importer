@@ -471,11 +471,11 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    carp_fishing: 'Аксесоари Шарански риболов'
+    other: 'Други Аксесоари'
    
   };
   
-  return names[categoryType] || 'Аксесоари Шарански риболов';
+  return names[categoryType] || 'Други Аксесоари';
 }
 
 
