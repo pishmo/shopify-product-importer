@@ -1,4 +1,4 @@
-// import-CAMPING.js - Импорт на CARP аксесоари от Filstar API
+// import-CARP-accessories.js - Импорт на CARP аксесоари от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
