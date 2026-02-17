@@ -52,7 +52,7 @@ const COLLECTION_MAPPING  = {
 // Статистика
 const stats = {
   
-  camping: { reated: 0, updated: 0, images: 0, cleaned: 0}
+  camping: { created: 0, updated: 0, images: 0, cleaned: 0}
   
 };
 
