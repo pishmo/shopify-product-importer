@@ -15,29 +15,22 @@ const LOCATION_ID = 'gid://shopify/Location/109713850750';
 
 // --- НАСТРОЙКИ ЗА ПОДКАТЕГОРИИ ---
 
-const WANTED_SUBCATEGORIES = {
-  "Шарански Риболов": [
-      "PVA материали",
-      "Аларми и индикатори",
-      "Готови монтажи",
-      "Инструменти",
-      "Материали за монтажи",
-      "Ракети",
-      "Стопери и рингове",
-      "Фидери",
-      "Шарански стойки",
-      "Други"
+	const WANTED_SUBCATEGORIES = {
+  "КУТИИ, КОШЧЕТА И КАЛЪФИ": [
+      "Калъфи",
+      "Кутии",
+      "Куфари",
+      "Раници, чанти, кошчета и кофи",
+      "Кофи и кошчета"
   ]
 };
-
-
 
 
 
 // Filstar category IDs за аксесоари
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   
-   carp_fishing: ['37'] 
+    boxes_and_bags: ['61']
 };
 
 
@@ -45,14 +38,14 @@ const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
 // Shopify collection IDs
 const COLLECTION_MAPPING  = {
   
-  carp_fishing: 'gid://shopify/Collection/739661152638'
+   boxes_and_bags: 'gid://shopify/Collection/739661316478'
  
 };
 
 // Статистика
 const stats = {
   
-  carp_fishing: { created: 0, updated: 0, images: 0, cleaned: 0}
+  boxes_and_bags: { created: 0, updated: 0, images: 0, cleaned: 0}
   
 };
 
