@@ -1515,7 +1515,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  КЪМПИНГ Import\n');
+  console.log('🚀 Starting Filstar  CARP аксесоари Import\n');
   console.log('📋 Categories to import:');
   console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
      
