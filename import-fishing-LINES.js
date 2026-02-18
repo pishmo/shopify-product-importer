@@ -1519,9 +1519,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  CARP аксесоари Import\n');
+  console.log('🚀 Starting Filstar Влакна Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+  console.log('  - Влакно Монофилно - Категория Id - (41)');
+  console.log('  - Влакно Плетено - Категория Id - (105)');
+  console.log('  - Влакно Флуорокарбон - Id - (107)'); 
+  console.log('  - Влакно Други - Категория Id - (109)\n');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1543,11 +1546,16 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
   
-    // Групирай по категория
+         // Групирай по категория
 const productsByCategory = {
- carp_fishing: []
+      monofilament: [],
+      braided: [],
+      fluorocarbon: [],
+      other: []
 	  
     };
+	
+	
     
     accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
