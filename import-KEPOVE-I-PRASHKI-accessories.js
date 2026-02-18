@@ -1,4 +1,4 @@
-// import-3CATEGORIES-accessories.js - Импорт на 3 Категории аксесоари от Filstar API
+// import-KEPOVE-I-PRASHKI-accessories.js - Импорт на 2 Категории аксесоари от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -30,34 +30,31 @@ const WANTED_SUBCATEGORIES = {
   ]
 };
 
-
-
+	
 // Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
-  pike_and_catfish: ['45'],
-  pole_and_match: ['50'],
-  knives: ['59'],
+  ceps: ['17'],
+  prashki: ['26'],
   
 };
 
 
 
-// Shopify collection IDs - САМО 4 КАТЕГОРИИ
-const COLLECTION_MAPPING  = {
-  pike_and_catfish: 'gid://shopify/Collection/739661185406',
-  pole_and_match: 'gid://shopify/Collection/739661218174',
-  knives: 'gid://shopify/Collection/739661250942',
+// Shopify collection IDs - САМО 2 КАТЕГОРИИ
+const COLLECTION_MAPPING   = {
+
+  
+  ceps: 'gid://shopify/Collection/739661087102',
+  prashki: 'gid://shopify/Collection/739661119870',
   
 };
 
-// Статистика - САМО 3 КАТЕГОРИИ
+// Статистика - САМО 4 КАТЕГОРИИ
 const stats = {
-  pike_and_catfish: { created: 0, updated: 0, images: 0, cleaned: 0 },
-  pole_and_match: { created: 0, updated: 0, images: 0, cleaned: 0 },
-  knives: { created: 0, updated: 0, images: 0, cleaned: 0 },
-  
+  ceps: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  prashki: { created: 0, updated: 0, images: 0, cleaned: 0 }
+ 
 };
-
 
 
 
@@ -1522,11 +1519,10 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  КЪМПИНГ Import\n');
+  console.log('🚀 Starting Filstar  Кепове и Прашки  Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари щука и сом - Категория Id - (45)');
-  console.log('  - Аксесоари щека и мач - Категория Id - (50)');
-  console.log('  - Ножове - Категория Id - (59)'); 
+  console.log('  - Аксесоари Живарници и кепове - Категория Id - (17)');
+  console.log('  - Аксесоари Прашки - Категория Id - (11)');
  
 
      
