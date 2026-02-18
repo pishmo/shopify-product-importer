@@ -1542,7 +1542,7 @@ console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
   
     // Групирай по категория
   const productsByCategory = {
-      ceps:: [],
+      ceps: [],
       prashki: []
      
       
