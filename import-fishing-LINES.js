@@ -469,19 +469,19 @@ function getCategoryType(product) {
   return null;
 }
 
-
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    carp_fishing: 'Аксесоари Шарански риболов'
+  monofilament: 'Влакно Монофилно',
+  braided: 'Влакно Плетено',
+  fluorocarbon: 'Влакно Флуорокарбон',
+  other: 'Елакно Други'
+  
    
   };
   
-  return names[categoryType] || 'Аксесоари Шарански риболов';
+  return names[categoryType] || 'Макари';
 }
-
-
-
 
 
 
