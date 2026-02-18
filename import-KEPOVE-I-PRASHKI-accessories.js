@@ -1542,9 +1542,9 @@ console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
   
     // Групирай по категория
   const productsByCategory = {
-      pike_and_catfish: [],
-      pole_and_match: [],
-      knives: [],
+      ceps:: [],
+      prashki: []
+     
       
 	  
     };
