@@ -1530,9 +1530,15 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  CARP аксесоари Import\n');
+  console.log('🚀 Starting Filstar Въдици Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+  console.log('  -  Телескопи с водачи - Категория Id - (33)');
+  console.log('  -  Телескопи без водачи- Категория Id - (38)');
+  console.log('  -  Шарански пръчки - Категория Id - (44)');
+  console.log('  -  Мач и Фидер - Категория Id - (47)');
+  console.log('  -  Специални пръчки - Категория Id - (57)');
+  console.log('  -  Комплекти - Категория Id - (56)');
+  console.log('  -  Спининг - Категория Id - (28)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1554,11 +1560,18 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
   
-    // Групирай по категория
+      // Групирай по категория
 const productsByCategory = {
- carp_fishing: []
+  telescopes_with_guides: [],
+  telescopes_without_guides: [],
+  carp_rods: [],
+  match_feeder: [],
+  specialty_rods: [],
+  kits: [],
+  spinning: []
 	  
     };
+	
     
     accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
