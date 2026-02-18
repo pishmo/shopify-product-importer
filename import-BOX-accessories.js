@@ -1508,7 +1508,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  КЪМПИНГ Import\n');
+  console.log('🚀 Starting Filstar  Кутии, Калъфи, Раници.... Import\n');
   console.log('📋 Categories to import:');
    console.log('  - Аксесоари Кутии и калъфи - Категория Id - (61)');
      
