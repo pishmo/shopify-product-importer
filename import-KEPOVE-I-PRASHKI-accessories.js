@@ -1,4 +1,4 @@
-// import-KEPOVE-I-PRASHKI-accessories.js - Импорт на 2 Категории аксесоари от Filstar API
+// import-KEPOVE-I-PRASHKI-accessories.js - Импорт на Кепове, Живарници и прашки от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
 const fs = require('fs').promises;
@@ -30,7 +30,8 @@ const WANTED_SUBCATEGORIES = {
   ]
 };
 
-	
+
+
 // Filstar category IDs за аксесоари - САМО 4 КАТЕГОРИИ
 const FILSTAR_ACCESSORIES_CATEGORY_IDS = {
   ceps: ['17'],
@@ -55,6 +56,7 @@ const stats = {
   prashki: { created: 0, updated: 0, images: 0, cleaned: 0 }
  
 };
+
 
 
 
@@ -466,21 +468,18 @@ function getCategoryType(product) {
 }
 
 
- 
-  
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-       ceps: 'Живарници и кепове',
-       prashki: 'Прашки'
+    carp_fishing: 'Аксесоари Шарански риболов'
    
   };
   
-  return names[categoryType] || 'Кепове, Живарници и пражки';
+  return names[categoryType] || 'Аксесоари Шарански риболов';
 }
 
 
-  
+
 
 
 
@@ -1518,12 +1517,9 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  Кепове и Прашки  Import\n');
+  console.log('🚀 Starting Filstar  CARP аксесоари Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари Живарници и кепове - Категория Id - (17)');
-  console.log('  - Аксесоари Прашки - Категория Id - (11)');
- 
-
+  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1546,14 +1542,10 @@ console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
   
     // Групирай по категория
-  const productsByCategory = {
-      pike_and_catfish: [],
-      pole_and_match: [],
-      knives: [],
-      
+const productsByCategory = {
+ carp_fishing: []
 	  
     };
-  
     
     accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
