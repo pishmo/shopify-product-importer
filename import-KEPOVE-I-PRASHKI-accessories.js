@@ -467,17 +467,16 @@ function getCategoryType(product) {
 
 
  
-  // Функция за получаване на име на категория
+  
+// Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    pike_and_catfish: 'Аксесоари щука и сом',
-    pole_and_match: 'Аксесоари щека и мач',
-    knives: 'Ножове',
-   
+       ceps: 'Живарници и кепове',
+       prashki: 'Прашки'
    
   };
   
-  return names[categoryType] || '3 Категории Аксесоари';
+  return names[categoryType] || 'Кепове, Живарници и пражки';
 }
 
 
