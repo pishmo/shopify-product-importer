@@ -486,17 +486,25 @@ function getCategoryType(product) {
 }
 
 
-// Функция за получаване на име на категория
+
+	// Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    carp_fishing: 'Аксесоари Шарански риболов'
+    
+    shoes: 'Обувки',
+    tshirts: 'Тениски',
+    pants: 'Панталони',
+    jackets: 'Якета',
+    hats: 'Шапки',
+    gloves: 'Ръкавици',
+    sunglasses: 'Слънчеви очила',
+    sets: 'Комплекти и костюми',
+    other: 'Друго облекло'
    
   };
   
-  return names[categoryType] || 'Аксесоари Шарански риболов';
+  return names[categoryType] || 'Облекло';
 }
-
-
 
 
 
