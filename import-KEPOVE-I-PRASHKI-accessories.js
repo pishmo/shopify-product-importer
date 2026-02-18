@@ -1517,9 +1517,10 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  CARP аксесоари Import\n');
+  console.log('🚀 Starting Filstar  Кепове, Живарници и Прашки  Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+  console.log('  - Аксесоари Живарници и кепове - Категория Id - (17)');
+  console.log('  - Аксесоари Прашки - Категория Id - (11)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1542,10 +1543,14 @@ console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
   
     // Групирай по категория
-const productsByCategory = {
- carp_fishing: []
+  const productsByCategory = {
+      pike_and_catfish: [],
+      pole_and_match: [],
+      knives: [],
+      
 	  
     };
+  
     
     accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
