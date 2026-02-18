@@ -473,17 +473,19 @@ function getCategoryType(product) {
 }
 
 
-// Функция за получаване на име на категория
+	// Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    carp_fishing: 'Аксесоари Шарански риболов'
+    front_drag: 'Front Drag Reels',
+    rear_drag: 'Rear Drag Reels',
+    baitrunner: 'Baitrunner Reels',
+    multipliers: 'Multiplier Reels',
+    other: 'Other Reels'
    
   };
   
-  return names[categoryType] || 'Аксесоари Шарански риболов';
+  return names[categoryType] || 'Макари';
 }
-
-
 
 
 
