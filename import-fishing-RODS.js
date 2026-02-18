@@ -53,20 +53,15 @@ const FILSTAR_RODS_CATEGORY_IDS = {
   spinning: ['28']
 };
 
-const REELS_PARENT_ID = '6';
-
 const stats = {
-  telescopes_with_guides: { created: 0, updated: 0, images: 0 },
-  telescopes_without_guides: { created: 0, updated: 0, images: 0 },
-  carp_rods: { created: 0, updated: 0, images: 0 },
-  match_feeder: { created: 0, updated: 0, images: 0 },
-  specialty_rods: { created: 0, updated: 0, images: 0 },
-  kits: { created: 0, updated: 0, images: 0 },
-  spinning: { created: 0, updated: 0, images: 0 }
+  telescopes_with_guides: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  telescopes_without_guides: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  carp_rods: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  match_feeder: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  specialty_rods: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  kits: { created: 0, updated: 0, images: 0, cleaned: 0 },
+  spinning: { created: 0, updated: 0, images: 0, cleaned: 0 }
 };
-
-
-
 
 
 
