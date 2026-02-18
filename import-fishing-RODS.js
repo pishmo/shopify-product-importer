@@ -32,54 +32,39 @@ const WANTED_SUBCATEGORIES = {
 
 
 
-
-	// Filstar категории за облекло
-const FILSTAR_CLOTHING_CATEGORY_IDS = {
-  shoes: ['90'],
-  tshirts: ['84'],
-  pants: ['85'],
-  jackets: ['86'],
-  hats: ['88'],
-  gloves: ['89'],
-  sunglasses: ['92'],
-  sets: ['87'],
-  other: ['95']
-};
-
-	
-
-const CLOTHING_PARENT_ID = '10';
-
-
-// Колекции за облекло (TODO: добави GID-овете на колекциите)
 const COLLECTION_MAPPING = {
-  shoes: 'gid://shopify/Collection/739347595646',
-  tshirts: 'gid://shopify/Collection/739347038590',
-  pants: 'gid://shopify/Collection/739347136894',
-  jackets: 'gid://shopify/Collection/739347235198',
-  hats: 'gid://shopify/Collection/739347399038',
-  gloves: 'gid://shopify/Collection/739347530110',
-  sunglasses: 'gid://shopify/Collection/739347628414',
-  sets: 'gid://shopify/Collection/739347267966',
-  other: 'gid://shopify/Collection/739347661182'
-
-
+  telescopes_with_guides: 'gid://shopify/Collection/739156001150',
+  telescopes_without_guides: 'gid://shopify/Collection/739156033918',
+  carp_rods: 'gid://shopify/Collection/739156099454',
+  match_feeder: 'gid://shopify/Collection/739156132222',
+  specialty_rods: 'gid://shopify/Collection/739156230526',
+  kits: 'gid://shopify/Collection/739156164990',
+  spinning: 'gid://shopify/Collection/739155968382'
 };
 
 
+const FILSTAR_RODS_CATEGORY_IDS = {
+  telescopes_with_guides: ['33'],
+  telescopes_without_guides: ['38'],
+  carp_rods: ['44'],
+  match_feeder: ['47'],
+  specialty_rods: ['57'],
+  kits: ['56'],
+  spinning: ['28']
+};
 
-// Статистика
+const REELS_PARENT_ID = '6';
+
 const stats = {
-  shoes: { created: 0, updated: 0, images: 0 },
-  tshirts: { created: 0, updated: 0, images: 0 },
-  pants: { created: 0, updated: 0, images: 0 },
-  jackets: { created: 0, updated: 0, images: 0 },
-  hats: { created: 0, updated: 0, images: 0 },
-  gloves: { created: 0, updated: 0, images: 0 },
-  sunglasses: { created: 0, updated: 0, images: 0 },
-  sets: { created: 0, updated: 0, images: 0 },
-  other: { created: 0, updated: 0, images: 0 }
+  telescopes_with_guides: { created: 0, updated: 0, images: 0 },
+  telescopes_without_guides: { created: 0, updated: 0, images: 0 },
+  carp_rods: { created: 0, updated: 0, images: 0 },
+  match_feeder: { created: 0, updated: 0, images: 0 },
+  specialty_rods: { created: 0, updated: 0, images: 0 },
+  kits: { created: 0, updated: 0, images: 0 },
+  spinning: { created: 0, updated: 0, images: 0 }
 };
+
 
 
 
