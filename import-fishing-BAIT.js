@@ -1525,9 +1525,14 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  CARP аксесоари Import\n');
+  console.log('🚀 Starting Filstar Захранкии стръв Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+  console.log('  - Захранка - Категория Id - (66)');
+  console.log('  - Бойли и пелети - Категория Id - (69)');
+  console.log('  - Добавки - Категория Id - (71)');
+  console.log('  - Семена - Категория Id - (73)');
+  console.log('  - Пасти - Категория Id - (75)');
+  console.log('  - Други захранки - Категория Id - (77)');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1551,7 +1556,13 @@ console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
   
     // Групирай по категория
 const productsByCategory = {
- carp_fishing: []
+  
+  groundbait: [],
+  boilies: [],
+  additives: [],
+  seeds: [],
+  pastes: [],
+  other: []
 	  
     };
     
