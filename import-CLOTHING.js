@@ -1535,9 +1535,16 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 // MAIN функция   =================================================================================================================================
 
   async function main() {
-  console.log('🚀 Starting Filstar  CARP аксесоари Import\n');
+  console.log('🚀 Starting Filstar Облекло Import\n');
   console.log('📋 Categories to import:');
-  console.log('  - Аксесоари - Шарански Риболов -  Категория Id - (37)');
+  console.log('  - Обувки - Категория Id - (90)');
+  console.log('  - Панталовни - Категория Id - (86)');
+  console.log('  - Якета Id - (59)'); 
+  console.log('  - Шапки Id - (88)'); 
+  console.log('  - Ръкавици Id - (89)');
+  console.log('  - Очила Id - (92)');
+  console.log('  - Комплекти Id - (87)');
+  console.log('  - Други Id - (95)\n');
      
   try {
     // Fetch всички продукти от Filstar
@@ -1559,11 +1566,20 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 console.log(`🎯 Found ${accessoryProducts.length} products to process\n`);
 	  
   
-    // Групирай по категория
+      // Групирай по категория
 const productsByCategory = {
- carp_fishing: []
+    shoes: [],
+    tshirts: [],
+    pants: [],
+    jackets: [],
+    hats: [],
+    gloves: [],
+    sunglasses: [],
+    sets: [],
+    other: []
 	  
     };
+	
     
     accessoryProducts.forEach(product => {
       const categoryType = getCategoryType(product);
