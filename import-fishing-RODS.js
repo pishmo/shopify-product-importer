@@ -484,14 +484,21 @@ function getCategoryType(product) {
 // Функция за получаване на име на категория
 function getCategoryName(categoryType) {
   const names = {
-    carp_fishing: 'Аксесоари Шарански риболов'
+    
+    telescopes_with_guides: 'Телескопи с водачи',
+    telescopes_without_guides: 'Телескопи без водачи',
+    carp_rods: 'Шарански пръчки',
+    match_feeder: 'Мач и Фидер',
+    specialty_rods: 'Специални пръчки',
+    kits: 'Комплекти',
+    spinning: 'Спининг'
+	
    
   };
   
-  return names[categoryType] || 'Аксесоари Шарански риболов';
+  return names[categoryType] || 'Въдици';
 }
-
-
+	
 
 
 
