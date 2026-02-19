@@ -161,16 +161,11 @@ async function deleteShopifyProduct(productId) {
 //  Тука се оправят имената на снимките   =============================================================================================================
 
 function getImageFilename(src) {
-  if (!src || typeof src !== 'string') return null;
-
+  if (!src) return null;
   let filename = src.split('/').pop().split('?')[0];
-  const lastDot = filename.lastIndexOf('.');
-  let name = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
-
-  const finalName = name.toLowerCase();
-  return finalName.endsWith('.jpg') ? finalName : finalName + '.jpg';
+  let name = filename.substring(0, filename.lastIndexOf('.')) || filename;
+  return name.toLowerCase() + '.jpg';
 }
-
 
 
 // 2. Normalize - просто вика горната
