@@ -163,15 +163,10 @@ async function deleteShopifyProduct(productId) {
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
 
-  // 1. Извличаме името от URL (всичко след последната наклонена черта и преди ?)
   let filename = src.split('/').pop().split('?')[0];
-  
-  // 2. Намираме къде е последната точка, за да махнем старото разширение
   const lastDot = filename.lastIndexOf('.');
   let name = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
 
-  // 3. Връщаме името непроменено + .jpg (Нормализация)
-  // Така _______zodiak.png става _______zodiak.jpg
   const finalName = name.toLowerCase();
   return finalName.endsWith('.jpg') ? finalName : finalName + '.jpg';
 }
