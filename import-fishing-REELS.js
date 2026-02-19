@@ -1388,21 +1388,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                     needsUpload = false;
                     break;
                 }
+          			
+			}
 
-                // Ако Shopify името съдържа оригинала + UID (превантивно чистене тук)
-                if (shopifyFilename.startsWith(rawFilstarName.split('.')[0]) && shopifyFilename.length > rawFilstarName.length) {
-                    console.log(`      🗑️  Found UID version: ${shopifyFilename}. Deleting...`);
-                    const imageId = edge.node.id.split('/').pop();
-                    const numericProductId = productGid.split('/').pop();
-
-                    await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericProductId}/images/${imageId}.json`, {
-                        method: 'DELETE',
-                        headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
-                    });
-                }
-            }
-
-            if (needsUpload) {
+        			
+			
+			if (needsUpload) {
                 console.log(`      🚀 Uploading: ${rawFilstarName}`);
                 let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
                 const buffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.id || 'id');
