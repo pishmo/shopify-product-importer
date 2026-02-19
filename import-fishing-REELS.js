@@ -164,8 +164,14 @@ function getImageFilename(src) {
   if (!src) return null;
   let filename = src.split('/').pop().split('?')[0];
   let name = filename.substring(0, filename.lastIndexOf('.')) || filename;
+  
+  // ДОБАВИ ТОЗИ РЕД:
+  name = name.replace(/^_+/, ''); 
+
   return name.toLowerCase() + '.jpg';
 }
+
+
 
 
 // 2. Normalize - просто вика горната
