@@ -1264,6 +1264,9 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 			if (stats[categoryType]) stats[categoryType].cleaned += deletedCount;
         }
 
+
+
+		
         // =====================================================================
         // 🚀 СЕКЦИЯ 2: ИЗВЛИЧАНЕ НА ТЕКУЩИ ДАННИ ОТ SHOPIFY
         // =====================================================================
