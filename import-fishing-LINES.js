@@ -1367,7 +1367,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             }
         }
 
-        // =====================================================================
+       // =====================================================================
         // 🚀 СЕКЦИЯ 5: КАЧВАНЕ НА МЕДИЯ (БЕЗ БЕЛЕНЕ НА ОРИГИНАЛА)
         // =====================================================================
         const filstarUrls = [
@@ -1384,12 +1384,16 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             if (!rawFilstarName || processedFilstarNames.has(rawFilstarName)) continue;
             processedFilstarNames.add(rawFilstarName);
 
+            // --- ДЕФИНИЦИЯТА НА baseName ---
+            const baseName = rawFilstarName.split('.')[0]; 
+
             let needsUpload = true;
             console.log(`    🔍 Testing: ${rawFilstarName}`);
 
             for (const edge of fullProduct.images.edges) {
                 const shopifyFilename = getImageFilename(edge.node.src);
                 
+                // Проверка дали името в Shopify започва с нашето (разпознава UUID опашки)
                 if (shopifyFilename.startsWith(baseName)) {
                     console.log(`      ✅ Match found: ${shopifyFilename}. Skipping upload.`);
                     needsUpload = false;
@@ -1400,6 +1404,8 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             if (needsUpload) {
                 console.log(`      🚀 Uploading: ${rawFilstarName}`);
                 let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
+                
+                // Използваме твоите функции normalizeImage и uploadImageToShopify
                 const buffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.id || 'id');
                 
                 if (buffer) {
@@ -1422,12 +1428,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
                         const attachData = await attachRes.json();
                         const newId = attachData.data?.productCreateMedia?.media?.[0]?.id;
                         if (newId) newMediaMap[rawFilstarName] = newId;
-						if (stats[categoryType]) stats[categoryType].images++;
+                        if (stats[categoryType]) stats[categoryType].images++;
                     }
                 }
             }
         }
-
     
 		
 		
