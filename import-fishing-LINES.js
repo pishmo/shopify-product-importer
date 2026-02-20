@@ -1387,8 +1387,8 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             for (const edge of fullProduct.images.edges) {
                 const shopifyFilename = getImageFilename(edge.node.src);
                 
-                if (shopifyFilename === rawFilstarName) {
-                    console.log(`      ✅ Exact match in Shopify. Skipping.`);
+                if (shopifyFilename.startsWith(baseName)) {
+                    console.log(`      ✅ Match found: ${shopifyFilename}. Skipping upload.`);
                     needsUpload = false;
                     break;
                 }
