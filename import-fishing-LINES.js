@@ -91,42 +91,45 @@ async function cleanupProductUIDImages(productGid, filstarProduct) {
     try {
         const numericId = productGid.replace('gid://shopify/Product/', '');
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}/images.json`, {
-            method: 'GET', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
+            method: 'GET', 
+            headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
         });
         const data = await res.json();
         const shopifyImages = data.images || [];
+
+        // Ако има 0 или 1 снимка, не пипаме нищо за безопасност
         if (shopifyImages.length <= 1) return 0;
 
-        // Всички легитимни имена от Filstar за този продукт
-        const validFilstarNames = new Set([
+        // Всички легитимни имена от Filstar за този продукт (изчистени)
+        const validFilstarBaseNames = new Set([
             ...(filstarProduct.images || []),
             ...filstarProduct.variants.filter(v => v.image).map(v => v.image)
-        ].map(url => getImageFilename(url)));
+        ].map(url => getImageFilename(url).split('.')[0])); // взимаме само името без .jpg
 
         let deleted = 0;
         for (const img of shopifyImages) {
             const sName = img.src.split('/').pop().split('?')[0];
             
-            // Ако името го няма в списъка на Filstar, но започва като някое от тях
-            // (т.е. има добавен UID от Shopify), го трием.
-            if (!validFilstarNames.has(sName)) {
-                const isUIDVersion = Array.from(validFilstarNames).some(vName => sName.startsWith(vName.split('.')[0]) && sName.includes('_'));
-                
-                if (isUIDVersion) {
-                    console.log(`  🗑️  Cleanup UID: ${sName}`);
-                    await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}/images/${img.id}.json`, {
-                        method: 'DELETE', headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
-                    });
-					                
-					deleted++;
-                }
+            // Проверяваме дали това име в Shopify ЗАПОЧВА с някое от нашите имена
+            const matchesAnyValid = Array.from(validFilstarBaseNames).some(baseName => sName.startsWith(baseName));
+
+            // АКО НЕ ПРИЛИЧА на нито едно наше име (т.е. е тотално чужд файл), 
+            // ИЛИ ако искаш да триеш само ако е дубликат (но за момента е по-добре така):
+            if (!matchesAnyValid) {
+                console.log(`  🗑️  Cleanup (Unknown or old file): ${sName}`);
+                await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/products/${numericId}/images/${img.id}.json`, {
+                    method: 'DELETE', 
+                    headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN }
+                });
+                deleted++;
             }
         }
         return deleted;
-    } catch (e) { return 0; }
+    } catch (e) { 
+        console.error("Error in cleanup:", e);
+        return 0; 
+    }
 }
-
-
 
 
 
