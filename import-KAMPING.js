@@ -1,5 +1,5 @@
 // import-CAMPING.js - Импорт на КЪМПИГ от Filstar API
-const fetch = require('node-fetch');
+const fetch = require('node-fetch'); 
 const sharp = require('sharp');
 const fs = require('fs').promises;
 const path = require('path');
