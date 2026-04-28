@@ -1,6 +1,6 @@
 // import-KEPOVE-I-PRASHKI-accessories.js - Импорт на Кепове, Живарници и прашки от Filstar API
 const fetch = require('node-fetch');
-const sharp = require('sharp');
+const sharp = require('sharp'); 
 const fs = require('fs').promises;
 const path = require('path');
 
