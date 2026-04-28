@@ -1,7 +1,7 @@
 // import-CARP-accessories.js - Импорт на CARP аксесоари от Filstar API
 const fetch = require('node-fetch');
 const sharp = require('sharp');
-const fs = require('fs').promises;
+const fs = require('fs').promises; 
 const path = require('path');
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN;
