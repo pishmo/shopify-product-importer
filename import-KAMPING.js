@@ -1238,14 +1238,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
 
 
 
-
-
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
-    const productName = filstarProduct.name;
-    const productGid = shopifyProduct.id;
-
-    console.log(`\n${'='.repeat(40)}`);
-    console.log(`🔄 [Pasync function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
     const productName = filstarProduct.name;
     const productGid = shopifyProduct.id;
 
@@ -1463,7 +1456,6 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         console.error(`❌ CRITICAL ERROR in Update:`, error.message);
     }
 }
-
 
 
 // MAIN функция   =================================================================================================================================
