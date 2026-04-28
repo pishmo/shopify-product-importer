@@ -1,6 +1,6 @@
 // import-3CATEGORIES-accessories.js - Импорт на 3 Категории аксесоари от Filstar API
 const fetch = require('node-fetch');
-const sharp = require('sharp');
+const sharp = require('sharp'); 
 const fs = require('fs').promises;
 const path = require('path');
 
