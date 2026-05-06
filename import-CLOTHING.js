@@ -1516,6 +1516,12 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
 // място за филтъра
 
+	
+		// Филтър за конкретни SKU (ако е нужно)
+    const targetSkus = ['960120']; // Замени с реалните SKU-та
+    accessoryProducts = accessoryProducts.filter(product => 
+      product.variants && product.variants.some(v => targetSkus.includes(v.sku))
+    );
 
   
 
