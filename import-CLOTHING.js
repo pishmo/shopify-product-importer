@@ -919,99 +919,60 @@ async function createShopifyProduct(filstarProduct, categoryType) {
     if (filstarProduct.images && filstarProduct.images.length > 0) {
       console.log(`  🖼️  Uploading ${filstarProduct.images.length} images...`);
       
-     
-	for (const imageUrl of filstarProduct.images) {
-        // 1. Първоначално белене
-        let rawCleanName = getImageFilename(imageUrl); 
+for (const imageUrl of filstarProduct.images) {
+        // 1. Взимаме директно името от URL и го правим малки букви
+        let filename = imageUrl.split('/').pop().split('?')[0].toLowerCase();
         
-        // 2. Логика за уникално име (индексиране)
-        let filename;
-        if (!nameCounts[rawCleanName]) {
-            filename = rawCleanName; // Първи път: 963811.jpg
-            nameCounts[rawCleanName] = 1;
-        } else {
-            // Втори път: 963811-1.jpg, 963811-2.jpg...
-            const lastDot = rawCleanName.lastIndexOf('.');
-            const namePart = lastDot !== -1 ? rawCleanName.substring(0, lastDot) : rawCleanName;
-            const extPart = lastDot !== -1 ? rawCleanName.substring(lastDot) : '.jpg';
-            
-            filename = `${namePart}-${nameCounts[rawCleanName]}${extPart}`;
-            nameCounts[rawCleanName]++;
-        }
-		  
-		  
+        // 2. Сменяме разширението само на .jpg
+        filename = filename.replace(/\.[^/.]+$/, "") + ".jpg";
+        
         const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${FILSTAR_BASE_URL}/${imageUrl}`;
-        
         const normalizedBuffer = await normalizeImage(fullImageUrl, filstarProduct.variants[0].sku);
         
         if (normalizedBuffer) {
-          const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
-          
-          if (resourceUrl) {
-
-            const altText = filstarProduct.name.replace(/"/g, '\\"'); // Ескейпваме кавичките
-
-            const attachMutation = `
-              mutation {
-                productCreateMedia(
-                  productId: "${productGid}"
-                  media: [{
-                    originalSource: "${resourceUrl}"
-                    mediaContentType: IMAGE
-                    alt: "${altText}"
-                  }]
-                ) {
-                  media {
-                    ... on MediaImage {
-                      id
-                      image { url }
+            const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
+            
+            if (resourceUrl) {
+                const altText = filstarProduct.name.replace(/"/g, '\\"');
+                const attachMutation = `
+                    mutation {
+                        productCreateMedia(
+                            productId: "${productGid}"
+                            media: [{
+                                originalSource: "${resourceUrl}"
+                                mediaContentType: IMAGE
+                                alt: "${altText}"
+                            }]
+                        ) {
+                            media { ... on MediaImage { id image { url } } }
+                            mediaUserErrors { field message }
+                        }
                     }
-                  }
-                  mediaUserErrors {
-                    field
-                    message
-                  }
+                `;
+
+                const attachResponse = await fetch(`https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`, {
+                    method: 'POST',
+                    headers: { 'X-Shopify-Access-Token': ACCESS_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: attachMutation })
+                });
+                
+                const attachData = await attachResponse.json();
+                
+                if (attachData.data?.productCreateMedia?.media?.[0]) {
+                    const shopifyImageId = attachData.data.productCreateMedia.media[0].id;
+                    
+                    // Важно: Записваме ГАРАНТИРАНОТО име, за да го намерим после
+                    imageMapping.set(filename, shopifyImageId);
+
+                    console.log(`    ✓ Uploaded: ${filename}`);
+                    stats[categoryType].images++;
                 }
-              }
-            `;
-
-			  
-            const attachResponse = await fetch(
-              `https://${SHOPIFY_DOMAIN}/admin/api/${API_VERSION}/graphql.json`,
-              {
-                method: 'POST',
-                headers: {
-                  'X-Shopify-Access-Token': ACCESS_TOKEN,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query: attachMutation })
-              }
-            );
-            
-            const attachData = await attachResponse.json();
-            
-           if (attachData.data?.productCreateMedia?.media?.[0]) {
-              const shopifyImageId = attachData.data.productCreateMedia.media[0].id;
-              
-              // 1. Записваме с ОРИГИНАЛНОТО чисто име (за да може вариантът да го намери)
-              // rawCleanName е името без индекси (-1, -2), което дефинирахме в началото на цикъла
-              imageMapping.set(rawCleanName, shopifyImageId);
-
-              // 2. Записваме и с УНИКАЛНОТО име (това с индекса, ако има такъв)
-              // Така Reorder логиката ще го намери, дори името да е променено
-              imageMapping.set(filename, shopifyImageId);
-
-              console.log(`    ✓ Uploaded: ${filename}`);
-              stats[categoryType].images++;
-            } else if (attachData.data?.productCreateMedia?.mediaUserErrors?.length > 0) {
-              console.log(`    ❌ Upload error: ${attachData.data.productCreateMedia.mediaUserErrors[0].message}`);
             }
-          }
         }
-        
         await new Promise(resolve => setTimeout(resolve, 500));
-      }
     }
+	
+	}
     
     // Scrape OG image
     const ogImageUrl = await scrapeOgImage(filstarProduct.slug);
