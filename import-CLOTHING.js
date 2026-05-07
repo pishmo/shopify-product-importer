@@ -1130,70 +1130,54 @@ for (const imageUrl of filstarProduct.images) {
     // ===========================================================================
     // REORDER IMAGES (Filename Match Logic)
     // ===========================================================================
-
 // ===========================================================================
-// REORDER IMAGES (ID Match Logic - Fixed)
+// REORDER IMAGES (Safe Version)
 // ===========================================================================
 if (allImages.length > 0 && ogImageUrl) {
   console.log(`\n🔄 Reordering images (Matching by ID)...`);
   
-  // 1. Взимаме ID-то на основната снимка (OG) от нашия mapping
   const ogName = getImageFilename(ogImageUrl);
-  const ogImageId = imageMapping.get(ogName);
-
-  // 2. Събираме ID-тата на всички снимки, които са закачени към варианти
+  const ogImageIdFromMapping = imageMapping.get(ogName);
   const variantImageIds = new Set(variantImageAssignments.map(a => a.imageId));
 
-  const unassignedImages = []; // FREE
-  const assignedImages = [];   // VARIANT
+  let unassignedImages = []; 
+  let assignedImages = [];   
   let ogImageNode = null;
 
-
-	
-// 3. Разпределяме снимките според техните ID-та
+  // 1. Първо разпределяме ВСИЧКИ снимки
   allImages.forEach(edge => {
     const node = edge.node;
-    const currentId = node.id;
-
-    // ПРОВЕРКА ЗА ОСНОВНА СНИМКА
-    if (currentId === ogImageId && !ogImageNode) {
+    if (node.id === ogImageIdFromMapping && !ogImageNode) {
       ogImageNode = node;
-      return; // <--- ВАЖНО: Спираме тук, за да не отиде и в долните масиви
-    }
-
-    // ПРОВЕРКА ЗА ВАРИАНТНА СНИМКА
-    if (variantImageIds.has(currentId)) {
+    } else if (variantImageIds.has(node.id)) {
       assignedImages.push(node);
     } else {
-      // Тук отиват само тези, които не са нито OG, нито VARIANT
       unassignedImages.push(node);
     }
   });
 
-	
-// 4. Генерираме финалния План за лога (с проверка за null)
-      console.log(`  📋 REORDER PLAN:`);
-      
-      const getSafeName = (node) => {
-        if (!node) return "unknown.jpg";
-        // Проверяваме всички възможни места за URL
-        const url = node.url || node.src || (node.image && node.image.url) || "";
-        return getImageFilename(url) || "unnamed.jpg";
-      };
+  // 2. СПАСИТЕЛНА ЛОДКА: Ако не сме намерили OG по ID, взимаме първата от свободните
+  if (!ogImageNode) {
+    if (unassignedImages.length > 0) {
+      ogImageNode = unassignedImages.shift(); // Вземаме първата и я махаме от "свободните"
+    } else if (assignedImages.length > 0) {
+      ogImageNode = assignedImages.shift(); // Ако няма свободни, взимаме от вариантните
+    } else {
+      ogImageNode = allImages[0].node; // Краен случай
+    }
+  }
 
-      console.log(`    1. [OG-MAIN] ${getSafeName(ogImageNode)}`);
+  // 3. ПРИНТИРАНЕ НА ПЛАНА (Безопасно)
+  console.log(`  📋 REORDER PLAN:`);
+  const getSafeName = (n) => getImageFilename(n.url || n.src || (n.image && n.image.url) || "unknown.jpg");
+  
+  console.log(`    1. [OG-MAIN] ${getSafeName(ogImageNode)}`);
+  unassignedImages.forEach((img, i) => console.log(`    ${i + 2}. [FREE]    ${getSafeName(img)}`));
+  
+  const startVarIdx = unassignedImages.length + 2;
+  assignedImages.forEach((img, i) => console.log(`    ${startVarIdx + i}. [VARIANT] ${getSafeName(img)}`));
 
-      unassignedImages.forEach((img, i) => {
-          console.log(`    ${i + 2}. [FREE]    ${getSafeName(img)}`);
-      });
-      
-      const startVarIdx = unassignedImages.length + 2;
-      assignedImages.forEach((img, i) => {
-          console.log(`    ${startVarIdx + i}. [VARIANT] ${getSafeName(img)}`);
-      });
-
-	
-  // 5. Подготвяме финалния масив с ID-та и позиции
+  // 4. ГЕНЕРИРАНЕ НА ФИНАЛНИЯ СПИСЪК С ID
   const finalOrderIds = [
     ogImageNode.id,
     ...unassignedImages.map(img => img.id),
@@ -1205,10 +1189,8 @@ if (allImages.length > 0 && ogImageUrl) {
     position: index + 1
   }));
 
-  // Викаме твоята функция
   await reorderProductImages(productGid, itemsToReorder);
 }
-
 	  
 	  
     return productGid;
