@@ -1212,7 +1212,7 @@ if (allImages.length > 0 && ogImageUrl) {
 async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType) {
     const productName = filstarProduct.name;
     const productGid = shopifyProduct.id;
-
+    const clean = (str) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
     console.log(`\n${'='.repeat(40)}`);
     console.log(`🔄 [PROCESS] ${productName}`);
     console.log(`${'='.repeat(40)}`);
@@ -1354,8 +1354,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 		for (const edge of fullProduct.images.edges) {
     const shopifyName = getImageFilename(edge.node.src);
     
-    // ФУНКЦИЯ ЗА ПЪЛНО ПОЧИСТВАНЕ (маха тирета, черти и точки)
-    const clean = (str) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+    
 
     if (clean(shopifyName) === clean(rawFilstarName)) {
         needsUpload = false;
@@ -1400,7 +1399,7 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
 
         // --- СЕКЦИЯ 6: СВЪРЗВАНЕ С ВАРИАНТИТЕ (БЕЗ SLEEP) ---
         
-		const clean = (str) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+		
 		
 		
 		console.log(`    🔗 Linking images to variants...`);
