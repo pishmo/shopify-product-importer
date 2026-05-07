@@ -1165,13 +1165,23 @@ if (allImages.length > 0 && ogImageUrl) {
   // Резерва: ако не сме намерили OG по ID, ползваме първата от списъка
   if (!ogImageNode) ogImageNode = allImages[0].node;
 
-  // 4. Генерираме лог за плана
-  console.log(`  📋 REORDER PLAN:`);
-  console.log(`    1. [OG-MAIN] ID: ${ogImageNode.id}`);
-  unassignedImages.forEach((img, i) => console.log(`    ${i + 2}. [FREE]    ID: ${img.id}`));
-  const startVarIdx = unassignedImages.length + 2;
-  assignedImages.forEach((img, i) => console.log(`    ${startVarIdx + i}. [VARIANT] ID: ${img.id}`));
+ // 4. Генерираме финалния План за лога (с ИМЕНА за прегледност)
+      console.log(`  📋 REORDER PLAN:`);
+      
+      // Вземаме името от URL-а на обекта, който Shopify ни е върнал
+      const mainNameLog = getImageFilename(ogImageNode.url || ogImageNode.src || "");
+      console.log(`    1. [OG-MAIN] ${mainNameLog}`);
 
+      unassignedImages.forEach((img, i) => {
+          const name = getImageFilename(img.url || img.src);
+          console.log(`    ${i + 2}. [FREE]    ${name}`);
+      });
+      
+      const startVarIdx = unassignedImages.length + 2;
+      assignedImages.forEach((img, i) => {
+          const name = getImageFilename(img.url || img.src);
+          console.log(`    ${startVarIdx + i}. [VARIANT] ${name}`);
+      });
   // 5. Подготвяме финалния масив с ID-та и позиции
   const finalOrderIds = [
     ogImageNode.id,
