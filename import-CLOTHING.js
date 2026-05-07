@@ -914,7 +914,7 @@ for (const imageUrl of filstarProduct.images) {
         filename = filename.replace(/\.[^/.]+$/, "") + ".jpg";
         
         const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${FILSTAR_BASE_URL}/${imageUrl}`;
-        const normalizedBuffer = await normalizeImage(fullImageUrl, filstarProduct.variants[0].sku);
+        const normalizedBuffer = await normalizeImage(fullImageUrl, filename);
         
         if (normalizedBuffer) {
             const resourceUrl = await uploadImageToShopify(normalizedBuffer, filename);
