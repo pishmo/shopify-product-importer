@@ -921,7 +921,7 @@ async function createShopifyProduct(filstarProduct, categoryType) {
       
 for (const imageUrl of filstarProduct.images) {
         // 1. Взимаме директно името от URL и го правим малки букви
-        let filename = imageUrl.split('/').pop().split('?')[0].toLowerCase();
+        let filename = imageUrl.split('/').pop().split('?')[0];
         
         // 2. Сменяме разширението само на .jpg
         filename = filename.replace(/\.[^/.]+$/, "") + ".jpg";
