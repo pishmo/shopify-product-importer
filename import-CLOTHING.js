@@ -1130,79 +1130,65 @@ for (const imageUrl of filstarProduct.images) {
     // ===========================================================================
     // REORDER IMAGES (Filename Match Logic)
     // ===========================================================================
-    if (allImages.length > 0 && ogImageUrl) {
-      console.log(`\n🔄 Reordering images (Matching by Filename)...`);
-      
-      // 1. Събираме чистите имена на снимките, които сме асоциирали с варианти
-      const variantNames = new Set();
-      variantImageAssignments.forEach(assignment => {
-        for (let [name, id] of imageMapping.entries()) {
-          if (id === assignment.imageId) {
-            variantNames.add(name);
-          }
-        }
-      });
 
-      // 2. Взимаме името на основната (OG) снимка
-      const ogName = getImageFilename(ogImageUrl);
+// ===========================================================================
+// REORDER IMAGES (ID Match Logic - Fixed)
+// ===========================================================================
+if (allImages.length > 0 && ogImageUrl) {
+  console.log(`\n🔄 Reordering images (Matching by ID)...`);
+  
+  // 1. Взимаме ID-то на основната снимка (OG) от нашия mapping
+  const ogName = getImageFilename(ogImageUrl);
+  const ogImageId = imageMapping.get(ogName);
 
-      const unassignedImages = []; // Свободни (FREE)
-      const assignedImages = [];   // Вариантни (VARIANT)
-      let ogImageNode = null;
+  // 2. Събираме ID-тата на всички снимки, които са закачени към варианти
+  const variantImageIds = new Set(variantImageAssignments.map(a => a.imageId));
 
-      // 3. Разпределяме снимките според имената им в Shopify
-      allImages.forEach(edge => {
-        const node = edge.node;
-        const currentName = getImageFilename(node.url || node.src);
+  const unassignedImages = []; // FREE
+  const assignedImages = [];   // VARIANT
+  let ogImageNode = null;
 
-        // Проверяваме дали това е основната снимка
-        if (currentName === ogName && !ogImageNode) {
-          ogImageNode = node;
-          return;
-        }
+  // 3. Разпределяме снимките според техните ID-та
+  allImages.forEach(edge => {
+    const node = edge.node;
+    const shopifyId = node.id;
 
-        // Проверяваме дали името съвпада с някой вариант
-        if (variantNames.has(currentName)) {
-          assignedImages.push(node);
-        } else {
-          unassignedImages.push(node);
-        }
-      });
-
-      // Ако не сме намерили OG по име, взимаме първата налична като резерва
-      if (!ogImageNode) ogImageNode = allImages[0].node ? allImages[0].node : allImages[0];
-
-      // 4. Генерираме финалния План за лога
-      console.log(`  📋 REORDER PLAN:`);
-      const mainNameLog = getImageFilename(ogImageNode.url || ogImageNode.src || "");
-      console.log(`    1. [OG-MAIN] ${mainNameLog}`);
-
-      unassignedImages.forEach((img, i) => {
-          const name = getImageFilename(img.url || img.src);
-          console.log(`    ${i + 2}. [FREE]    ${name}`);
-      });
-      
-      const startVarIdx = unassignedImages.length + 2;
-      assignedImages.forEach((img, i) => {
-          const name = getImageFilename(img.url || img.src);
-          console.log(`    ${startVarIdx + i}. [VARIANT] ${name}`);
-      });
-
-      // 5. ПОДГОТОВКА НА ID-тата ЗА ШОПИФАЙ
-      // Важно: тук ползваме node.id, което Shopify ни върна в allImages (ProductImage ID)
-      const finalOrderIds = [
-        ogImageNode.id,
-        ...unassignedImages.map(img => img.id),
-        ...assignedImages.map(img => img.id)
-      ];
-
-      const itemsToReorder = finalOrderIds.map((id, index) => ({
-        id: id,
-        position: index + 1
-      }));
-
-      await reorderProductImages(productGid, itemsToReorder);
+    if (shopifyId === ogImageId && !ogImageNode) {
+      ogImageNode = node;
+    } else if (variantImageIds.has(shopifyId)) {
+      assignedImages.push(node);
+    } else {
+      unassignedImages.push(node);
     }
+  });
+
+  // Резерва: ако не сме намерили OG по ID, ползваме първата от списъка
+  if (!ogImageNode) ogImageNode = allImages[0].node;
+
+  // 4. Генерираме лог за плана
+  console.log(`  📋 REORDER PLAN:`);
+  console.log(`    1. [OG-MAIN] ID: ${ogImageNode.id}`);
+  unassignedImages.forEach((img, i) => console.log(`    ${i + 2}. [FREE]    ID: ${img.id}`));
+  const startVarIdx = unassignedImages.length + 2;
+  assignedImages.forEach((img, i) => console.log(`    ${startVarIdx + i}. [VARIANT] ID: ${img.id}`));
+
+  // 5. Подготвяме финалния масив с ID-та и позиции
+  const finalOrderIds = [
+    ogImageNode.id,
+    ...unassignedImages.map(img => img.id),
+    ...assignedImages.map(img => img.id)
+  ];
+
+  const itemsToReorder = finalOrderIds.map((id, index) => ({
+    id: id,
+    position: index + 1
+  }));
+
+  // Викаме твоята функция
+  await reorderProductImages(productGid, itemsToReorder);
+}
+
+	  
 	  
     return productGid;
     
