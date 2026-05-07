@@ -1351,15 +1351,17 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             let needsUpload = true;
           
 			
-			for (const edge of fullProduct.images.edges) {
+		for (const edge of fullProduct.images.edges) {
     const shopifyName = getImageFilename(edge.node.src);
-    // Сравняваме ги, като и двете ги правим с малки букви
-    if (shopifyName && shopifyName.toLowerCase() === rawFilstarName.toLowerCase()) {
+    
+    // ФУНКЦИЯ ЗА ПЪЛНО ПОЧИСТВАНЕ (маха тирета, черти и точки)
+    const clean = (str) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+
+    if (clean(shopifyName) === clean(rawFilstarName)) {
         needsUpload = false;
         break;
     }
 }
-
 			
             if (needsUpload) {
                 console.log(`    🚀 Uploading New Image: ${rawFilstarName}`);
@@ -1397,7 +1399,11 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
         }
 
         // --- СЕКЦИЯ 6: СВЪРЗВАНЕ С ВАРИАНТИТЕ (БЕЗ SLEEP) ---
-        console.log(`    🔗 Linking images to variants...`);
+        
+		const clean = (str) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+		
+		
+		console.log(`    🔗 Linking images to variants...`);
         const currentImages = fullProduct.images.edges;
 
         for (const fv of filstarProduct.variants) {
@@ -1407,11 +1413,10 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             const targetSv = fullProduct.variants.edges.find(e => e.node.sku === fv.sku);
 
             if (targetSv) {
-               const match = currentImages.find(img => {
-    const sName = getImageFilename(img.node.src);
-    return sName && sName.toLowerCase() === targetName.toLowerCase();
-});
+              const match = currentImages.find(img => clean(getImageFilename(img.node.src)) === clean(targetName));
 
+
+				
                 if (match) {
                     const imgIdInShopify = match.node.id.split('/').pop();
                     const currentVariantImageId = targetSv.node.image?.id ? targetSv.node.image.id.split('/').pop() : null;
