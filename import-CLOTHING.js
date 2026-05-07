@@ -1349,17 +1349,22 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             processedFilstarNames.add(rawFilstarName);
 
             let needsUpload = true;
-            for (const edge of fullProduct.images.edges) {
-                if (getImageFilename(edge.node.src) === rawFilstarName) {
-                    needsUpload = false;
-                    break;
-                }
-            }
+          
+			
+			for (const edge of fullProduct.images.edges) {
+    const shopifyName = getImageFilename(edge.node.src);
+    // Сравняваме ги, като и двете ги правим с малки букви
+    if (shopifyName && shopifyName.toLowerCase() === rawFilstarName.toLowerCase()) {
+        needsUpload = false;
+        break;
+    }
+}
 
+			
             if (needsUpload) {
                 console.log(`    🚀 Uploading New Image: ${rawFilstarName}`);
                 let fullUrl = url.trim().startsWith('http') ? url.trim() : `${FILSTAR_BASE_URL}/${url.trim().replace(/^\//, '')}`;
-                const buffer = await normalizeImage(encodeURI(fullUrl), filstarProduct.variants[0].sku);
+                 const buffer = await normalizeImage(encodeURI(fullUrl), rawFilstarName);
                 
                 if (buffer) {
                     const resourceUrl = await uploadImageToShopify(buffer, rawFilstarName);
@@ -1402,7 +1407,10 @@ async function updateShopifyProduct(shopifyProduct, filstarProduct, categoryType
             const targetSv = fullProduct.variants.edges.find(e => e.node.sku === fv.sku);
 
             if (targetSv) {
-                const match = currentImages.find(img => getImageFilename(img.node.src) === targetName);
+               const match = currentImages.find(img => {
+    const sName = getImageFilename(img.node.src);
+    return sName && sName.toLowerCase() === targetName.toLowerCase();
+});
 
                 if (match) {
                     const imgIdInShopify = match.node.id.split('/').pop();
