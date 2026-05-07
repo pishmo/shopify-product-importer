@@ -1148,23 +1148,29 @@ if (allImages.length > 0 && ogImageUrl) {
   const assignedImages = [];   // VARIANT
   let ogImageNode = null;
 
-  // 3. Разпределяме снимките според техните ID-та
+
+	
+// 3. Разпределяме снимките според техните ID-та
   allImages.forEach(edge => {
     const node = edge.node;
-    const shopifyId = node.id;
+    const currentId = node.id;
 
-    if (shopifyId === ogImageId && !ogImageNode) {
+    // ПРОВЕРКА ЗА ОСНОВНА СНИМКА
+    if (currentId === ogImageId && !ogImageNode) {
       ogImageNode = node;
-    } else if (variantImageIds.has(shopifyId)) {
+      return; // <--- ВАЖНО: Спираме тук, за да не отиде и в долните масиви
+    }
+
+    // ПРОВЕРКА ЗА ВАРИАНТНА СНИМКА
+    if (variantImageIds.has(currentId)) {
       assignedImages.push(node);
     } else {
+      // Тук отиват само тези, които не са нито OG, нито VARIANT
       unassignedImages.push(node);
     }
   });
 
-  // Резерва: ако не сме намерили OG по ID, ползваме първата от списъка
-  if (!ogImageNode) ogImageNode = allImages[0].node;
-
+	
  // 4. Генерираме финалния План за лога (с ИМЕНА за прегледност)
       console.log(`  📋 REORDER PLAN:`);
       
