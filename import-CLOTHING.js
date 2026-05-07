@@ -231,7 +231,7 @@ function extractSkuFromImageFilename(filename) {
 
 
 // Функция за нормализация на изображения
-async function normalizeImage(imageUrl, sku) {
+async function normalizeImage(imageUrl, filename) { // Променяме името на параметъра за яснота
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
@@ -239,13 +239,12 @@ async function normalizeImage(imageUrl, sku) {
     const buffer = await response.buffer();
     const tempDir = path.join(__dirname, 'temp');
     
-    try {
-      await fs.access(tempDir);
-    } catch {
-      await fs.mkdir(tempDir, { recursive: true });
+    // Проверка/Създаване на темп папка
+    if (!fs.existsSync(tempDir)) {
+      await fs.mkdirSync(tempDir, { recursive: true });
     }
     
-    const filename = `${sku}_${Date.now()}.jpg`;
+    // ВАЖНО: Използваме директно filename, който идва от Create или Update
     const outputPath = path.join(tempDir, filename);
     
     await sharp(buffer)
@@ -257,7 +256,7 @@ async function normalizeImage(imageUrl, sku) {
       .toFile(outputPath);
     
     const normalizedBuffer = await fs.readFile(outputPath);
-    await fs.unlink(outputPath);
+    await fs.unlink(outputPath); // Изтриваме темп файла след прочитане
     
     return normalizedBuffer;
   } catch (error) {
@@ -265,8 +264,6 @@ async function normalizeImage(imageUrl, sku) {
     return null;
   }
 }
-
-
 
 
 
