@@ -670,7 +670,10 @@ const collectionId = COLLECTION_MAPPING[categoryType];
   }
 }
 
-// Функция за пренареждане на изображенията
+
+
+
+//   Функция за пренареждане на изображенията
 
 
 async function reorderProductImages(productGid, itemsWithPositions) {
