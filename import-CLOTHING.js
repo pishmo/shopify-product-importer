@@ -168,31 +168,21 @@ async function deleteShopifyProduct(productId) {
   console.log(` ✅ Product deleted`);
 }
 
-
-
-
-//  Тука се оправят имената на снимките   =============================================================================================================
-
-// 1. Основната функция за почистване (Хирургическа)
 function getImageFilename(src) {
   if (!src || typeof src !== 'string') return null;
 
+  // 1. Вземаме само името на файла от края на URL-а
   let filename = src.split('/').pop().split('?')[0];
+  
+  // 2. Намираме къде започва разширението
   const lastDot = filename.lastIndexOf('.');
+  
+  // 3. Режем до точката, без да пипаме нищо по самия стринг (без replace, без toLowerCase)
   let name = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
 
-  // Чистим UUID и Хешове (това вече го имаш)
-  name = name.replace(/_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i, '');
-  name = name.replace(/_[a-f0-9]{32,}$/i, '');
-
-  // ТОВА Е ВАЖНОТО: Махаме "-png" или "-jpg", ако са залепени за името
-  name = name.replace(/-(png|jpe?g)$/i, '');
-
-  // ВРЪЩАМЕ ВИНАГИ .jpg (защото твоята нормализация прави .jpg)
-  return name.toLowerCase() + '.jpg';
+  // 4. Долепяме .jpg и връщаме "суровото" име
+  return name + '.jpg';
 }
-
-
 
 
 
