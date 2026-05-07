@@ -1171,23 +1171,28 @@ if (allImages.length > 0 && ogImageUrl) {
   });
 
 	
- // 4. Генерираме финалния План за лога (с ИМЕНА за прегледност)
+// 4. Генерираме финалния План за лога (с проверка за null)
       console.log(`  📋 REORDER PLAN:`);
       
-      // Вземаме името от URL-а на обекта, който Shopify ни е върнал
-      const mainNameLog = getImageFilename(ogImageNode.url || ogImageNode.src || "");
-      console.log(`    1. [OG-MAIN] ${mainNameLog}`);
+      const getSafeName = (node) => {
+        if (!node) return "unknown.jpg";
+        // Проверяваме всички възможни места за URL
+        const url = node.url || node.src || (node.image && node.image.url) || "";
+        return getImageFilename(url) || "unnamed.jpg";
+      };
+
+      console.log(`    1. [OG-MAIN] ${getSafeName(ogImageNode)}`);
 
       unassignedImages.forEach((img, i) => {
-          const name = getImageFilename(img.url || img.src);
-          console.log(`    ${i + 2}. [FREE]    ${name}`);
+          console.log(`    ${i + 2}. [FREE]    ${getSafeName(img)}`);
       });
       
       const startVarIdx = unassignedImages.length + 2;
       assignedImages.forEach((img, i) => {
-          const name = getImageFilename(img.url || img.src);
-          console.log(`    ${startVarIdx + i}. [VARIANT] ${name}`);
+          console.log(`    ${startVarIdx + i}. [VARIANT] ${getSafeName(img)}`);
       });
+
+	
   // 5. Подготвяме финалния масив с ID-та и позиции
   const finalOrderIds = [
     ogImageNode.id,
