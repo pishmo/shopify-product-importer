@@ -231,7 +231,8 @@ function extractSkuFromImageFilename(filename) {
 
 
 // Функция за нормализация на изображения
-async function normalizeImage(imageUrl, filename) { // Променяме името на параметъра за яснота
+
+async function normalizeImage(imageUrl, filename) {
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
@@ -239,12 +240,14 @@ async function normalizeImage(imageUrl, filename) { // Променяме име
     const buffer = await response.buffer();
     const tempDir = path.join(__dirname, 'temp');
     
-    // Проверка/Създаване на темп папка
-    if (!fs.existsSync(tempDir)) {
-      await fs.mkdirSync(tempDir, { recursive: true });
+    // ПРАВИЛНИЯТ НАЧИН за асинхронна проверка на папка:
+    try {
+      await fs.access(tempDir);
+    } catch {
+      await fs.mkdir(tempDir, { recursive: true });
     }
     
-    // ВАЖНО: Използваме директно filename, който идва от Create или Update
+    // Използваме директно filename, който подадохме (с всички черти и тирета)
     const outputPath = path.join(tempDir, filename);
     
     await sharp(buffer)
@@ -256,7 +259,7 @@ async function normalizeImage(imageUrl, filename) { // Променяме име
       .toFile(outputPath);
     
     const normalizedBuffer = await fs.readFile(outputPath);
-    await fs.unlink(outputPath); // Изтриваме темп файла след прочитане
+    await fs.unlink(outputPath);
     
     return normalizedBuffer;
   } catch (error) {
@@ -264,8 +267,6 @@ async function normalizeImage(imageUrl, filename) { // Променяме име
     return null;
   }
 }
-
-
 
 
 // Функция за качване на изображение в Shopify   ============================================================
