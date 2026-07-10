@@ -1,0 +1,5 @@
+- name: Test Filstar API
+  run: |
+    curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: Bearer ${{ secrets.FILSTAR_API_TOKEN }}" \
+    https://[filstar-api-endpoint]
