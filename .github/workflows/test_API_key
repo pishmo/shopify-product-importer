@@ -1,7 +1,6 @@
-- name: Test Filstar API connection
-  run: |
-    STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-      -H "Authorization: Bearer 945135" \
-      -H "Content-Type: application/json" \
-      "https://filstar.com/api/products?page=1&limit=10")
-    echo "HTTP Status: $STATUS"
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+  -X GET \
+  -H "Authorization: Bearer 945135" \
+  -H "Content-Type: application/json" \
+  "https://filstar.com/api/products?page=1&limit=1000")
+echo "HTTP Status: $STATUS"
