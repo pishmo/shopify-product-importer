@@ -1,17 +1,9 @@
-name: Test Basic Connection
-
-on:
-  workflow_dispatch:
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test basic internet
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://google.com)
-          echo "Google status: $STATUS"
-      
-      - name: Get my IP
-        run: |
-          curl https://api.ipify.org
+- name: Test Filstar full response
+  run: |
+    echo "=== URL ===" 
+    echo "https://filstar.com/api/products?page=1&limit=1000"
+    echo "=== Response body ==="
+    curl -s \
+      -H "Authorization: Bearer 945135" \
+      -H "Content-Type: application/json" \
+      "https://filstar.com/api/products?page=1&limit=1000"
