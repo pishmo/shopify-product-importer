@@ -1,9 +1,0 @@
-- name: Test Filstar full response
-  run: |
-    echo "=== URL ===" 
-    echo "https://filstar.com/api/products?page=1&limit=1000"
-    echo "=== Response body ==="
-    curl -s \
-      -H "Authorization: Bearer 945135" \
-      -H "Content-Type: application/json" \
-      "https://filstar.com/api/products?page=1&limit=1000"
